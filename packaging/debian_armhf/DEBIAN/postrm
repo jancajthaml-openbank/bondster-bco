@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+
+  purge)
+    systemctl stop bondster-bco.service
+    systemctl disable bondster-bco.service
+    (rm /lib/systemd/system/bondster-bco.service || :)
+    (rm /lib/systemd/system/bondster-bco.service || :)
+    (rm /etc/init/bondster-bco.conf || :)
+    (rm /opt/bondster-bco/metrics/metrics.json || :)
+    systemctl daemon-reload
+    systemctl reset-failed
+  ;;
+
+  remove)
+    systemctl mask bondster-bco.service
+  ;;
+
+  upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+  ;;
+
+  *)
+    (>&2 echo "postrm called with unknown argument \`$1'")
+    exit 1
+  ;;
+
+esac
+
+exit 0

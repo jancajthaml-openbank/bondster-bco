@@ -1,0 +1,9 @@
+Package: bondster-bco
+Version: 0.0.0+prototype
+Architecture: amd64
+Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
+Depends: init-system-helpers (>= 1.18~), libzmq5 (= 4.2.1-4)
+Section: openbank
+Priority: extra
+Vcs-Git: git@github.com:jancajthaml-openbank/bondster-bco.git
+Description: Openbank Bondster Marketplace Connection

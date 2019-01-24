@@ -1,0 +1,259 @@
+version: 2
+
+# ---------------------------------------------------------------------------- #
+
+workflows:
+
+  version: 2
+
+  commit:
+    jobs:
+      - setup:
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
+      - test:
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
+      - build:
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
+      - package:
+          requires:
+            - build
+            - test
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
+      - bbtest:
+          requires:
+            - package
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
+      - release:
+          requires:
+            - bbtest
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
+            branches:
+              ignore: /.*/
+
+# ---------------------------------------------------------------------------- #
+
+jobs:
+
+  # -------------------------------------------------------------------------- #
+
+  setup:
+    docker:
+      - image: docker:17.09.0-ce-git
+        environment:
+          - LANG: C.UTF-8
+          - GOARCH: amd64
+          - GOOS: linux
+          - GOBIN: /usr/lib/go/bin/go
+    working_directory: /home/circleci/project
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: docker build -t openbankdev/bondster_bco_base ./dev
+      - run: docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+      - deploy:
+          name: Push dev docker images to DockerHUB
+          command: |
+            upload_to_docker_hub() {
+              docker tag ${1} "${1}:${2}"
+              docker push "${1}:${2}"
+            }
+
+            upload_to_docker_hub openbankdev/bondster_bco_base latest
+      - save_cache:
+          key: bondster-base-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+          paths:
+            - /home/circleci/project
+
+  # -------------------------------------------------------------------------- #
+
+  test:
+    docker:
+      - image: openbankdev/bondster_bco_base
+    working_directory: /home/circleci/project
+    steps:
+      - restore_cache:
+          keys:
+            - bondster-base-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+      - run:
+          name: ensure services namespace
+          command: |
+            mkdir -p /go/src/github.com/jancajthaml-openbank
+            ln -s /home/circleci/project/services/bondster-bco-rest /go/src/github.com/jancajthaml-openbank/bondster-bco-rest
+            ln -s /home/circleci/project/services/bondster-bco-unit /go/src/github.com/jancajthaml-openbank/bondster-bco-unit
+      - run:
+          name: sync dependencies
+          command: |
+            ./dev/lifecycle/sync --pkg bondster-bco-rest
+            ./dev/lifecycle/sync --pkg bondster-bco-unit
+      - run:
+          name: unit test bondster-bco-rest
+          command: |
+            ./dev/lifecycle/test --pkg bondster-bco-rest
+      - run:
+          name: unit test bondster-bco-unit
+          command: |
+            ./dev/lifecycle/test --pkg bondster-bco-unit
+
+  # -------------------------------------------------------------------------- #
+
+  build:
+    docker:
+      - image: openbankdev/bondster_bco_base
+    working_directory: /home/circleci/project
+    steps:
+      - restore_cache:
+          keys:
+            - bondster-base-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: ensure services namespace
+          command: |
+            mkdir -p /go/src/github.com/jancajthaml-openbank
+            ln -s /home/circleci/project/services/bondster-bco-rest /go/src/github.com/jancajthaml-openbank/bondster-bco-rest
+            ln -s /home/circleci/project/services/bondster-bco-unit /go/src/github.com/jancajthaml-openbank/bondster-bco-unit
+      - run:
+          name: sync dependencies
+          command: |
+            ./dev/lifecycle/sync --pkg bondster-bco-rest
+            ./dev/lifecycle/sync --pkg bondster-bco-unit
+      - run:
+          name: package binary of bondster-bco-unit
+          command: |
+            ./dev/lifecycle/package --arch linux/amd64 --pkg bondster-bco-unit
+            ./dev/lifecycle/package --arch linux/armhf --pkg bondster-bco-unit
+      - run:
+          name: package binary of bondster-bco-rest
+          command: |
+            ./dev/lifecycle/package --arch linux/amd64 --pkg bondster-bco-rest
+            ./dev/lifecycle/package --arch linux/armhf --pkg bondster-bco-rest
+      - run:
+          name: Package debian of bondster-bco
+          command: |
+            if [ -z ${CIRCLE_TAG} ] ; then
+              tags=($(git tag --sort=-v:refname))
+              if [ ${#tags[@]} -eq 0 ] ; then
+                VERSION=v0.0.0
+              else
+                VERSION=${tags[0]}
+              fi
+              META=$(sed 's:.*/::' <<< ${CIRCLE_BRANCH})
+              VERSION=${VERSION}+${META}
+            else
+              VERSION=${CIRCLE_TAG}
+            fi
+
+            ./dev/lifecycle/debian -v ${VERSION} --arch amd64 --pkg bondster-bco
+            ./dev/lifecycle/debian -v ${VERSION} --arch armhf --pkg bondster-bco
+      - save_cache:
+          key: bondster-binaries-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+          paths:
+            - /home/circleci/project
+      - persist_to_workspace:
+          root: /home/circleci/project/packaging
+          paths:
+            - bin
+  # -------------------------------------------------------------------------- #
+
+  package:
+    docker:
+      - image: openbankdev/bondster_bco_base
+    working_directory: /home/circleci/project
+    steps:
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - bondster-binaries-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+      - run: docker build -t openbank/bondster-bco .
+      - run: docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+      - deploy:
+          name: Push snapshot docker images to DockerHUB
+          command: |
+            upload() {
+              if [ -z ${CIRCLE_TAG} ] ; then
+                VERSION=$(sed 's:.*/::' <<< ${CIRCLE_BRANCH})
+                echo "snapshot ${VERSION}"
+
+                docker tag ${1} ${1}:${VERSION}
+                docker push ${1}:${VERSION}
+              else
+                VERSION=${CIRCLE_TAG}
+                echo "release ${VERSION}"
+
+                docker tag ${1} ${1}:${VERSION}
+                docker push ${1}:${VERSION}
+
+                docker tag ${1} ${1}:latest
+                docker push ${1}:latest
+              fi
+            }
+
+            upload openbank/bondster-bco
+
+  # -------------------------------------------------------------------------- #
+
+  bbtest:
+    machine: true
+    working_directory: /home/circleci/project
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /home/circleci/project/packaging
+      - run: docker build -t openbankdev/bondster_bco_bbtest -f ./bbtest/Dockerfile .
+      - run:
+          name: Run blackbox tests
+          command: |
+            docker exec -it $(\
+              docker run -d -ti \
+                -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+                -v /home/circleci/project/bbtest:/opt/bbtest \
+                -v /home/circleci/project/reports:/reports \
+              openbankdev/bondster_bco_bbtest \
+            ) rspec --require /opt/bbtest/spec.rb \
+              --format documentation \
+              --format RspecJunitFormatter \
+              --out junit.xml \
+              --pattern /opt/bbtest/features/*.feature
+      - store_test_results:
+          path: /home/circleci/project/bbtest
+      - store_artifacts:
+          path: /home/circleci/project/reports
+          destination: reports
+
+  # -------------------------------------------------------------------------- #
+
+  release:
+    docker:
+      - image: openbankdev/bondster_bco_base
+    working_directory: /home/circleci/project
+    steps:
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - bondster-binaries-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+      - run: if [ ! -f ./packaging/bin/bondster-bco-rest-linux-amd64 ] ; then exit 1 ; fi
+      - run: if [ ! -f ./packaging/bin/bondster-bco-unit-linux-amd64 ] ; then exit 1 ; fi
+      - run: if [ ! -f ./packaging/bin/bondster-bco-rest-linux-armhf ] ; then exit 1 ; fi
+      - run: if [ ! -f ./packaging/bin/bondster-bco-unit-linux-armhf ] ; then exit 1 ; fi
+      - run: if [ ! -f ./packaging/bin/bondster-bco_${CIRCLE_TAG#v}_amd64.deb ] ; then exit 1 ; fi
+      - run: if [ ! -f ./packaging/bin/bondster-bco_${CIRCLE_TAG#v}_armhf.deb ] ; then exit 1 ; fi
+      - deploy:
+          name: Release artifacts to github
+          command: |
+            ./dev/lifecycle/release -v ${CIRCLE_TAG} -t ${GITHUB_RELEASE_TOKEN}
+
+# ---------------------------------------------------------------------------- #
