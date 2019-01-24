@@ -94,13 +94,18 @@ jobs:
           name: ensure services namespace
           command: |
             mkdir -p /go/src/github.com/jancajthaml-openbank
-            ln -s /home/circleci/project/services/bondster-bco-rest /go/src/github.com/jancajthaml-openbank/bondster-bco-rest
-            ln -s /home/circleci/project/services/bondster-bco-unit /go/src/github.com/jancajthaml-openbank/bondster-bco-unit
+            cp -r /home/circleci/project/services/bondster-bco-rest /go/src/github.com/jancajthaml-openbank/bondster-bco-rest
+            cp -r /home/circleci/project/services/bondster-bco-unit /go/src/github.com/jancajthaml-openbank/bondster-bco-unit
       - run:
           name: sync dependencies
           command: |
             ./dev/lifecycle/sync --pkg bondster-bco-rest
             ./dev/lifecycle/sync --pkg bondster-bco-unit
+      - run:
+          name: move vendor folder to project
+          command: |
+            cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-rest/vendor /home/circleci/project/services/bondster-bco-rest/vendor
+            cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-unit/vendor /home/circleci/project/services/bondster-bco-unit/vendor
       - run:
           name: unit test bondster-bco-rest
           command: |
@@ -124,13 +129,18 @@ jobs:
           name: ensure services namespace
           command: |
             mkdir -p /go/src/github.com/jancajthaml-openbank
-            ln -s /home/circleci/project/services/bondster-bco-rest /go/src/github.com/jancajthaml-openbank/bondster-bco-rest
-            ln -s /home/circleci/project/services/bondster-bco-unit /go/src/github.com/jancajthaml-openbank/bondster-bco-unit
+            cp -r /home/circleci/project/services/bondster-bco-rest /go/src/github.com/jancajthaml-openbank/bondster-bco-rest
+            cp -r /home/circleci/project/services/bondster-bco-unit /go/src/github.com/jancajthaml-openbank/bondster-bco-unit
       - run:
           name: sync dependencies
           command: |
             ./dev/lifecycle/sync --pkg bondster-bco-rest
             ./dev/lifecycle/sync --pkg bondster-bco-unit
+      - run:
+          name: move vendor folder to project
+          command: |
+            cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-rest/vendor /home/circleci/project/services/bondster-bco-rest/vendor
+            cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-unit/vendor /home/circleci/project/services/bondster-bco-unit/vendor
       - run:
           name: package binary of bondster-bco-unit
           command: |
