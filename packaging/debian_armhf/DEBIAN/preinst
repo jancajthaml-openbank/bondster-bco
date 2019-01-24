@@ -1,0 +1,59 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+
+  install|upgrade)
+
+    if [ ! -f "/etc/init/bondster-bco.conf" ] ; then
+      mkdir -p /etc/init
+      touch /etc/init/bondster-bco.conf
+
+      echo "BONDSTER_BCO_STORAGE=/data" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_LOG_LEVEL=INFO" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_METRICS_REFRESHRATE=1s" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_BONDSTER_GATEWAY=https://bondster.com/ib/proxy" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_SYNC_RATE=22s" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_WALL_GATEWAY=https://localhost" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_METRICS_OUTPUT=/opt/bondster-bco/metrics/metrics.json" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_LAKE_HOSTNAME=localhost" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_HTTP_PORT=7443" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_SECRETS=/opt/bondster-bco/secrets" >> /etc/init/bondster-bco.conf
+    fi
+
+    secrets=$(sed -n -e 's/^.*BONDSTER_BCO_SECRETS=//p' /etc/init/bondster-bco.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
+
+    # FIXME better
+    if [ -z "${secrets}" ] ; then
+      (>&2 echo "BONDSTER_BCO_SECRETS are not defined at /etc/init/bondster-bco.conf")
+      exit 1
+    fi
+
+    if [ ! -f "${secrets}/domain.local.crt" ] || [ ! -f "${secrets}/domain.local.key" ] ; then
+      mkdir -p "${secrets}"
+
+      openssl req \
+        -x509 \
+        -nodes \
+        -newkey rsa:2048 \
+        -keyout "${secrets}/domain.local.key" \
+        -out "${secrets}/domain.local.crt" \
+        -days 1 \
+        -subj "/C=CZ/ST=Czechia/L=Prague/O=OpenBanking/OU=IT/CN=localhost/emailAddress=jan.cajthaml@gmail.com"
+      echo "generated temporary certificates at ${secrets} valid for 24 hours"
+    fi
+
+  ;;
+
+  abort-upgrade)
+  ;;
+
+  *)
+    (>&2 echo "preinst called with unknown argument \`$1'")
+    exit 1
+  ;;
+
+esac
+
+exit 0
