@@ -61,6 +61,9 @@ func NewToken(value string, username string, password string) Token {
 }
 
 func (entity *Token) UpdateCurrencies(currencies []string) bool {
+	if entity == nil {
+		return false
+	}
 	var updated = false
 	for _, currency := range currencies {
 		if _, ok := entity.LastSyncedFrom[currency]; !ok {
@@ -77,9 +80,17 @@ func (entity *Token) Persist() []byte {
 		return nil
 	}
 	var buffer bytes.Buffer
-	buffer.WriteString(utils.EncryptString(entity.Username))
+	uname, err := utils.EncryptString(entity.Username)
+	if err != nil {
+		return nil
+	}
+	pwd, err := utils.EncryptString(entity.Password)
+	if err != nil {
+		return nil
+	}
+	buffer.WriteString(uname)
 	buffer.WriteString("\n")
-	buffer.WriteString(utils.EncryptString(entity.Password))
+	buffer.WriteString(pwd)
 	for currency, syncTime := range entity.LastSyncedFrom {
 		buffer.WriteString("\n")
 		buffer.WriteString(currency)
@@ -94,13 +105,23 @@ func (entity *Token) Hydrate(data []byte) {
 	if entity == nil {
 		return
 	}
+	//fmt.Printf("raw encrypted data of token is %+v\n", string(data))
+	entity.LastSyncedFrom = make(map[string]time.Time)
+
 	lines := strings.Split(string(data), "\n")
 	if len(lines) < 2 {
 		return
 	}
-	entity.Username = utils.DecryptString(lines[0])
-	entity.Password = utils.DecryptString(lines[1])
-	entity.LastSyncedFrom = make(map[string]time.Time)
+	uname, err := utils.DecryptString(lines[0])
+	if err != nil {
+		return
+	}
+	pwd, err := utils.DecryptString(lines[1])
+	if err != nil {
+		return
+	}
+	entity.Username = uname
+	entity.Password = pwd
 	for _, syncTime := range lines[2:] {
 		if from, err := time.Parse("01/2006", syncTime[4:]); err == nil {
 			entity.LastSyncedFrom[syncTime[:3]] = from

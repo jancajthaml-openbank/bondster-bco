@@ -18,46 +18,64 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/hex"
+	"fmt"
 	"io"
 )
 
 // fixme not really secure now
-var masterKey = []byte("4D92199549E0F2EF009B4160F3582E5528A11A45017F3EF8")
+var masterKey []byte
 
-func EncryptString(data string) string {
-	return string(Encrypt([]byte(data)))
+func init() {
+	key, _ := hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
+	masterKey = []byte(key)
 }
 
-func Encrypt(data []byte) []byte {
+func EncryptString(data string) (string, error) {
+	result, err := Encrypt([]byte(data))
+	if err != nil {
+		return "", err
+	}
+	return string(result), nil
+}
+
+func Encrypt(data []byte) ([]byte, error) {
 	block, err := aes.NewCipher(masterKey)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	ciphertext := make([]byte, aes.BlockSize+len(data))
 	iv := ciphertext[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil
+		return nil, err
 	}
 	cfb := cipher.NewCFBEncrypter(block, iv)
 	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(data))
-	return data
+	return ciphertext, nil
 }
 
-func DecryptString(data string) string {
-	return string(Decrypt([]byte(data)))
+func DecryptString(data string) (string, error) {
+	result, err := Decrypt([]byte(data))
+	if err != nil {
+		return "", err
+	}
+	return string(result), nil
 }
 
-func Decrypt(data []byte) []byte {
+func Decrypt(data []byte) ([]byte, error) {
 	block, err := aes.NewCipher(masterKey)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	if len(data) < aes.BlockSize {
-		return nil
+		return nil, fmt.Errorf("invalid blocksize expected %d but actual is %d", aes.BlockSize, len(data))
 	}
-	iv := data[:aes.BlockSize]
-	data = data[aes.BlockSize:]
+
+	plaintext := make([]byte, len(data))
+	copy(plaintext, data)
+	iv := plaintext[:aes.BlockSize]
+	plaintext = plaintext[aes.BlockSize:]
 	cfb := cipher.NewCFBDecrypter(block, iv)
-	cfb.XORKeyStream(data, data)
-	return data
+	cfb.XORKeyStream(plaintext, plaintext)
+	return plaintext, nil
 }
