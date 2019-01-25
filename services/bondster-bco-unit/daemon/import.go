@@ -177,9 +177,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
-		return fmt.Errorf("Bondster transaction search Error %+v", err)
+		return fmt.Errorf("Bondster transaction search Error %+v , request: %+v", err, string(request))
 	} else if code != 200 {
-		return fmt.Errorf("Bondster transaction search Error %d %+v", code, string(response))
+		return fmt.Errorf("Bondster transaction search Error %d %+v , request: %+v", code, string(response), string(request))
 	}
 
 	var search = new(model.TransfersSearchResult)
@@ -198,9 +198,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
-		return fmt.Errorf("Bondster transaction list Error %+v", err)
+		return fmt.Errorf("Bondster transaction list Error %+v , request: %+v", err, string(request))
 	} else if code != 200 {
-		return fmt.Errorf("Bondster transaction list Error %d %+v", code, string(response))
+		return fmt.Errorf("Bondster transaction list Error %d %+v , request: %+v", code, string(response), string(request))
 	}
 
 	var envelope = new(model.BondsterImportEnvelope)
