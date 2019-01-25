@@ -105,11 +105,11 @@ func (bondster BondsterImport) validateLoginStep(device string, channel string, 
 	step := model.LoginStep{
 		Code: "USR_PWD",
 		Values: []model.LoginStepValue{
-			model.LoginStepValue{
+			{
 				Type:  "USERNAME",
 				Value: token.Username,
 			},
-			model.LoginStepValue{
+			{
 				Type:  "PWD",
 				Value: token.Password,
 			},
