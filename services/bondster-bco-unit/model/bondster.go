@@ -151,11 +151,11 @@ type TransfersSearchResult struct {
 	IDs []string `json:"transferIdList"`
 }
 
-func (entity *TransfersSearchResult) MarshalJSON() ([]byte, error) {
+func (entity TransfersSearchResult) MarshalJSON() ([]byte, error) {
 	return []byte("{\"transactionIds\":[" + strings.Join(entity.IDs, ",") + "]}"), nil
 }
 
-func (entity *TransfersSearchRequest) MarshalJSON() ([]byte, error) {
+func (entity TransfersSearchRequest) MarshalJSON() ([]byte, error) {
 	return []byte("{\"valueDateFrom\":\"{\"month\":\"" + strconv.FormatInt(int64(entity.From.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.From.Year()), 10) + "\"},\"valueDateTo\":\"{\"month\":\"" + strconv.FormatInt(int64(entity.To.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.To.Year()), 10) + "\"}}"), nil
 }
 
@@ -210,22 +210,18 @@ type Session struct {
 	Channel string
 }
 
-type PotrfolioCurrencies struct {
+type CurrenciesLimit struct {
 	Value []string
 }
 
-func (entity *PotrfolioCurrencies) UnmarshalJSON(data []byte) error {
-	all := struct {
-		MarketAccounts struct {
-			AccountsMap map[string]interface{} `json:"currencyToAccountMap"`
-		} `json:"marketVerifiedExternalAccount"`
-	}{}
+func (entity *CurrenciesLimit) UnmarshalJSON(data []byte) error {
+	all := make(map[string]interface{})
 	err := utils.JSON.Unmarshal(data, &all)
 	if err != nil {
 		return err
 	}
 	entity.Value = make([]string, 0)
-	for currency := range all.MarketAccounts.AccountsMap {
+	for currency := range all {
 		entity.Value = append(entity.Value, currency)
 	}
 	return nil
