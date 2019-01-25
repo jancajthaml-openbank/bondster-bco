@@ -49,7 +49,7 @@ scan:
 }
 
 func RandDevice() string {
-	var x = [10]byte{
+	device := string([]byte{
 		numbers[rand.Intn(9)],
 		numbers[rand.Intn(9)],
 		numbers[rand.Intn(9)],
@@ -60,9 +60,7 @@ func RandDevice() string {
 		numbers[rand.Intn(9)],
 		numbers[rand.Intn(9)],
 		numbers[rand.Intn(9)],
-	}
-
-	device := string(x[:])
+	})
 	control := checksum(device)
 	return device + "." + control
 }
