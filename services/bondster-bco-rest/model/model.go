@@ -36,7 +36,7 @@ type Token struct {
 	LastSyncedFrom map[string]time.Time
 }
 
-func (entity *Token) MarshalJSON() ([]byte, error) {
+func (entity Token) MarshalJSON() ([]byte, error) {
 	return []byte("{\"value\":\"" + entity.Value + "\"}"), nil
 }
 

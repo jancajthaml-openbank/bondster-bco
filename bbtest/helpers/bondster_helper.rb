@@ -3,7 +3,7 @@ require 'thread'
 require_relative '../shims/harden_webrick'
 require_relative './bondster_mock'
 
-class BondsterGetContactInformationHandler < WEBrick::HTTPServlet::AbstractServlet
+class BondsterGetCurrenciesLimitHandler < WEBrick::HTTPServlet::AbstractServlet
 
   def do_POST(request, response)
     status, content_type, body = process(request)
@@ -19,29 +19,17 @@ class BondsterGetContactInformationHandler < WEBrick::HTTPServlet::AbstractServl
     return 401, {} unless request.header.key?("authorization")
 
     return 200, "application/json", {
-      "status": "VERIFIED",
-      "marketVerifiedExternalAccount": {
-        "status": "APPROVED",
-        "currencyToAccountMap": {
-          "EUR": [
-            {
-              "portfolioCurrency": "EUR",
-              "bankCode": "1111",
-              "accountNumber": "2222",
-              "status": "APPROVED",
-              "accountNumberFormat": "IBAN"
-            }
-          ],
-          "CZK": [
-            {
-              "portfolioCurrency": "CZK",
-              "bankCode": "1111",
-              "accountNumber": "2222",
-              "status": "APPROVED",
-              "accountNumberFormat": "LOCALCZ"
-            }
-          ]
-        }
+      "EUR": {
+        "minInvestment": 0.01,
+        "maxInvestment": 10000000,
+        "maxInvestmentPercentage": 100,
+        "defaultInvestment": 5
+      },
+      "CZK": {
+        "minInvestment": 0.01,
+        "maxInvestment": 10000000,
+        "maxInvestmentPercentage": 100,
+        "defaultInvestment": 100
       }
     }.to_json
   end
@@ -97,10 +85,19 @@ class BondsterSearchTransactionHandler < WEBrick::HTTPServlet::AbstractServlet
   end
 
   def process(request)
-    return 500, {} unless request.header.key?("channeluuid")
-    return 500, {} unless request.header.key?("device")
-    return 401, {} unless request.header.key?("authorization")
-    return 401, {} unless request.header.key?("x-account-context")
+    return 500, "application/json", {} unless request.header.key?("channeluuid")
+    return 500, "application/json", {} unless request.header.key?("device")
+    return 401, "application/json", {} unless request.header.key?("authorization")
+    return 401, "application/json", {} unless request.header.key?("x-account-context")
+
+    body = Hash.new
+
+    begin
+      body = JSON.parse(request.body)
+      raise "" unless body.key?("valueDateFrom") and body.key?("valueDateTo")
+    rescue Exception
+      return 400, "application/json", {}
+    end
 
     currency = request.header["x-account-context"]
 
@@ -139,8 +136,8 @@ class BondsterGetLoginScenarioHandler < WEBrick::HTTPServlet::AbstractServlet
 
   def process(request)
 
-    return 500, {} unless request.header.key?("channeluuid")
-    return 500, {} unless request.header.key?("device")
+    return 500, "application/json", {} unless request.header.key?("channeluuid")
+    return 500, "application/json", {} unless request.header.key?("device")
 
     #puts request.header["authorization"]
 
@@ -182,8 +179,8 @@ class BondsterValidateLoginStepHandler < WEBrick::HTTPServlet::AbstractServlet
 
   def process(request)
 
-    return 500, {} unless request.header.key?("channeluuid")
-    return 500, {} unless request.header.key?("device")
+    return 500, "application/json", {} unless request.header.key?("channeluuid")
+    return 500, "application/json", {} unless request.header.key?("device")
 
     return 200, "application/json", {
       "result": "FINISH",
@@ -225,7 +222,7 @@ module BondsterHelper
     self.server.mount "/router/api/public/authentication/validateLoginStep", BondsterValidateLoginStepHandler
     self.server.mount "/mktinvestor/api/private/transaction/search", BondsterSearchTransactionHandler
     self.server.mount "/mktinvestor/api/private/transaction/list", BondsterListTransactionHandler
-    self.server.mount "/clientusersetting/api/private/market/getContactInformation", BondsterGetContactInformationHandler
+    self.server.mount "/mktinvestor/api/private/investor/limits", BondsterGetCurrenciesLimitHandler
 
 
 
