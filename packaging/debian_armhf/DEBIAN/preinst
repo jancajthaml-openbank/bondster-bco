@@ -18,7 +18,7 @@ case "$1" in
       echo "BONDSTER_BCO_WALL_GATEWAY=https://localhost" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_METRICS_OUTPUT=/opt/bondster-bco/metrics/metrics.json" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_LAKE_HOSTNAME=localhost" >> /etc/init/bondster-bco.conf
-      echo "BONDSTER_BCO_HTTP_PORT=7443" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_HTTP_PORT=4001" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_SECRETS=/opt/bondster-bco/secrets" >> /etc/init/bondster-bco.conf
     fi
 

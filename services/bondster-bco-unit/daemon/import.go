@@ -177,9 +177,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
-		return err
+		return fmt.Errorf("Bondster transaction search Error %+v", err)
 	} else if code != 200 {
-		return fmt.Errorf("Bondster Gateway Error %d %+v", code, string(response))
+		return fmt.Errorf("Bondster transaction search Error %d %+v", code, string(response))
 	}
 
 	var search = new(model.TransfersSearchResult)
@@ -198,9 +198,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
-		return err
+		return fmt.Errorf("Bondster transaction list Error %+v", err)
 	} else if code != 200 {
-		return fmt.Errorf("Bondster Gateway Error %d %+v", code, string(response))
+		return fmt.Errorf("Bondster transaction list Error %d %+v", code, string(response))
 	}
 
 	var envelope = new(model.BondsterImportEnvelope)
@@ -234,9 +234,6 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 			return fmt.Errorf("Wall Account Error %d %+v", code, string(response))
 		}
 	}
-
-	// FIXME duplicate epoch time
-	//epoch := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
@@ -329,9 +326,9 @@ func (bondster BondsterImport) getCurrencies(session *model.Session) ([]string, 
 
 	response, code, err = bondster.httpClient.Post(uri, nil, headers)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Bondster get contant information Error %+v", err)
 	} else if code != 200 {
-		return nil, fmt.Errorf("Bondster Gateway Error %d %+v", code, string(response))
+		return nil, fmt.Errorf("Bondster get contant information Error %d %+v", code, string(response))
 	}
 
 	var currencies = new(model.PotrfolioCurrencies)
@@ -362,7 +359,7 @@ func (bondster BondsterImport) importStatements(token model.Token) {
 
 	for currency := range token.LastSyncedFrom {
 		if err := bondster.importNewTransactions(&token, currency, session); err != nil {
-			log.Warnf("Import statements Failed : %+v for %+v", err, token.Value)
+			log.Warnf("Import token %s statements failed with %+v", token.Value, err)
 			continue
 		}
 	}
