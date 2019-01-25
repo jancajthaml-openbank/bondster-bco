@@ -29,7 +29,7 @@ func loadConfFromEnv() Configuration {
 	secrets := getEnvString("BONDSTER_BCO_SECRETS", "")
 	rootStorage := getEnvString("BONDSTER_BCO_STORAGE", "/data")
 	lakeHostname := getEnvString("BONDSTER_BCO_LAKE_HOSTNAME", "")
-	port := getEnvInteger("BONDSTER_BCO_HTTP_PORT", 443)
+	port := getEnvInteger("BONDSTER_BCO_HTTP_PORT", 4001)
 
 	if lakeHostname == "" || secrets == "" || rootStorage == "" {
 		log.Fatal("missing required parameter to run")

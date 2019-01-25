@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"strings"
 	"time"
+
+	"github.com/jancajthaml-openbank/bondster-bco-unit/utils"
 )
 
 // Token represents metadata of token entity
@@ -62,7 +64,6 @@ func (entity *Token) UpdateCurrencies(currencies []string) bool {
 	var updated = false
 	for _, currency := range currencies {
 		if _, ok := entity.LastSyncedFrom[currency]; !ok {
-			// FIXME duplicate epoch time
 			entity.LastSyncedFrom[currency] = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 			updated = true
 		}
@@ -76,9 +77,9 @@ func (entity *Token) Persist() []byte {
 		return nil
 	}
 	var buffer bytes.Buffer
-	buffer.WriteString(entity.Username)
+	buffer.WriteString(utils.EncryptString(entity.Username))
 	buffer.WriteString("\n")
-	buffer.WriteString(entity.Password)
+	buffer.WriteString(utils.EncryptString(entity.Password))
 	for currency, syncTime := range entity.LastSyncedFrom {
 		buffer.WriteString("\n")
 		buffer.WriteString(currency)
@@ -97,14 +98,13 @@ func (entity *Token) Hydrate(data []byte) {
 	if len(lines) < 2 {
 		return
 	}
-	entity.Username = lines[0]
-	entity.Password = lines[1]
+	entity.Username = utils.DecryptString(lines[0])
+	entity.Password = utils.DecryptString(lines[1])
 	entity.LastSyncedFrom = make(map[string]time.Time)
 	for _, syncTime := range lines[2:] {
 		if from, err := time.Parse("01/2006", syncTime[4:]); err == nil {
 			entity.LastSyncedFrom[syncTime[:3]] = from
 		} else {
-			// FIXME duplicate epoch time
 			entity.LastSyncedFrom[syncTime[:3]] = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 		}
 	}
