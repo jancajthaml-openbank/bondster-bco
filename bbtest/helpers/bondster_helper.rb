@@ -65,6 +65,29 @@ class BondsterListTransactionHandler < WEBrick::HTTPServlet::AbstractServlet
     return 401, {} unless request.header.key?("authorization")
     return 401, {} unless request.header.key?("x-account-context")
 
+    schema = {
+      "type" => "object",
+      "required" => ["transactionIds"],
+      "properties" => {
+        "transactionIds" => {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+
+    body = Hash.new
+
+    begin
+      body = JSON.parse(request.body)
+    rescue Exception
+      return 400, {}
+    end
+
+    return 400, {} unless JSON::Validator.validate(schema, body)
+
     return 200, [
       {
         "idTransaction": "x",
