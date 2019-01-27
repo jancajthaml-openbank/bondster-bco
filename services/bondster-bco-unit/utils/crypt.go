@@ -31,14 +31,6 @@ func init() {
 	masterKey = []byte(key)
 }
 
-func EncryptString(data string) (string, error) {
-	result, err := Encrypt([]byte(data))
-	if err != nil {
-		return "", err
-	}
-	return string(result), nil
-}
-
 func Encrypt(data []byte) ([]byte, error) {
 	block, err := aes.NewCipher(masterKey)
 	if err != nil {
@@ -52,14 +44,6 @@ func Encrypt(data []byte) ([]byte, error) {
 	cfb := cipher.NewCFBEncrypter(block, iv)
 	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(data))
 	return ciphertext, nil
-}
-
-func DecryptString(data string) (string, error) {
-	result, err := Decrypt([]byte(data))
-	if err != nil {
-		return "", err
-	}
-	return string(result), nil
 }
 
 func Decrypt(data []byte) ([]byte, error) {

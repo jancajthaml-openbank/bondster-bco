@@ -156,7 +156,7 @@ func (entity TransfersSearchResult) MarshalJSON() ([]byte, error) {
 }
 
 func (entity TransfersSearchRequest) MarshalJSON() ([]byte, error) {
-	return []byte("{\"valueDateFrom\":\"{\"month\":\"" + strconv.FormatInt(int64(entity.From.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.From.Year()), 10) + "\"},\"valueDateTo\":\"{\"month\":\"" + strconv.FormatInt(int64(entity.To.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.To.Year()), 10) + "\"}}"), nil
+	return []byte("{\"valueDateFrom\":{\"month\":\"" + strconv.FormatInt(int64(entity.From.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.From.Year()), 10) + "\"},\"valueDateTo\":{\"month\":\"" + strconv.FormatInt(int64(entity.To.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.To.Year()), 10) + "\"}}"), nil
 }
 
 func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
@@ -170,10 +170,10 @@ func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	if len(all.Scenarios) == 0 {
-		return fmt.Errorf("No login scenarios")
+		return fmt.Errorf("no login scenarios")
 	}
 	if all.Scenarios[0].Code == "" {
-		return fmt.Errorf("Missing code value field")
+		return fmt.Errorf("missing \"code\" value field")
 	}
 	entity.Value = all.Scenarios[0].Code
 	return nil
@@ -195,10 +195,10 @@ func (entity *JWT) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	if all.Result != "FINISH" {
-		return fmt.Errorf("Result %+v does not represent ready session credentials", all.Result)
+		return fmt.Errorf("result %s has not finished, bailing out", all.Result)
 	}
 	if all.JWT.Value == "" {
-		return fmt.Errorf("Missing jwt value field")
+		return fmt.Errorf("missing \"jwt\" value field")
 	}
 	entity.Value = all.JWT.Value
 	return nil

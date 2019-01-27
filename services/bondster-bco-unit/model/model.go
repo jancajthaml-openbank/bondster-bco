@@ -16,6 +16,7 @@ package model
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"time"
 
@@ -74,59 +75,58 @@ func (entity *Token) UpdateCurrencies(currencies []string) bool {
 	return updated
 }
 
-// Persist serializes Token entity to persistable data
-func (entity *Token) Persist() []byte {
+// Serialise Token entity to persistable data
+func (entity *Token) Serialise() ([]byte, error) {
 	if entity == nil {
-		return nil
+		return nil, fmt.Errorf("called Token.Serialise over nil")
 	}
 	var buffer bytes.Buffer
-	uname, err := utils.EncryptString(entity.Username)
-	if err != nil {
-		return nil
-	}
-	pwd, err := utils.EncryptString(entity.Password)
-	if err != nil {
-		return nil
-	}
-	buffer.WriteString(uname)
+	buffer.WriteString(entity.Username)
 	buffer.WriteString("\n")
-	buffer.WriteString(pwd)
+	buffer.WriteString(entity.Password)
 	for currency, syncTime := range entity.LastSyncedFrom {
 		buffer.WriteString("\n")
 		buffer.WriteString(currency)
 		buffer.WriteString(" ")
 		buffer.WriteString(syncTime.Format("01/2006"))
 	}
-	return buffer.Bytes()
+	out, err := utils.Encrypt(buffer.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("unable to encrypt data")
+	}
+	return out, nil
 }
 
-// Hydrate deserializes Token entity from persistent data
-func (entity *Token) Hydrate(data []byte) {
+// Deserialise Token entity from persistent data
+func (entity *Token) Deserialise(data []byte) error {
 	if entity == nil {
-		return
+		return fmt.Errorf("called Token.Deserialise over nil")
 	}
-	//fmt.Printf("raw encrypted data of token is %+v\n", string(data))
 	entity.LastSyncedFrom = make(map[string]time.Time)
 
-	lines := strings.Split(string(data), "\n")
+	in, err := utils.Decrypt(data)
+	if err != nil {
+		return fmt.Errorf("unable to decrypt data")
+	}
+
+	// FIXME more optimal split
+	lines := strings.Split(string(in), "\n")
 	if len(lines) < 2 {
-		return
+		return fmt.Errorf("malformed data")
 	}
-	uname, err := utils.DecryptString(lines[0])
-	if err != nil {
-		return
-	}
-	pwd, err := utils.DecryptString(lines[1])
-	if err != nil {
-		return
-	}
-	entity.Username = uname
-	entity.Password = pwd
+
+	entity.Username = lines[0]
+	entity.Password = lines[1]
 	for _, syncTime := range lines[2:] {
+		if len(syncTime) < 7 {
+			continue
+		}
 		if from, err := time.Parse("01/2006", syncTime[4:]); err == nil {
 			entity.LastSyncedFrom[syncTime[:3]] = from
 		} else {
 			entity.LastSyncedFrom[syncTime[:3]] = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 		}
 	}
+
+	return nil
 }
