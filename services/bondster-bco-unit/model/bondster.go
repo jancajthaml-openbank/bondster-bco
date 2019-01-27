@@ -210,18 +210,22 @@ type Session struct {
 	Channel string
 }
 
-type CurrenciesLimit struct {
+type PotrfolioCurrencies struct {
 	Value []string
 }
 
-func (entity *CurrenciesLimit) UnmarshalJSON(data []byte) error {
-	all := make(map[string]interface{})
+func (entity *PotrfolioCurrencies) UnmarshalJSON(data []byte) error {
+	all := struct {
+		MarketAccounts struct {
+			AccountsMap map[string]interface{} `json:"currencyToAccountMap"`
+		} `json:"marketVerifiedExternalAccount"`
+	}{}
 	err := utils.JSON.Unmarshal(data, &all)
 	if err != nil {
 		return err
 	}
 	entity.Value = make([]string, 0)
-	for currency := range all {
+	for currency := range all.MarketAccounts.AccountsMap {
 		entity.Value = append(entity.Value, currency)
 	}
 	return nil
