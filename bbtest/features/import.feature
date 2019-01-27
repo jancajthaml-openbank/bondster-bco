@@ -255,4 +255,4 @@ Feature: Bondster Marketplace import
       HTTP_PORT=443
     """
     And token IMPORT/importToken is created
-    And I sleep for 5 seconds
+    And I sleep for 3 seconds

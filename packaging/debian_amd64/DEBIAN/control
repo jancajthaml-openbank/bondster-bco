@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.0.0+bbtest-validate-schema
+Version: 1.0.0+json-schema-bbtest-validation
 Architecture: amd64
 Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
 Depends: init-system-helpers (>= 1.18~), libzmq5 (= 4.2.1-4)

@@ -69,15 +69,21 @@ func (bondster BondsterImport) getLoginScenario(device string, channel string) e
 	uri = bondster.bondsterGateway + "/router/api/public/authentication/getLoginScenario"
 
 	headers := map[string]string{
-		"device":      device,
-		"channeluuid": channel,
+		"device":            device,
+		"channeluuid":       channel,
+		"x-active-language": "cs",
+		"host":              "bondster.com",
+		"origin":            "https://bondster.com",
+		"referer":           "https://bondster.com/ib/cs",
+		"accept":            "application/json",
 	}
 
 	response, code, err = bondster.httpClient.Post(uri, nil, headers)
 	if err != nil {
+		return fmt.Errorf("bondster get login scenario Error %+v", err)
 		return err
 	} else if code != 200 {
-		return fmt.Errorf("Bondster Gateway Error %d %+v", code, string(response))
+		return fmt.Errorf("bondster get login scenario error %d %+v", code, string(response))
 	}
 
 	var scenario = new(model.LoginScenario)
@@ -87,7 +93,7 @@ func (bondster BondsterImport) getLoginScenario(device string, channel string) e
 	}
 
 	if scenario.Value != "USR_PWD" {
-		return fmt.Errorf("Bondster Gateway Unsupported Login Scenario %+v", string(response))
+		return fmt.Errorf("bondster unsupported login scenario %s", string(response))
 	}
 
 	return nil
@@ -124,15 +130,20 @@ func (bondster BondsterImport) validateLoginStep(device string, channel string, 
 	uri = bondster.bondsterGateway + "/router/api/public/authentication/validateLoginStep"
 
 	headers := map[string]string{
-		"device":      device,
-		"channeluuid": channel,
+		"device":            device,
+		"channeluuid":       channel,
+		"x-active-language": "cs",
+		"host":              "bondster.com",
+		"origin":            "https://bondster.com",
+		"referer":           "https://bondster.com/ib/cs",
+		"accept":            "application/json",
 	}
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
 		return nil, err
 	} else if code != 200 {
-		return nil, fmt.Errorf("Bondster Gateway Error %d %+v", code, string(response))
+		return nil, fmt.Errorf("bondster validate login step Error %d %+v", code, string(response))
 	}
 
 	var session = new(model.JWT)
@@ -173,13 +184,18 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		"channeluuid":       session.Channel,
 		"authorization":     "Bearer " + session.JWT,
 		"x-account-context": currency,
+		"x-active-language": "cs",
+		"host":              "bondster.com",
+		"origin":            "https://bondster.com",
+		"referer":           "https://bondster.com/ib/cs",
+		"accept":            "application/json",
 	}
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
-		return fmt.Errorf("Bondster transaction search Error %+v , request: %+v", err, string(request))
+		return fmt.Errorf("bondster transaction search Error %+v, request: %+v", err, string(request))
 	} else if code != 200 {
-		return fmt.Errorf("Bondster transaction search Error %d %+v , request: %+v", code, string(response), string(request))
+		return fmt.Errorf("bondster transaction search Error %d %+v, request: %+v", code, string(response), string(request))
 	}
 
 	var search = new(model.TransfersSearchResult)
@@ -198,9 +214,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
-		return fmt.Errorf("Bondster transaction list Error %+v , request: %+v", err, string(request))
+		return fmt.Errorf("bondster transaction list Error %+v, request: %+v", err, string(request))
 	} else if code != 200 {
-		return fmt.Errorf("Bondster transaction list Error %d %+v , request: %+v", code, string(response), string(request))
+		return fmt.Errorf("bondster transaction list Error %d %+v, request: %+v", code, string(response), string(request))
 	}
 
 	var envelope = new(model.BondsterImportEnvelope)
@@ -221,7 +237,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 			if code == 200 || code == 409 || code == 400 {
 				return
 			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("Wall Account Error %d %+v", code, string(response))
+				err = fmt.Errorf("wall Account Error %d %+v", code, string(response))
 			}
 			return
 		})
@@ -229,9 +245,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		if err != nil {
 			return err
 		} else if code == 400 {
-			return fmt.Errorf("Wall Account Malformed request %+v", string(request))
+			return fmt.Errorf("wall Account Malformed request %+v", string(request))
 		} else if code != 200 && code != 409 {
-			return fmt.Errorf("Wall Account Error %d %+v", code, string(response))
+			return fmt.Errorf("wall Account Error %d %+v", code, string(response))
 		}
 	}
 
@@ -255,7 +271,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 			if code == 200 || code == 201 || code == 400 {
 				return
 			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("Wall Transaction Error %d %+v", code, string(response))
+				err = fmt.Errorf("wall Transaction Error %d %+v", code, string(response))
 			}
 			return
 		})
@@ -263,17 +279,17 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		if err != nil {
 			return err
 		} else if code == 409 {
-			return fmt.Errorf("Wall Transaction Duplicate %+v", string(request))
+			return fmt.Errorf("wall Transaction Duplicate %+v", string(request))
 		} else if code == 400 {
-			return fmt.Errorf("Wall Transaction Malformed request %+v", string(request))
+			return fmt.Errorf("wall Transaction Malformed request %+v", string(request))
 		} else if code != 200 && code != 201 {
-			return fmt.Errorf("Wall Transaction Error %d %+v", code, string(response))
+			return fmt.Errorf("wall Transaction Error %d %+v", code, string(response))
 		}
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(bondster.storage, token) {
-				log.Warnf("Unable to update token %+v", token)
+				log.Warnf("unable to update token %+v", token)
 			}
 		}
 
@@ -297,7 +313,7 @@ func (bondster BondsterImport) login(token model.Token) (session *model.Session,
 		log.Warnf("Unable to validate login step for token %+v", token.Value)
 		return
 	}
-	log.Debugf("Logged in with token %+v", token.Value)
+	log.Debugf("Logged in with token %s", token.Value)
 
 	session = &model.Session{
 		JWT:     jwt.Value,
@@ -326,9 +342,9 @@ func (bondster BondsterImport) getCurrencies(session *model.Session) ([]string, 
 
 	response, code, err = bondster.httpClient.Post(uri, nil, headers)
 	if err != nil {
-		return nil, fmt.Errorf("Bondster get contant information Error %+v", err)
+		return nil, fmt.Errorf("bondster get contant information Error %+v", err)
 	} else if code != 200 {
-		return nil, fmt.Errorf("Bondster get contant information Error %d %+v", code, string(response))
+		return nil, fmt.Errorf("bondster get contant information Error %d %+v", code, string(response))
 	}
 
 	var currencies = new(model.CurrenciesLimit)
@@ -354,7 +370,7 @@ func (bondster BondsterImport) importStatements(token model.Token) {
 	}
 
 	if token.UpdateCurrencies(currencies) && !persistence.UpdateToken(bondster.storage, &token) {
-		log.Errorf("Update of token currencies has failed, currencies : %+v, token: %+v", currencies, token)
+		log.Errorf("update of token currencies has failed, currencies : %+v, token: %+v", currencies, token)
 	}
 
 	for currency := range token.LastSyncedFrom {
@@ -370,7 +386,7 @@ func (bondster BondsterImport) importRoundtrip() {
 
 	tokens, err := bondster.getActiveTokens()
 	if err != nil {
-		log.Errorf("Unable to get active tokens %+v", err)
+		log.Errorf("unable to get active tokens %+v", err)
 		return
 	}
 

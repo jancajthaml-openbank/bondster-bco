@@ -1,4 +1,5 @@
 require 'json'
+require "json-schema"
 require 'thread'
 require_relative '../shims/harden_webrick'
 require_relative './bondster_mock'
@@ -6,10 +7,10 @@ require_relative './bondster_mock'
 class BondsterGetCurrenciesLimitHandler < WEBrick::HTTPServlet::AbstractServlet
 
   def do_POST(request, response)
-    status, content_type, body = process(request)
+    status, body = process(request)
 
     response.status = status
-    response['Content-Type'] = content_type
+    response['Content-Type'] =  "application/json"
     response.body = body
   end
 
@@ -18,7 +19,7 @@ class BondsterGetCurrenciesLimitHandler < WEBrick::HTTPServlet::AbstractServlet
     return 500, {} unless request.header.key?("device")
     return 401, {} unless request.header.key?("authorization")
 
-    return 200, "application/json", {
+    return 200, {
       "EUR": {
         "minInvestment": 0.01,
         "maxInvestment": 10000000,
@@ -38,10 +39,10 @@ end
 class BondsterListTransactionHandler < WEBrick::HTTPServlet::AbstractServlet
 
   def do_POST(request, response)
-    status, content_type, body = process(request)
+    status, body = process(request)
 
     response.status = status
-    response['Content-Type'] = content_type
+    response['Content-Type'] =  "application/json"
     response.body = body
   end
 
@@ -51,7 +52,7 @@ class BondsterListTransactionHandler < WEBrick::HTTPServlet::AbstractServlet
     return 401, {} unless request.header.key?("authorization")
     return 401, {} unless request.header.key?("x-account-context")
 
-    return 200, "application/json", [
+    return 200, [
       {
         "idTransaction": "x",
         "idTransfer": "y",
@@ -77,10 +78,10 @@ end
 class BondsterSearchTransactionHandler < WEBrick::HTTPServlet::AbstractServlet
 
   def do_POST(request, response)
-    status, content_type, body = process(request)
+    status, body = process(request)
 
     response.status = status
-    response['Content-Type'] = content_type
+    response['Content-Type'] = "application/json"
     response.body = body
   end
 
@@ -91,17 +92,17 @@ class BondsterSearchTransactionHandler < WEBrick::HTTPServlet::AbstractServlet
     return 401, "application/json", {} unless request.header.key?("x-account-context")
 
     body = Hash.new
-
     begin
       body = JSON.parse(request.body)
       raise "" unless body.key?("valueDateFrom") and body.key?("valueDateTo")
-    rescue Exception
-      return 400, "application/json", {}
+    rescue Exception => err
+      puts err
+      return 400, {}
     end
 
     currency = request.header["x-account-context"]
 
-    return 200, "application/json", {
+    return 200, {
       "transferIdList": [
         "a",
         "b",
@@ -135,15 +136,8 @@ class BondsterGetLoginScenarioHandler < WEBrick::HTTPServlet::AbstractServlet
   end
 
   def process(request)
-
     return 500, "application/json", {} unless request.header.key?("channeluuid")
     return 500, "application/json", {} unless request.header.key?("device")
-
-    #puts request.header["authorization"]
-
-    #puts "headers: #{request.header}"
-
-    # fixme validate headers
 
     return 200, "application/json", {
       "scenarios": [
@@ -170,19 +164,80 @@ end
 class BondsterValidateLoginStepHandler < WEBrick::HTTPServlet::AbstractServlet
 
   def do_POST(request, response)
-    status, content_type, body = process(request)
+    status, body = process(request)
+
+    body = {
+      "errors": [
+        {
+          "code": "WRONG_VALUE",
+          "attributeName": "authProcessStepValues.value",
+          "arguments": {}
+        }
+      ]
+    } if status == 400
 
     response.status = status
-    response['Content-Type'] = content_type
+    response['Content-Type'] = "application/json"
     response.body = body
   end
 
   def process(request)
+    return 500, {} unless request.header.key?("channeluuid")
+    return 500, {} unless request.header.key?("device")
 
-    return 500, "application/json", {} unless request.header.key?("channeluuid")
-    return 500, "application/json", {} unless request.header.key?("device")
+    schema = {
+      "type" => "object",
+      "required" => ["authProcessStepValues", "scenarioCode"],
+      "properties" => {
+        "authProcessStepValues" => {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/definitions/processStep" }
+        },
+        "scenarioCode" => {
+          "type" => "string"
+        }
+      },
+      "definitions": {
+        "processStep": {
+          "type": "object",
+          "required": [ "authDetailType", "value" ],
+          "properties": {
+            "authDetailType": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
 
-    return 200, "application/json", {
+    body = Hash.new
+
+    begin
+      body = JSON.parse(request.body)
+    rescue Exception
+      return 400, {}
+    end
+
+    return 400, {} unless JSON::Validator.validate(schema, body)
+
+    return 400, {} unless body["scenarioCode"] == "USR_PWD"
+
+    username = body["authProcessStepValues"].detect {|e| e["authDetailType"] == "USERNAME"}
+    password = body["authProcessStepValues"].detect {|e| e["authDetailType"] == "PWD"}
+
+    return 400, {} if username.empty?
+    return 400, {} if password.empty?
+
+    username = username["value"]
+    password = password["value"]
+
+    return 400, {} unless username == "X" && password == "Y"
+
+    return 200, {
       "result": "FINISH",
       "idAuthProcess": "rIw5_8ARbFY2YrL8TG_UQ7vIPof3KuoiRt6YT27S75Y_fPx-iWXEwl36vHTerr8JSqnlGkMpkfMvLPWhFAlskw==", # fixme generate
       "nextSMSAfter": 0, # fixme generate
@@ -223,8 +278,6 @@ module BondsterHelper
     self.server.mount "/mktinvestor/api/private/transaction/search", BondsterSearchTransactionHandler
     self.server.mount "/mktinvestor/api/private/transaction/list", BondsterListTransactionHandler
     self.server.mount "/mktinvestor/api/private/investor/limits", BondsterGetCurrenciesLimitHandler
-
-
 
     self.server_daemon = Thread.new do
       self.server.start()
