@@ -152,7 +152,11 @@ type TransfersSearchResult struct {
 }
 
 func (entity TransfersSearchResult) MarshalJSON() ([]byte, error) {
-	return []byte("{\"transactionIds\":[" + strings.Join(entity.IDs, ",") + "]}"), nil
+	ids := make([]string, len(entity.IDs))
+	for i, id := range entity.IDs {
+		ids[i] = "\"" + id + "\""
+	}
+	return []byte("{\"transactionIds\":[" + strings.Join(ids, ",") + "]}"), nil
 }
 
 func (entity TransfersSearchRequest) MarshalJSON() ([]byte, error) {
