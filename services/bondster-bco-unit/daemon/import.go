@@ -332,7 +332,7 @@ func (bondster BondsterImport) getCurrencies(session *model.Session) ([]string, 
 		uri      string
 	)
 
-	uri = bondster.bondsterGateway + "/mktinvestor/api/private/investor/limits"
+	uri = bondster.bondsterGateway + "/clientusersetting/api/private/market/getContactInformation"
 
 	headers := map[string]string{
 		"device":        session.Device,
@@ -342,12 +342,12 @@ func (bondster BondsterImport) getCurrencies(session *model.Session) ([]string, 
 
 	response, code, err = bondster.httpClient.Post(uri, nil, headers)
 	if err != nil {
-		return nil, fmt.Errorf("bondster get contant information Error %+v", err)
+		return nil, fmt.Errorf("Bondster get contant information Error %+v", err)
 	} else if code != 200 {
-		return nil, fmt.Errorf("bondster get contant information Error %d %+v", code, string(response))
+		return nil, fmt.Errorf("Bondster get contant information Error %d %+v", code, string(response))
 	}
 
-	var currencies = new(model.CurrenciesLimit)
+	var currencies = new(model.PotrfolioCurrencies)
 	err = utils.JSON.Unmarshal(response, currencies)
 	if err != nil {
 		return nil, err

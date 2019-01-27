@@ -4,13 +4,14 @@ require 'thread'
 require_relative '../shims/harden_webrick'
 require_relative './bondster_mock'
 
-class BondsterGetCurrenciesLimitHandler < WEBrick::HTTPServlet::AbstractServlet
+
+class BondsterGetContactInformationHandler < WEBrick::HTTPServlet::AbstractServlet
 
   def do_POST(request, response)
     status, body = process(request)
 
     response.status = status
-    response['Content-Type'] =  "application/json"
+    response['Content-Type'] = "application/json"
     response.body = body
   end
 
@@ -20,17 +21,29 @@ class BondsterGetCurrenciesLimitHandler < WEBrick::HTTPServlet::AbstractServlet
     return 401, {} unless request.header.key?("authorization")
 
     return 200, {
-      "EUR": {
-        "minInvestment": 0.01,
-        "maxInvestment": 10000000,
-        "maxInvestmentPercentage": 100,
-        "defaultInvestment": 5
-      },
-      "CZK": {
-        "minInvestment": 0.01,
-        "maxInvestment": 10000000,
-        "maxInvestmentPercentage": 100,
-        "defaultInvestment": 100
+      "status": "VERIFIED",
+      "marketVerifiedExternalAccount": {
+        "status": "APPROVED",
+        "currencyToAccountMap": {
+          "EUR": [
+            {
+              "portfolioCurrency": "EUR",
+              "bankCode": "1111",
+              "accountNumber": "2222",
+              "status": "APPROVED",
+              "accountNumberFormat": "IBAN"
+            }
+          ],
+          "CZK": [
+            {
+              "portfolioCurrency": "CZK",
+              "bankCode": "1111",
+              "accountNumber": "2222",
+              "status": "APPROVED",
+              "accountNumberFormat": "LOCALCZ"
+            }
+          ]
+        }
       }
     }.to_json
   end
@@ -277,7 +290,7 @@ module BondsterHelper
     self.server.mount "/router/api/public/authentication/validateLoginStep", BondsterValidateLoginStepHandler
     self.server.mount "/mktinvestor/api/private/transaction/search", BondsterSearchTransactionHandler
     self.server.mount "/mktinvestor/api/private/transaction/list", BondsterListTransactionHandler
-    self.server.mount "/mktinvestor/api/private/investor/limits", BondsterGetCurrenciesLimitHandler
+    self.server.mount "/clientusersetting/api/private/market/getContactInformation", BondsterGetContactInformationHandler
 
     self.server_daemon = Thread.new do
       self.server.start()
