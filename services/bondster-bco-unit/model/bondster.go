@@ -107,6 +107,7 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 	deduplicated[envelope.Currency+"_INVESTOR_INVESTMENT_FEE"] = nil
 	deduplicated[envelope.Currency+"_PRIMARY_MARKET_FINANCIAL"] = nil
 	deduplicated[envelope.Currency+"_PRINCIPAL_PAYMENT_FINANCIAL"] = nil
+	deduplicated[envelope.Currency+"_INTEREST_PAYMENT"] = nil
 	deduplicated[envelope.Currency+"_INVESTOR_DEPOSIT"] = nil
 	deduplicated[envelope.Currency+"_SANCTION_PAYMENT"] = nil
 
