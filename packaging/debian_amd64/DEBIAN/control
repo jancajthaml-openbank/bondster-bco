@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.0.0+synt-on-boot
+Version: 1.0.0+mountable-masterkey
 Architecture: amd64
 Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
 Depends: init-system-helpers (>= 1.18~), libzmq5 (= 4.2.1-4)

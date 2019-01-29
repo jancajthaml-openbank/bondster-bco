@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/jancajthaml-openbank/bondster-bco-unit/utils"
 )
 
 // Token represents metadata of token entity
@@ -90,11 +88,7 @@ func (entity *Token) Serialise() ([]byte, error) {
 		buffer.WriteString(" ")
 		buffer.WriteString(syncTime.Format("01/2006"))
 	}
-	out, err := utils.Encrypt(buffer.Bytes())
-	if err != nil {
-		return nil, fmt.Errorf("unable to encrypt data")
-	}
-	return out, nil
+	return buffer.Bytes(), nil
 }
 
 // Deserialise Token entity from persistent data
@@ -104,13 +98,8 @@ func (entity *Token) Deserialise(data []byte) error {
 	}
 	entity.LastSyncedFrom = make(map[string]time.Time)
 
-	in, err := utils.Decrypt(data)
-	if err != nil {
-		return fmt.Errorf("unable to decrypt data")
-	}
-
 	// FIXME more optimal split
-	lines := strings.Split(string(in), "\n")
+	lines := strings.Split(string(data), "\n")
 	if len(lines) < 2 {
 		return fmt.Errorf("malformed data")
 	}

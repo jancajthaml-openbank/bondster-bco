@@ -18,21 +18,12 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"io"
 )
 
-// fixme not really secure now
-var masterKey []byte
-
-func init() {
-	key, _ := hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
-	masterKey = []byte(key)
-}
-
-func Encrypt(data []byte) ([]byte, error) {
-	block, err := aes.NewCipher(masterKey)
+func Encrypt(key []byte, data []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +37,8 @@ func Encrypt(data []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-func Decrypt(data []byte) ([]byte, error) {
-	block, err := aes.NewCipher(masterKey)
+func Decrypt(key []byte, data []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
