@@ -42,7 +42,8 @@ step "tenant :tenant is onbdoarded" do |tenant|
     "BONDSTER_BCO_LAKE_HOSTNAME=localhost",
     "BONDSTER_BCO_METRICS_REFRESHRATE=1h",
     "BONDSTER_BCO_HTTP_PORT=443",
-    "BONDSTER_BCO_SECRETS=/opt/bondster-bco/secrets"
+    "BONDSTER_BCO_SECRETS=/opt/bondster-bco/secrets",
+    "BONDSTER_BCO_ENCRYPTION_KEY=/opt/bondster-bco/secrets/fs_encryption.key"
   ].join("\n").inspect.delete('\"')
 
   %x(mkdir -p /etc/init)
@@ -69,7 +70,8 @@ step "bondster-bco is reconfigured with" do |configuration|
     "LAKE_HOSTNAME" => "localhost",
     "METRICS_REFRESHRATE" => "1h",
     "HTTP_PORT" => "443",
-    "SECRETS" => "/opt/bondster-bco/secrets"
+    "SECRETS" => "/opt/bondster-bco/secrets",
+    "ENCRYPTION_KEY" => "/opt/bondster-bco/secrets/fs_encryption.key"
   }
 
   config = Array[defaults.merge(params).map {|k,v| "BONDSTER_BCO_#{k}=#{v}"}]

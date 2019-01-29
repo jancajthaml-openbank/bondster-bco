@@ -62,7 +62,11 @@ func PersistToken(storage *localfs.Storage, entity *model.Token) *model.Token {
 	if err != nil {
 		return nil
 	}
-	if storage.WriteFile(path, data) != nil {
+	out, err := storage.Encrypt(data)
+	if err != nil {
+		return nil //, fmt.Errorf("unable to encrypt data")
+	}
+	if storage.WriteFile(path, out) != nil {
 		return nil
 	}
 	return entity
@@ -78,7 +82,11 @@ func HydrateToken(storage *localfs.Storage, entity *model.Token) *model.Token {
 	if err != nil {
 		return nil
 	}
-	err = entity.Deserialise(data)
+	in, err := storage.Decrypt(data)
+	if err != nil {
+		return nil
+	}
+	err = entity.Deserialise(in)
 	if err != nil {
 		return nil
 	}
@@ -96,5 +104,9 @@ func UpdateToken(storage *localfs.Storage, entity *model.Token) bool {
 	if err != nil {
 		return false
 	}
-	return storage.UpdateFile(path, data) == nil
+	out, err := storage.Encrypt(data)
+	if err != nil {
+		return false
+	}
+	return storage.UpdateFile(path, out) == nil
 }

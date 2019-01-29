@@ -28,6 +28,8 @@ type Configuration struct {
 	WallGateway string
 	// RootStorage gives where to store journals
 	RootStorage string
+	// EncryptionKey represents current encryption key
+	EncryptionKey []byte
 	// LakeHostname represent hostname of openbank lake service
 	LakeHostname string
 	// LogOutput represents log output

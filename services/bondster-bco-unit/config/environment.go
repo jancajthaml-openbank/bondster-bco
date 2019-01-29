@@ -15,6 +15,8 @@
 package config
 
 import (
+	"encoding/hex"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -27,6 +29,7 @@ import (
 func loadConfFromEnv() Configuration {
 	logOutput := getEnvString("BONDSTER_BCO_LOG", "")
 	logLevel := strings.ToUpper(getEnvString("BONDSTER_BCO_LOG_LEVEL", "DEBUG"))
+	encryptionKey := getEnvString("BONDSTER_BCO_ENCRYPTION_KEY", "")
 	rootStorage := getEnvString("BONDSTER_BCO_STORAGE", "/data")
 	tenant := getEnvString("BONDSTER_BCO_TENANT", "")
 	bondsterGateway := getEnvString("BONDSTER_BCO_BONDSTER_GATEWAY", "https://bondster.com/ib/proxy")
@@ -36,7 +39,7 @@ func loadConfFromEnv() Configuration {
 	metricsOutput := getEnvString("BONDSTER_BCO_METRICS_OUTPUT", "")
 	metricsRefreshRate := getEnvDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second)
 
-	if tenant == "" || lakeHostname == "" || rootStorage == "" {
+	if tenant == "" || lakeHostname == "" || rootStorage == "" || encryptionKey == "" {
 		log.Fatal("missing required parameter to run")
 	}
 
@@ -44,9 +47,20 @@ func loadConfFromEnv() Configuration {
 		log.Fatal("unable to assert metrics output")
 	}
 
+	keyData, err := ioutil.ReadFile(encryptionKey)
+	if err != nil {
+		log.Fatalf("unable to load encryption key from %s", encryptionKey)
+	}
+
+	key, err := hex.DecodeString(string(keyData))
+	if err != nil {
+		log.Fatalf("invalid encryption key %+v at %s", err, encryptionKey)
+	}
+
 	return Configuration{
 		Tenant:             tenant,
 		RootStorage:        rootStorage + "/" + tenant + "/import/bondster",
+		EncryptionKey:      []byte(key),
 		BondsterGateway:    bondsterGateway,
 		SyncRate:           syncRate,
 		WallGateway:        wallGateway,

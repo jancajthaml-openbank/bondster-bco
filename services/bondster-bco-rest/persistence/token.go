@@ -34,26 +34,9 @@ func LoadTokens(storage *localfs.Storage, tenant string) ([]model.Token, error) 
 	}
 	result := make([]model.Token, len(tokens))
 	for i, value := range tokens {
-		token := model.Token{
+		result[i] = model.Token{
 			Value: value,
-		}
-		if HydrateToken(storage, tenant, &token) != nil {
-			result[i] = token
 		}
 	}
 	return result, nil
-}
-
-// HydrateToken hydrate existing token from storage
-func HydrateToken(storage *localfs.Storage, tenant string, entity *model.Token) *model.Token {
-	if entity == nil {
-		return nil
-	}
-	path := utils.TokenPath(tenant, entity.Value)
-	data, err := storage.ReadFileFully(path)
-	if err != nil {
-		return nil
-	}
-	entity.Hydrate(data)
-	return entity
 }
