@@ -405,8 +405,10 @@ func (bondster BondsterImport) importRoundtrip() {
 func (bondster BondsterImport) Start() {
 	defer bondster.MarkDone()
 
-	log.Infof("Start bondster-import daemon, sync %v each %v", bondster.bondsterGateway, bondster.refreshRate)
+	log.Infof("Start bondster-import daemon, sync %v now and then each %v", bondster.bondsterGateway, bondster.refreshRate)
 	bondster.MarkReady()
+
+	bondster.importRoundtrip()
 
 	for {
 		select {
