@@ -26,20 +26,7 @@ import (
 
 	"github.com/gorilla/mux"
 	localfs "github.com/jancajthaml-openbank/local-fs"
-	log "github.com/sirupsen/logrus"
 )
-
-var emptyJSONObject = []byte("{}")
-var emptyJSONArray = []byte("[]")
-
-// HealtCheck returns 200 OK
-func HealtCheck(w http.ResponseWriter, r *http.Request) {
-	log.Info("HealtCheck request")
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(emptyJSONObject)
-}
 
 // TokenPartial returns http handler for single token
 func TokenPartial(system *daemon.ActorSystem) func(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +60,43 @@ func TokenPartial(system *daemon.ActorSystem) func(w http.ResponseWriter, r *htt
 			return
 
 		}
+	}
+}
+
+// TokensPartial returns http handler for tokens
+func TokensPartial(storage *localfs.Storage) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		tenant := vars["tenant"]
+
+		if tenant == "" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(emptyJSONArray)
+			return
+		}
+
+		tokens, err := persistence.LoadTokens(storage, tenant)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(emptyJSONArray)
+			return
+		}
+
+		resp, err := utils.JSON.Marshal(tokens)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(emptyJSONArray)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
+		return
 	}
 }
 
@@ -142,42 +166,5 @@ func DeleteToken(system *daemon.ActorSystem, tenant string, token string, w http
 		w.Write(emptyJSONObject)
 		return
 
-	}
-}
-
-// TokensPartial returns http handler for tokens
-func TokensPartial(storage *localfs.Storage) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-
-		tenant := vars["tenant"]
-
-		if tenant == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(emptyJSONArray)
-			return
-		}
-
-		tokens, err := persistence.LoadTokens(storage, tenant)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(emptyJSONArray)
-			return
-		}
-
-		resp, err := utils.JSON.Marshal(tokens)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(emptyJSONArray)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
-		return
 	}
 }

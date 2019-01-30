@@ -1,9 +1,10 @@
-Feature: API test
+Feature: Token API test
 
   Scenario: Token API - get tokens when application is from scratch
     Given tenant API is onbdoarded
     And bondster-bco is reconfigured with
     """
+      LOG_LEVEL=DEBUG
       SYNC_RATE=1s
       HTTP_PORT=443
     """
@@ -18,6 +19,7 @@ Feature: API test
     Given tenant API is onbdoarded
     And bondster-bco is reconfigured with
     """
+      LOG_LEVEL=DEBUG
       SYNC_RATE=1s
       HTTP_PORT=443
     """
@@ -72,6 +74,7 @@ Feature: API test
     Given tenant API is onbdoarded
     And bondster-bco is reconfigured with
     """
+      LOG_LEVEL=DEBUG
       SYNC_RATE=1s
       HTTP_PORT=443
     """
