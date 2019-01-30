@@ -24,7 +24,7 @@ Feature: Token API test
       HTTP_PORT=443
     """
 
-    When I request curl POST https://localhost/token/API/A
+    When I request curl POST https://localhost/token/API
     """
       {
         "username": "X",
@@ -32,9 +32,6 @@ Feature: Token API test
       }
     """
     Then curl responds with 200
-    """
-      {}
-    """
 
   Scenario: Token API - get tokens
     Given tenant API is onbdoarded
@@ -45,7 +42,7 @@ Feature: Token API test
       HTTP_PORT=443
     """
 
-    When I request curl POST https://localhost/token/API/B
+    When I request curl POST https://localhost/token/API
     """
       {
         "username": "X",
@@ -53,46 +50,6 @@ Feature: Token API test
       }
     """
     Then curl responds with 200
-    """
-      {}
-    """
 
     When I request curl GET https://localhost/token/API
     Then curl responds with 200
-    """
-      [
-        {
-          "value": "A"
-        },
-        {
-          "value": "B"
-        }
-      ]
-    """
-
-  Scenario: Token API - delete existant token
-    Given tenant API is onbdoarded
-    And bondster-bco is reconfigured with
-    """
-      LOG_LEVEL=DEBUG
-      SYNC_RATE=1s
-      HTTP_PORT=443
-    """
-
-    When I request curl POST https://localhost/token/API/C
-    """
-      {
-        "username": "X",
-        "password": "Y"
-      }
-    """
-    Then curl responds with 200
-    """
-      {}
-    """
-
-    When I request curl DELETE https://localhost/token/API/C
-    Then curl responds with 200
-    """
-      {}
-    """
