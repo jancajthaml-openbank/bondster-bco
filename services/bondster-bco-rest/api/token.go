@@ -108,8 +108,8 @@ func CreateToken(system *daemon.ActorSystem, tenant string, w http.ResponseWrite
 		return
 	}
 
-	var req model.Token
-	err = utils.JSON.Unmarshal(b, &req)
+	var req = new(model.Token)
+	err = utils.JSON.Unmarshal(b, req)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -121,7 +121,7 @@ func CreateToken(system *daemon.ActorSystem, tenant string, w http.ResponseWrite
 	rand.Read(noise)
 	req.Value = hex.EncodeToString(noise) + xid.New().String()
 
-	switch actor.CreateToken(system, tenant, req).(type) {
+	switch actor.CreateToken(system, tenant, *req).(type) {
 
 	case *model.TokenCreated:
 
