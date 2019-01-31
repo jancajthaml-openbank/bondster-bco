@@ -17,26 +17,19 @@ package persistence
 import (
 	localfs "github.com/jancajthaml-openbank/local-fs"
 
-	"github.com/jancajthaml-openbank/bondster-bco-rest/model"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/utils"
 )
 
 // LoadTokens rehydrates token entity state from storage
-func LoadTokens(storage *localfs.Storage, tenant string) ([]model.Token, error) {
+func LoadTokens(storage *localfs.Storage, tenant string) ([]string, error) {
 	path := utils.TokensPath(tenant)
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {
-		return make([]model.Token, 0), nil
+		return make([]string, 0), nil
 	}
 	tokens, err := storage.ListDirectory(path, true)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]model.Token, len(tokens))
-	for i, value := range tokens {
-		result[i] = model.Token{
-			Value: value,
-		}
-	}
-	return result, nil
+	return tokens, nil
 }

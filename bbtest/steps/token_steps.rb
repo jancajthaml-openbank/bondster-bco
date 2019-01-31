@@ -39,7 +39,7 @@ step "token :slash_pair should exist" do |slash_pair|
   @resp[:body] = resp[0...resp.length-3] unless resp.nil?
   send "request should succeed"
 
-  actual_tokens = JSON.parse(@resp[:body]).map { |item| tenant + "/" + item["value"] }
+  actual_tokens = JSON.parse(@resp[:body]).map { |item| tenant + "/" + item }
 
   expect(actual_tokens).to include(tenant+"/"+token_value), "expected to find \"#{slash_pair}\" in #{actual_tokens}"
 end
