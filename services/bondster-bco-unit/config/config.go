@@ -26,6 +26,8 @@ type Configuration struct {
 	SyncRate time.Duration
 	// WallGateway represent wall gateway uri
 	WallGateway string
+	// VaultGateway represent vault gateway uri
+	VaultGateway string
 	// RootStorage gives where to store journals
 	RootStorage string
 	// EncryptionKey represents current encryption key
