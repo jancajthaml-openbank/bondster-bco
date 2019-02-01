@@ -18,16 +18,14 @@
 
 FROM jancajthaml/bbtest
 
-COPY packaging/bin /tmp/packages
+COPY packaging/bin /etc/bbtest/packages
 
 RUN \
-    if [ -z "$(find . /tmp/packages -type f -name 'bondster-bco_*_amd64.deb' -print)" ] ; then \
+    if [ -z "$(find . /etc/bbtest/packages -type f -name 'bondster-bco_*_amd64.deb' -print)" ] ; then \
       (>&2 echo "no package to test found") ; \
       exit 1 ; \
     fi
 
-RUN apt-get update && \
-    find /tmp/packages -type f -name 'bondster-bco_*_amd64.deb' -exec \
-    apt-get -y install -f \{\} \;
+RUN apt-get update
 
 # ---------------------------------------------------------------------------- #
