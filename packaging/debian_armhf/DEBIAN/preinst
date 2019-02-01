@@ -16,6 +16,7 @@ case "$1" in
       echo "BONDSTER_BCO_BONDSTER_GATEWAY=https://bondster.com/ib/proxy" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_SYNC_RATE=22s" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_WALL_GATEWAY=https://localhost" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_VAULT_GATEWAY=https://localhost:4400" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_METRICS_OUTPUT=/opt/bondster-bco/metrics/metrics.json" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_LAKE_HOSTNAME=localhost" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_HTTP_PORT=4001" >> /etc/init/bondster-bco.conf

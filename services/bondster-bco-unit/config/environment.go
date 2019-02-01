@@ -35,6 +35,7 @@ func loadConfFromEnv() Configuration {
 	bondsterGateway := getEnvString("BONDSTER_BCO_BONDSTER_GATEWAY", "https://bondster.com/ib/proxy")
 	syncRate := getEnvDuration("BONDSTER_BCO_SYNC_RATE", 22*time.Second)
 	wallGateway := getEnvString("BONDSTER_BCO_WALL_GATEWAY", "https://localhost")
+	vaultGateway := getEnvString("BONDSTER_BCO_WALL_GATEWAY", "https://localhost:4400")
 	lakeHostname := getEnvString("BONDSTER_BCO_LAKE_HOSTNAME", "")
 	metricsOutput := getEnvString("BONDSTER_BCO_METRICS_OUTPUT", "")
 	metricsRefreshRate := getEnvDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second)
@@ -64,6 +65,7 @@ func loadConfFromEnv() Configuration {
 		BondsterGateway:    bondsterGateway,
 		SyncRate:           syncRate,
 		WallGateway:        wallGateway,
+		VaultGateway:       vaultGateway,
 		LakeHostname:       lakeHostname,
 		LogOutput:          logOutput,
 		LogLevel:           logLevel,

@@ -36,6 +36,7 @@ type BondsterImport struct {
 	tenant          string
 	bondsterGateway string
 	wallGateway     string
+	vaultGateway    string
 	refreshRate     time.Duration
 	storage         *localfs.Storage
 	metrics         *Metrics
@@ -50,6 +51,7 @@ func NewBondsterImport(ctx context.Context, cfg config.Configuration, metrics *M
 		tenant:          cfg.Tenant,
 		bondsterGateway: cfg.BondsterGateway,
 		wallGateway:     cfg.WallGateway,
+		vaultGateway:    cfg.VaultGateway,
 		refreshRate:     cfg.SyncRate,
 		storage:         storage,
 		metrics:         metrics,
@@ -233,7 +235,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		}
 
 		err = utils.Retry(10, time.Second, func() (err error) {
-			response, code, err = bondster.httpClient.Post(bondster.wallGateway+"/account/"+bondster.tenant, request, nil)
+			response, code, err = bondster.httpClient.Post(bondster.vaultGateway+"/account/"+bondster.tenant, request, nil)
 			if code == 200 || code == 409 || code == 400 {
 				return
 			} else if code >= 500 && err == nil {
