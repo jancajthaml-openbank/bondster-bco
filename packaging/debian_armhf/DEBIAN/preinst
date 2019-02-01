@@ -55,7 +55,6 @@ case "$1" in
       mkdir -p $(basename "${encryptionKey}")
       openssl rand -hex 32 | xargs --no-run-if-empty echo -n > "${encryptionKey}"
       echo "generated 32B encryption key at ${encryptionKey}"
-      echo "_$(cat ${encryptionKey})_"
     fi
   ;;
 

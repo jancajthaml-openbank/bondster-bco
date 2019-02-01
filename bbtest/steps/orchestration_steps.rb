@@ -14,6 +14,8 @@ step "bondster-bco is restarted" do ||
     %x(systemctl restart #{e} 2>&1)
   }
 
+  ids << "bondster-bco"
+
   eventually() {
     ids.each { |e|
       out = %x(systemctl show -p SubState #{e} 2>&1 | sed 's/SubState=//g')
@@ -86,8 +88,6 @@ step "bondster-bco is reconfigured with" do |configuration|
   ids = ids.split("\n").map(&:strip).reject { |x|
     x.empty? || !x.start_with?("bondster-bco")
   }.map { |x| x.chomp(".service") }
-
-  expect(ids).not_to be_empty
 
   ids.each { |e|
     %x(systemctl restart #{e} 2>&1)

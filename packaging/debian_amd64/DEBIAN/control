@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.0.0+return-tokens-ids
+Version: 1.0.0+delete-params-conf
 Architecture: amd64
 Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
 Depends: init-system-helpers (>= 1.18~), libzmq5 (= 4.2.1-4)
