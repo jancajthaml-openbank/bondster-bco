@@ -26,6 +26,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// UUID generates uuid-4
 func UUID() string {
 	r := make([]byte, 16)
 	rand.Read(r)

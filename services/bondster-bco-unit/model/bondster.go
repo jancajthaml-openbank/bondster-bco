@@ -24,31 +24,33 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-unit/utils"
 )
 
+// BondsterImportEnvelope represents bondster marketplace import statement entity
 type BondsterImportEnvelope struct {
-	Transactions []BondsterTransaction
+	Transactions []bondsterTransaction
 	Currency     string
 }
 
-type BondsterTransaction struct {
-	IdTransaction string                   `json:"idTransaction"`
-	IdTransfer    string                   `json:"idTransfer"`
+type bondsterTransaction struct {
+	IDTransaction string                   `json:"idTransaction"`
+	IDTransfer    string                   `json:"idTransfer"`
 	Type          string                   `json:"transactionType"`
 	Direction     string                   `json:"direction"`
 	ValueDate     time.Time                `json:"valueDate"`
-	External      *BondsterExternalAccount `json:"externalAccount"`
-	Amount        BondsterAmount           `json:"amount"`
+	External      *bondsterExternalAccount `json:"externalAccount"`
+	Amount        bondsterAmount           `json:"amount"`
 }
 
-type BondsterExternalAccount struct {
+type bondsterExternalAccount struct {
 	Number   string `json:"accountNumber"`
 	BankCode string `json:"bankCode"`
 }
 
-type BondsterAmount struct {
+type bondsterAmount struct {
 	Value    float64 `json:"amount"`
 	Currency string  `json:"currencyCode"`
 }
 
+// GetTransactions return list of bondster transactions
 func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
 	if envelope == nil {
 		return nil
@@ -73,8 +75,8 @@ func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
 			debit = envelope.Currency + "_" + transfer.Type
 		}
 
-		set[transfer.IdTransaction] = append(set[transfer.IdTransaction], Transfer{
-			IDTransfer:   transfer.IdTransfer,
+		set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+			IDTransfer:   transfer.IDTransfer,
 			Credit:       credit,
 			Debit:        debit,
 			ValueDate:    transfer.ValueDate.Format("2006-01-02T15:04:05Z0700"),
@@ -96,6 +98,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
 
 }
 
+// GetAccounts return list of bondster accounts
 func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 	if envelope == nil {
 		return nil
@@ -129,29 +132,35 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 	return result
 }
 
+// LoginStep satisfaction of login scenario
 type LoginStep struct {
 	Code   string           `json:"scenarioCode"`
 	Values []LoginStepValue `json:"authProcessStepValues"`
 }
 
+// LoginStepValue value of login step
 type LoginStepValue struct {
 	Type  string `json:"authDetailType"`
 	Value string `json:"value"`
 }
 
+// LoginScenario holds code representing how service should log in
 type LoginScenario struct {
 	Value string
 }
 
+// TransfersSearchRequest request for search transfed
 type TransfersSearchRequest struct {
 	From time.Time
 	To   time.Time
 }
 
+// TransfersSearchResult result of search transfers request
 type TransfersSearchResult struct {
 	IDs []string `json:"transferIdList"`
 }
 
+// MarshalJSON is json TransfersSearchResult marhalling companion
 func (entity TransfersSearchResult) MarshalJSON() ([]byte, error) {
 	ids := make([]string, len(entity.IDs))
 	for i, id := range entity.IDs {
@@ -160,11 +169,16 @@ func (entity TransfersSearchResult) MarshalJSON() ([]byte, error) {
 	return []byte("{\"transactionIds\":[" + strings.Join(ids, ",") + "]}"), nil
 }
 
+// MarshalJSON is json TransfersSearchRequest marhalling companion
 func (entity TransfersSearchRequest) MarshalJSON() ([]byte, error) {
 	return []byte("{\"valueDateFrom\":{\"month\":\"" + strconv.FormatInt(int64(entity.From.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.From.Year()), 10) + "\"},\"valueDateTo\":{\"month\":\"" + strconv.FormatInt(int64(entity.To.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.To.Year()), 10) + "\"}}"), nil
 }
 
+// UnmarshalJSON is json LoginScenario unmarhalling companion
 func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
+	if entity == nil {
+		return fmt.Errorf("cannot unmarshall to nil pointer")
+	}
 	all := struct {
 		Scenarios []struct {
 			Code string `json:"code"`
@@ -184,11 +198,16 @@ func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// JWT encrypted json web token of bondster session
 type JWT struct {
 	Value string
 }
 
+// UnmarshalJSON is json JWT unmarhalling companion
 func (entity *JWT) UnmarshalJSON(data []byte) error {
+	if entity == nil {
+		return fmt.Errorf("cannot unmarshall to nil pointer")
+	}
 	all := struct {
 		Result string `json:"result"`
 		JWT    struct {
@@ -209,17 +228,23 @@ func (entity *JWT) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Session hold bondster session headers
 type Session struct {
 	JWT     string
 	Device  string
 	Channel string
 }
 
+// PotrfolioCurrencies hold currencies of account portfolio
 type PotrfolioCurrencies struct {
 	Value []string
 }
 
+// UnmarshalJSON is json PotrfolioCurrencies unmarhalling companion
 func (entity *PotrfolioCurrencies) UnmarshalJSON(data []byte) error {
+	if entity == nil {
+		return fmt.Errorf("cannot unmarshall to nil pointer")
+	}
 	all := struct {
 		MarketAccounts struct {
 			AccountsMap map[string]interface{} `json:"currencyToAccountMap"`

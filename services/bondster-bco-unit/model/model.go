@@ -59,6 +59,7 @@ func NewToken(value string, username string, password string) Token {
 	}
 }
 
+// UpdateCurrencies updates known currencies to Token
 func (entity *Token) UpdateCurrencies(currencies []string) bool {
 	if entity == nil {
 		return false
