@@ -145,7 +145,7 @@ func (bondster BondsterImport) validateLoginStep(device string, channel string, 
 	if err != nil {
 		return nil, err
 	} else if code != 200 {
-		return nil, fmt.Errorf("bondster validate login step Error %d %+v", code, string(response))
+		return nil, fmt.Errorf("bondster validate login step error %d %+v", code, string(response))
 	}
 
 	var session = new(model.JWT)
@@ -195,9 +195,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
-		return fmt.Errorf("bondster transaction search Error %+v, request: %+v", err, string(request))
+		return fmt.Errorf("bondster transaction search error %+v, request: %+v", err, string(request))
 	} else if code != 200 {
-		return fmt.Errorf("bondster transaction search Error %d %+v, request: %+v", code, string(response), string(request))
+		return fmt.Errorf("bondster transaction search error %d %+v, request: %+v", code, string(response), string(request))
 	}
 
 	var search = new(model.TransfersSearchResult)
@@ -216,9 +216,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 
 	response, code, err = bondster.httpClient.Post(uri, request, headers)
 	if err != nil {
-		return fmt.Errorf("bondster transaction list Error %+v, request: %+v", err, string(request))
+		return fmt.Errorf("bondster transaction list error %+v, request: %+v", err, string(request))
 	} else if code != 200 {
-		return fmt.Errorf("bondster transaction list Error %d %+v, request: %+v", code, string(response), string(request))
+		return fmt.Errorf("bondster transaction list error %d %+v, request: %+v", code, string(response), string(request))
 	}
 
 	var envelope = new(model.BondsterImportEnvelope)
@@ -239,7 +239,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 			if code == 200 || code == 409 || code == 400 {
 				return
 			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("wall Account Error %d %+v", code, string(response))
+				err = fmt.Errorf("vault account error %d %+v", code, string(response))
 			}
 			return
 		})
@@ -247,9 +247,9 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		if err != nil {
 			return err
 		} else if code == 400 {
-			return fmt.Errorf("wall Account Malformed request %+v", string(request))
+			return fmt.Errorf("vault account malformed request %+v", string(request))
 		} else if code != 200 && code != 409 {
-			return fmt.Errorf("wall Account Error %d %+v", code, string(response))
+			return fmt.Errorf("vault account error %d %+v", code, string(response))
 		}
 	}
 
@@ -273,7 +273,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 			if code == 200 || code == 201 || code == 400 {
 				return
 			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("wall Transaction Error %d %+v", code, string(response))
+				err = fmt.Errorf("wall transaction error %d %+v", code, string(response))
 			}
 			return
 		})
@@ -281,17 +281,17 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		if err != nil {
 			return err
 		} else if code == 409 {
-			return fmt.Errorf("wall Transaction Duplicate %+v", string(request))
+			return fmt.Errorf("wall transaction duplicate %+v", string(request))
 		} else if code == 400 {
-			return fmt.Errorf("wall Transaction Malformed request %+v", string(request))
+			return fmt.Errorf("wall transaction malformed request %+v", string(request))
 		} else if code != 200 && code != 201 {
-			return fmt.Errorf("wall Transaction Error %d %+v", code, string(response))
+			return fmt.Errorf("wall transaction error %d %+v", code, string(response))
 		}
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(bondster.storage, token) {
-				log.Warnf("unable to update token %+v", token)
+				log.Warnf("Unable to update token %+v", token)
 			}
 		}
 
@@ -344,9 +344,9 @@ func (bondster BondsterImport) getCurrencies(session *model.Session) ([]string, 
 
 	response, code, err = bondster.httpClient.Post(uri, nil, headers)
 	if err != nil {
-		return nil, fmt.Errorf("Bondster get contant information Error %+v", err)
+		return nil, fmt.Errorf("bondster get contact information error %+v", err)
 	} else if code != 200 {
-		return nil, fmt.Errorf("Bondster get contant information Error %d %+v", code, string(response))
+		return nil, fmt.Errorf("bondster get contact information error %d %+v", code, string(response))
 	}
 
 	var currencies = new(model.PotrfolioCurrencies)

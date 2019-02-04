@@ -30,7 +30,7 @@ func checksum(cc string) string {
 	var (
 		i int
 		v uint32 = 0x811c9dc5
-		l int    = len(cc)
+		l        = len(cc)
 	)
 
 	if l == 0 {
@@ -48,6 +48,7 @@ scan:
 	return strconv.FormatUint(uint64(v>>0), 10)
 }
 
+// RandDevice returns random device fingerprint
 func RandDevice() string {
 	device := string([]byte{
 		numbers[rand.Intn(9)],

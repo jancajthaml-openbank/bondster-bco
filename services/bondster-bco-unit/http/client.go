@@ -25,37 +25,12 @@ import (
 	"time"
 )
 
-/*
-// formatRequest generates ascii representation of a request
-func formatRequest(r *http.Request, body []byte) string {
-	// Create return string
-	var request []string
-	// Add the request string
-	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
-	request = append(request, url)
-	// Add the host
-	request = append(request, fmt.Sprintf("Host: %v", r.Host))
-	// Loop through headers
-	for name, headers := range r.Header {
-		name = strings.ToLower(name)
-		for _, h := range headers {
-			request = append(request, fmt.Sprintf("%v: %v", name, h))
-		}
-	}
-
-	if body != nil {
-		request = append(request, fmt.Sprintf("Body: %+v", string(body)))
-	}
-
-	// Return the request as a string
-	return strings.Join(request, "\n")
-}
-*/
-
+// Client represents fascade for http client
 type Client struct {
 	underlying *http.Client
 }
 
+// NewClient returns new http client
 func NewClient() Client {
 	return Client{
 		underlying: &http.Client{
@@ -82,6 +57,7 @@ func NewClient() Client {
 	}
 }
 
+// Post performs http POST request for given url with given body
 func (client Client) Post(url string, body []byte, headers map[string]string) (contents []byte, code int, err error) {
 	var (
 		req  *http.Request
@@ -90,14 +66,14 @@ func (client Client) Post(url string, body []byte, headers map[string]string) (c
 
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("Runtime Error %v", r)
+			err = fmt.Errorf("runtime error %+v", r)
 		}
 
 		if err != nil && resp != nil {
-			io.Copy(ioutil.Discard, resp.Body)
+			_, err = io.Copy(ioutil.Discard, resp.Body)
 			resp.Body.Close()
 		} else if resp == nil && err != nil {
-			err = fmt.Errorf("Runtime Error no response")
+			err = fmt.Errorf("runtime error, no response")
 		}
 
 		if err != nil {
@@ -113,14 +89,12 @@ func (client Client) Post(url string, body []byte, headers map[string]string) (c
 		return
 	}
 
-	req.Header.Set("content-type", "application/json")
-	req.Header.Set("accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-
-	//log.Debug(formatRequest(req, body))
 
 	resp, err = client.underlying.Do(req)
 	if err != nil {
@@ -131,6 +105,7 @@ func (client Client) Post(url string, body []byte, headers map[string]string) (c
 	return
 }
 
+// Get performs http GET request for given url
 func (client Client) Get(url string, headers map[string]string) (contents []byte, code int, err error) {
 	var (
 		req  *http.Request
@@ -139,14 +114,14 @@ func (client Client) Get(url string, headers map[string]string) (contents []byte
 
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("Runtime Error %v", r)
+			err = fmt.Errorf("runtime error %+v", r)
 		}
 
 		if err != nil && resp != nil {
-			io.Copy(ioutil.Discard, resp.Body)
+			_, err = io.Copy(ioutil.Discard, resp.Body)
 			resp.Body.Close()
 		} else if resp == nil && err != nil {
-			err = fmt.Errorf("Runtime Error no response")
+			err = fmt.Errorf("runtime error, no response")
 		}
 
 		if err != nil {
@@ -162,13 +137,11 @@ func (client Client) Get(url string, headers map[string]string) (contents []byte
 		return
 	}
 
-	req.Header.Set("accept", "application/json")
+	req.Header.Set("Accept", "application/json")
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-
-	//log.Debug(formatRequest(req, nil))
 
 	resp, err = client.underlying.Do(req)
 	if err != nil {
