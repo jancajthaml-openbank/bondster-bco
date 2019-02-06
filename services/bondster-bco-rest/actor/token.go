@@ -55,6 +55,7 @@ func CreateToken(s *daemon.ActorSystem, tenant string, token model.Token) (resul
 	select {
 
 	case result = <-ch:
+		log.Infof("Token %s/%s created", tenant, token.Value)
 		return
 
 	case <-time.After(time.Second):
@@ -81,6 +82,7 @@ func DeleteToken(s *daemon.ActorSystem, tenant string, token string) (result int
 	s.RegisterActor(envelope, func(state interface{}, context system.Context) {
 		switch msg := context.Data.(type) {
 		case model.TokenDeleted:
+			log.Infof("Token %s/%s deleted", tenant, token)
 			ch <- &msg
 		default:
 			ch <- nil

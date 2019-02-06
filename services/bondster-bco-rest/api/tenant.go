@@ -89,7 +89,7 @@ func TenantsPartial(system *daemon.SystemControl) func(w http.ResponseWriter, r 
 func EnableUnit(system *daemon.SystemControl, tenant string, w http.ResponseWriter, r *http.Request) {
 	err := system.EnableUnit("bondster-bco@" + tenant + ".service")
 	if err != nil {
-		log.Errorf("Error when enabling unit, %+v", err)
+		log.Errorf("Error when enabling tenant %s, %+v", tenant, err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(emptyJSONObject)
@@ -99,6 +99,7 @@ func EnableUnit(system *daemon.SystemControl, tenant string, w http.ResponseWrit
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(emptyJSONObject)
+	log.Infof("Tenant %s enabled", tenant)
 	return
 }
 
@@ -106,7 +107,7 @@ func EnableUnit(system *daemon.SystemControl, tenant string, w http.ResponseWrit
 func DisableUnit(system *daemon.SystemControl, tenant string, w http.ResponseWriter, r *http.Request) {
 	err := system.DisableUnit("bondster-bco@" + tenant + ".service")
 	if err != nil {
-		log.Errorf("Error when disabling unit, %+v", err)
+		log.Errorf("Error when disabling tenant %s, %+v", tenant, err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(emptyJSONObject)
@@ -116,5 +117,6 @@ func DisableUnit(system *daemon.SystemControl, tenant string, w http.ResponseWri
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(emptyJSONObject)
+	log.Infof("Tenant %s disabled", tenant)
 	return
 }
