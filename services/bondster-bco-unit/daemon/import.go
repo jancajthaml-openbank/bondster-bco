@@ -233,13 +233,13 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		if err != nil {
 			return err
 		}
-
+		uri := bondster.vaultGateway + "/account/" + bondster.tenant
 		err = utils.Retry(10, time.Second, func() (err error) {
-			response, code, err = bondster.httpClient.Post(bondster.vaultGateway+"/account/"+bondster.tenant, request, nil)
+			response, code, err = bondster.httpClient.Post(uri, request, nil)
 			if code == 200 || code == 409 || code == 400 {
 				return
 			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("vault account error %d %+v", code, string(response))
+				err = fmt.Errorf("vault POST %s error %d %+v", uri, code, string(response))
 			}
 			return
 		})
@@ -249,7 +249,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		} else if code == 400 {
 			return fmt.Errorf("vault account malformed request %+v", string(request))
 		} else if code != 200 && code != 409 {
-			return fmt.Errorf("vault account error %d %+v", code, string(response))
+			return fmt.Errorf("vault POST %s error %d %+v", uri, code, string(response))
 		}
 	}
 
@@ -268,12 +268,13 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 			return err
 		}
 
+		uri := bondster.wallGateway + "/transaction/" + bondster.tenant
 		err = utils.Retry(10, time.Second, func() (err error) {
-			response, code, err = bondster.httpClient.Post(bondster.wallGateway+"/transaction/"+bondster.tenant, request, nil)
+			response, code, err = bondster.httpClient.Post(uri, request, nil)
 			if code == 200 || code == 201 || code == 400 {
 				return
 			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("wall transaction error %d %+v", code, string(response))
+				err = fmt.Errorf("wall POST %s error %d %+v", uri, code, string(response))
 			}
 			return
 		})
@@ -285,7 +286,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		} else if code == 400 {
 			return fmt.Errorf("wall transaction malformed request %+v", string(request))
 		} else if code != 200 && code != 201 {
-			return fmt.Errorf("wall transaction error %d %+v", code, string(response))
+			return fmt.Errorf("wall POST %s error %d %+v", uri, code, string(response))
 		}
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
