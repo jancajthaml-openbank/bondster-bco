@@ -173,8 +173,6 @@ func (bondster BondsterImport) getActiveTokens() ([]model.Token, error) {
 }
 
 func (bondster BondsterImport) importNewTransactions(token *model.Token, currency string, session *model.Session) error {
-	log.Info("A")
-
 	var (
 		err      error
 		response []byte
@@ -207,7 +205,6 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		"accept":            "application/json",
 	}
 
-	log.Info("B")
 	bondster.metrics.TimeTransactionSearchLatency(func() {
 		response, code, err = bondster.httpClient.Post(uri, request, headers)
 	})
@@ -231,8 +228,6 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 	}
 
 	uri = bondster.bondsterGateway + "/mktinvestor/api/private/transaction/list"
-
-	log.Info("C")
 	bondster.metrics.TimeTransactionListLatency(func() {
 		response, code, err = bondster.httpClient.Post(uri, request, headers)
 	})
@@ -256,8 +251,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 			return err
 		}
 		uri := bondster.vaultGateway + "/account/" + bondster.tenant
-		err = utils.Retry(5, 100*time.Millisecond, func() (err error) {
-			log.Infof("D %+v", uri)
+		err = utils.Retry(3, time.Second, func() (err error) {
 			response, code, err = bondster.httpClient.Post(uri, request, nil)
 			if code == 200 || code == 409 || code == 400 {
 				return
@@ -292,8 +286,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 		}
 
 		uri := bondster.wallGateway + "/transaction/" + bondster.tenant
-		err = utils.Retry(5, 100*time.Millisecond, func() (err error) {
-			log.Infof("E %+v", uri)
+		err = utils.Retry(3, time.Second, func() (err error) {
 			response, code, err = bondster.httpClient.Post(uri, request, nil)
 			if code == 200 || code == 201 || code == 400 {
 				return
