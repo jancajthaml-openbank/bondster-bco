@@ -55,7 +55,7 @@ func CreateToken(s *daemon.ActorSystem, tenant string, token model.Token) (resul
 	select {
 
 	case result = <-ch:
-		log.Infof("Token %s/%s created", tenant, token.Value)
+		log.Infof("Token %s/%s created", tenant, token.ID)
 		return
 
 	case <-time.After(time.Second):

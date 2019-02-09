@@ -119,7 +119,7 @@ func CreateToken(system *daemon.ActorSystem, tenant string, w http.ResponseWrite
 
 	noise := make([]byte, 10)
 	rand.Read(noise)
-	req.Value = hex.EncodeToString(noise) + xid.New().String()
+	req.ID = hex.EncodeToString(noise) + xid.New().String()
 
 	switch actor.CreateToken(system, tenant, *req).(type) {
 

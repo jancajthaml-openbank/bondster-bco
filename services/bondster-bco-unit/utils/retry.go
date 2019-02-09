@@ -34,5 +34,5 @@ func Retry(attempts int, sleep time.Duration, callback func() error) (err error)
 		time.Sleep(sleep)
 	}
 
-	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
+	return fmt.Errorf("after %s, last error: %s", time.Duration(attempts)*sleep, err)
 }

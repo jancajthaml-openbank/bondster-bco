@@ -24,14 +24,18 @@ import (
 // LoadTokens rehydrates token entity state from storage
 func LoadTokens(storage *localfs.Storage) ([]model.Token, error) {
 	path := utils.TokensPath()
+	ok, err := storage.Exists(path)
+	if err != nil || !ok {
+		return make([]model.Token, 0), nil
+	}
 	tokens, err := storage.ListDirectory(path, true)
 	if err != nil {
 		return nil, err
 	}
 	result := make([]model.Token, len(tokens))
-	for i, value := range tokens {
+	for i, id := range tokens {
 		token := model.Token{
-			Value: value,
+			ID: id,
 		}
 		if HydrateToken(storage, &token) != nil {
 			result[i] = token
@@ -41,14 +45,14 @@ func LoadTokens(storage *localfs.Storage) ([]model.Token, error) {
 }
 
 // CreateToken creates and persist new token entity
-func CreateToken(storage *localfs.Storage, value string, username string, password string) bool {
-	token := model.NewToken(value, username, password)
+func CreateToken(storage *localfs.Storage, id string, username string, password string) bool {
+	token := model.NewToken(id, username, password)
 	return PersistToken(storage, &token) != nil
 }
 
 // DeleteToken deletes existing token entity
-func DeleteToken(storage *localfs.Storage, value string) bool {
-	path := utils.TokenPath(value)
+func DeleteToken(storage *localfs.Storage, id string) bool {
+	path := utils.TokenPath(id)
 	return storage.DeleteFile(path) == nil
 }
 
@@ -57,14 +61,14 @@ func PersistToken(storage *localfs.Storage, entity *model.Token) *model.Token {
 	if entity == nil {
 		return nil
 	}
-	path := utils.TokenPath(entity.Value)
+	path := utils.TokenPath(entity.ID)
 	data, err := entity.Serialise()
 	if err != nil {
 		return nil
 	}
 	out, err := storage.Encrypt(data)
 	if err != nil {
-		return nil //, fmt.Errorf("unable to encrypt data")
+		return nil
 	}
 	if storage.WriteFile(path, out) != nil {
 		return nil
@@ -77,7 +81,7 @@ func HydrateToken(storage *localfs.Storage, entity *model.Token) *model.Token {
 	if entity == nil {
 		return nil
 	}
-	path := utils.TokenPath(entity.Value)
+	path := utils.TokenPath(entity.ID)
 	data, err := storage.ReadFileFully(path)
 	if err != nil {
 		return nil
@@ -98,7 +102,7 @@ func UpdateToken(storage *localfs.Storage, entity *model.Token) bool {
 	if entity == nil {
 		return false
 	}
-	path := utils.TokenPath(entity.Value)
+	path := utils.TokenPath(entity.ID)
 	// FIXME check nil
 	data, err := entity.Serialise()
 	if err != nil {

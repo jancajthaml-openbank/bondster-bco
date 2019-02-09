@@ -1,0 +1,20 @@
+bondster-bco (1.1.0) unstable; urgency=low
+
+  * Properly map env variable of vault
+  * Better logging
+  * Fixed linting issues
+  * Preinstall dependencies for bbtest in image
+  * Using vault api for account rest
+  * Bugfix swapper receiver and sender
+  * Dont bail out if we are unable to start service after install
+  * Installing package for bbtest in bbtest run and not in Dockerfile
+  * Deleted WORKFLOW.md
+  * Deleted params.conf in packaging
+  * Return only ids for token list
+  * Generate token id
+  * Http api for onboarding and offboarding tenants
+  * Mountable encryption key
+  * Sync immediately after boot
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Wed, 6 Feb 2019 08:42:57 +0100
+

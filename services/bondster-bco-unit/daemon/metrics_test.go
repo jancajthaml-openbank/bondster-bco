@@ -26,81 +26,53 @@ func TestMetricsPersist(t *testing.T) {
 	delay := 1e8
 	delta := 1e8
 
-	t.Log("TimeSync properly times synchronization latency")
+	t.Log("TimeTransactionSearchLatency properly times synchronization latency")
 	{
-		require.Equal(t, int64(0), entity.syncLatency.Count())
-		entity.TimeSyncLatency(func() {
+		require.Equal(t, int64(0), entity.transactionSearchLatency.Count())
+		entity.TimeTransactionSearchLatency(func() {
 			time.Sleep(time.Duration(delay))
 		})
-		assert.Equal(t, int64(1), entity.syncLatency.Count())
-		assert.InDelta(t, entity.syncLatency.Percentile(0.95), delay, delta)
+		assert.Equal(t, int64(1), entity.transactionSearchLatency.Count())
+		assert.InDelta(t, entity.transactionSearchLatency.Percentile(0.95), delay, delta)
 	}
 
-	t.Log("TimeImportAccount properly times run of ImportAccount function")
+	t.Log("TimeTransactionListLatency properly times run of ImportAccount function")
 	{
-		require.Equal(t, int64(0), entity.importAccountLatency.Count())
-		entity.TimeImportAccount(func() {
+		require.Equal(t, int64(0), entity.transactionListLatency.Count())
+		entity.TimeTransactionListLatency(func() {
 			time.Sleep(time.Duration(delay))
 		})
-		assert.Equal(t, int64(1), entity.importAccountLatency.Count())
-		assert.InDelta(t, entity.importAccountLatency.Percentile(0.95), delay, delta)
+		assert.Equal(t, int64(1), entity.transactionListLatency.Count())
+		assert.InDelta(t, entity.transactionListLatency.Percentile(0.95), delay, delta)
 	}
 
-	t.Log("TimeExportAccount properly times run of ExportAccount function")
+	t.Log("TransactionImported properly marks number of accounts imported")
 	{
-		require.Equal(t, int64(0), entity.exportAccountLatency.Count())
-		entity.TimeExportAccount(func() {
-			time.Sleep(time.Duration(delay))
-		})
-		assert.Equal(t, int64(1), entity.exportAccountLatency.Count())
-		assert.InDelta(t, entity.exportAccountLatency.Percentile(0.95), delay, delta)
+		require.Equal(t, int64(0), entity.importedTransactions.Count())
+		entity.TransactionImported()
+		assert.Equal(t, int64(1), entity.importedTransactions.Count())
 	}
 
-	t.Log("TimeImportTransaction properly times run of ImportTransaction function")
-	{
-		require.Equal(t, int64(0), entity.importTransactionLatency.Count())
-		entity.TimeImportTransaction(func() {
-			time.Sleep(time.Duration(delay))
-		})
-		assert.Equal(t, int64(1), entity.importTransactionLatency.Count())
-		assert.InDelta(t, entity.importTransactionLatency.Percentile(0.95), delay, delta)
-	}
-
-	t.Log("TimeExportTransaction properly times run of ExportTransaction function")
-	{
-		require.Equal(t, int64(0), entity.exportTransactionLatency.Count())
-		entity.TimeExportTransaction(func() {
-			time.Sleep(time.Duration(delay))
-		})
-		assert.Equal(t, int64(1), entity.exportTransactionLatency.Count())
-		assert.InDelta(t, entity.exportTransactionLatency.Percentile(0.95), delay, delta)
-	}
-
-	t.Log("ImportedAccounts properly marks number of accounts imported")
-	{
-		require.Equal(t, int64(0), entity.importedAccounts.Count())
-		entity.ImportedAccounts(2)
-		assert.Equal(t, int64(2), entity.importedAccounts.Count())
-	}
-
-	t.Log("ExportedAccounts properly marks number of accounts exported")
-	{
-		require.Equal(t, int64(0), entity.exportedAccounts.Count())
-		entity.ExportedAccounts(4)
-		assert.Equal(t, int64(4), entity.exportedAccounts.Count())
-	}
-
-	t.Log("ImportedTransfers properly marks number of accounts imported")
+	t.Log("TransfersImported properly marks number of accounts exported")
 	{
 		require.Equal(t, int64(0), entity.importedTransfers.Count())
-		entity.ImportedTransfers(8)
-		assert.Equal(t, int64(8), entity.importedTransfers.Count())
+		entity.TransfersImported(4)
+		assert.Equal(t, int64(4), entity.importedTransfers.Count())
+		entity.TransfersImported(6)
+		assert.Equal(t, int64(10), entity.importedTransfers.Count())
 	}
 
-	t.Log("ExportedTransfers properly marks number of accounts exported")
+	t.Log("TokenCreated properly marks number of accounts imported")
 	{
-		require.Equal(t, int64(0), entity.exportedTransfers.Count())
-		entity.ExportedTransfers(16)
-		assert.Equal(t, int64(16), entity.exportedTransfers.Count())
+		require.Equal(t, int64(0), entity.createdTokens.Count())
+		entity.TokenCreated()
+		assert.Equal(t, int64(1), entity.createdTokens.Count())
+	}
+
+	t.Log("TokenDeleted properly marks number of accounts exported")
+	{
+		require.Equal(t, int64(0), entity.deletedTokens.Count())
+		entity.TokenDeleted()
+		assert.Equal(t, int64(1), entity.deletedTokens.Count())
 	}
 }
