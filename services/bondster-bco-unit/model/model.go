@@ -23,7 +23,7 @@ import (
 
 // Token represents metadata of token entity
 type Token struct {
-	Value          string
+	ID             string
 	Username       string
 	Password       string
 	LastSyncedFrom map[string]time.Time
@@ -35,14 +35,14 @@ type ListTokens struct {
 
 // CreateToken is inbound request for creation of new token
 type CreateToken struct {
-	Value    string
+	ID       string
 	Username string
 	Password string
 }
 
 // DeleteToken is inbound request for deletion of token
 type DeleteToken struct {
-	Value string
+	ID string
 }
 
 // GetToken is inbound request for token details
@@ -50,9 +50,9 @@ type GetToken struct {
 }
 
 // NewToken returns new Token
-func NewToken(value string, username string, password string) Token {
+func NewToken(id string, username string, password string) Token {
 	return Token{
-		Value:          value,
+		ID:             id,
 		Username:       username,
 		Password:       password,
 		LastSyncedFrom: make(map[string]time.Time),

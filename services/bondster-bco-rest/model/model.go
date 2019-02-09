@@ -25,12 +25,12 @@ type TokenDeleted struct{}
 
 // Token represents metadata of token entity
 type Token struct {
-	Value    string `json:"value"`
-	Username string
-	Password string
+	ID       string `json:"-"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // MarshalJSON serialises Token as json
 func (entity Token) MarshalJSON() ([]byte, error) {
-	return []byte("{\"value\":\"" + entity.Value + "\"}"), nil
+	return []byte("{\"value\":\"" + entity.ID + "\"}"), nil
 }

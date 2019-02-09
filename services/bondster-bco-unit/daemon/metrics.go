@@ -32,33 +32,23 @@ type Metrics struct {
 	Support
 	output                   string
 	tenant                   string
+	refreshRate              time.Duration
 	createdTokens            metrics.Counter
 	deletedTokens            metrics.Counter
-	refreshRate              time.Duration
-	syncLatency              metrics.Timer
-	importAccountLatency     metrics.Timer
-	exportAccountLatency     metrics.Timer
-	importTransactionLatency metrics.Timer
-	exportTransactionLatency metrics.Timer
-	importedAccounts         metrics.Meter
-	exportedAccounts         metrics.Meter
-	importedTransfers        metrics.Meter
-	exportedTransfers        metrics.Meter
+	transactionSearchLatency metrics.Timer
+	transactionListLatency   metrics.Timer
+	importedTransfers        metrics.Counter
+	importedTransactions     metrics.Counter
 }
 
 // Snapshot holds metrics snapshot status
 type Snapshot struct {
 	CreatedTokens            int64   `json:"createdTokens"`
 	DeletedTokens            int64   `json:"deletedTokens"`
-	SyncLatency              float64 `json:"syncLatency"`
-	ImportAccountLatency     float64 `json:"importAccountLatency"`
-	ExportAccountLatency     float64 `json:"exportAccountLatency"`
-	ImportTransactionLatency float64 `json:"importTransactionLatency"`
-	ExportTransactionLatency float64 `json:"exportTransactionLatency"`
-	ImportedAccounts         int64   `json:"importedAccounts"`
-	ExportedAccounts         int64   `json:"exportedAccounts"`
 	ImportedTransfers        int64   `json:"importedTransfers"`
-	ExportedTransfers        int64   `json:"exportedTransfers"`
+	ImportedTransactions     int64   `json:"importedTransactions"`
+	SearchTransactionLatency float64 `json:"searchTransactionLatency"`
+	ListTransactionLatency   float64 `json:"listTransactionLatency"`
 }
 
 // NewMetrics returns metrics fascade
@@ -70,15 +60,10 @@ func NewMetrics(ctx context.Context, cfg config.Configuration) Metrics {
 		refreshRate:              cfg.MetricsRefreshRate,
 		createdTokens:            metrics.NewCounter(),
 		deletedTokens:            metrics.NewCounter(),
-		syncLatency:              metrics.NewTimer(),
-		importAccountLatency:     metrics.NewTimer(),
-		exportAccountLatency:     metrics.NewTimer(),
-		importTransactionLatency: metrics.NewTimer(),
-		exportTransactionLatency: metrics.NewTimer(),
-		importedAccounts:         metrics.NewMeter(),
-		exportedAccounts:         metrics.NewMeter(),
-		importedTransfers:        metrics.NewMeter(),
-		exportedTransfers:        metrics.NewMeter(),
+		importedTransfers:        metrics.NewCounter(),
+		importedTransactions:     metrics.NewCounter(),
+		transactionSearchLatency: metrics.NewTimer(),
+		transactionListLatency:   metrics.NewTimer(),
 	}
 }
 
@@ -87,15 +72,10 @@ func NewSnapshot(metrics Metrics) Snapshot {
 	return Snapshot{
 		CreatedTokens:            metrics.createdTokens.Count(),
 		DeletedTokens:            metrics.deletedTokens.Count(),
-		SyncLatency:              metrics.syncLatency.Percentile(0.95),
-		ImportAccountLatency:     metrics.importAccountLatency.Percentile(0.95),
-		ExportAccountLatency:     metrics.exportAccountLatency.Percentile(0.95),
-		ImportTransactionLatency: metrics.importTransactionLatency.Percentile(0.95),
-		ExportTransactionLatency: metrics.exportTransactionLatency.Percentile(0.95),
-		ImportedAccounts:         metrics.importedAccounts.Count(),
-		ExportedAccounts:         metrics.exportedAccounts.Count(),
 		ImportedTransfers:        metrics.importedTransfers.Count(),
-		ExportedTransfers:        metrics.exportedTransfers.Count(),
+		ImportedTransactions:     metrics.importedTransactions.Count(),
+		SearchTransactionLatency: metrics.transactionSearchLatency.Percentile(0.95),
+		ListTransactionLatency:   metrics.transactionListLatency.Percentile(0.95),
 	}
 }
 
@@ -109,40 +89,22 @@ func (metrics Metrics) TokenDeleted() {
 	metrics.deletedTokens.Inc(1)
 }
 
-func (metrics Metrics) TimeSyncLatency(f func()) {
-	metrics.syncLatency.Time(f)
+// TransfersImported increments transfers created by count
+func (metrics Metrics) TransfersImported(count int64) {
+	metrics.importedTransfers.Inc(count)
 }
 
-func (metrics Metrics) TimeImportAccount(f func()) {
-	metrics.importAccountLatency.Time(f)
+// TransactionImported increments transactions created by count
+func (metrics Metrics) TransactionImported() {
+	metrics.importedTransactions.Inc(1)
 }
 
-func (metrics Metrics) TimeExportAccount(f func()) {
-	metrics.exportAccountLatency.Time(f)
+func (metrics Metrics) TimeTransactionSearchLatency(f func()) {
+	metrics.transactionSearchLatency.Time(f)
 }
 
-func (metrics Metrics) TimeImportTransaction(f func()) {
-	metrics.importTransactionLatency.Time(f)
-}
-
-func (metrics Metrics) TimeExportTransaction(f func()) {
-	metrics.exportTransactionLatency.Time(f)
-}
-
-func (metrics Metrics) ImportedAccounts(num int64) {
-	metrics.importedAccounts.Mark(num)
-}
-
-func (metrics Metrics) ExportedAccounts(num int64) {
-	metrics.exportedAccounts.Mark(num)
-}
-
-func (metrics Metrics) ImportedTransfers(num int64) {
-	metrics.importedTransfers.Mark(num)
-}
-
-func (metrics Metrics) ExportedTransfers(num int64) {
-	metrics.exportedTransfers.Mark(num)
+func (metrics Metrics) TimeTransactionListLatency(f func()) {
+	metrics.transactionListLatency.Time(f)
 }
 
 func (metrics Metrics) persist(filename string) {

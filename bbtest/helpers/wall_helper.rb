@@ -14,6 +14,8 @@ class WallTransactionHandler < WEBrick::HTTPServlet::AbstractServlet
   end
 
   def create_transaction(request)
+    puts "creating transactionn"
+
     begin
       body = JSON.parse(request.body)
 

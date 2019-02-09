@@ -35,7 +35,9 @@ type bondsterTransaction struct {
 	IDTransfer    string                   `json:"idTransfer"`
 	Type          string                   `json:"transactionType"`
 	Direction     string                   `json:"direction"`
+	LoanID        *string                  `json:"loanNumber"`
 	ValueDate     time.Time                `json:"valueDate"`
+	Originator    *bondsterOriginator      `json:"originator"`
 	External      *bondsterExternalAccount `json:"externalAccount"`
 	Amount        bondsterAmount           `json:"amount"`
 }
@@ -43,6 +45,11 @@ type bondsterTransaction struct {
 type bondsterExternalAccount struct {
 	Number   string `json:"accountNumber"`
 	BankCode string `json:"bankCode"`
+}
+
+type bondsterOriginator struct {
+	ID   string `json:"idOriginator"`
+	Name string `json:"originatorName"`
 }
 
 type bondsterAmount struct {
@@ -63,27 +70,73 @@ func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
 	})
 
 	var nostro = envelope.Currency + "_NOSTRO"
-	var credit string
-	var debit string
 
 	for _, transfer := range envelope.Transactions {
-		if transfer.Direction == "DEBIT" {
-			credit = envelope.Currency + "_" + transfer.Type
-			debit = nostro
-		} else {
-			credit = nostro
-			debit = envelope.Currency + "_" + transfer.Type
-		}
+		valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
 
-		set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
-			IDTransfer:   transfer.IDTransfer,
-			Credit:       credit,
-			Debit:        debit,
-			ValueDate:    transfer.ValueDate.Format("2006-01-02T15:04:05Z0700"),
-			ValueDateRaw: transfer.ValueDate,
-			Amount:       transfer.Amount.Value,
-			Currency:     transfer.Amount.Currency,
-		})
+		if transfer.Direction == "DEBIT" {
+			if transfer.Originator != nil {
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+					IDTransfer:   transfer.IDTransfer,
+					Credit:       envelope.Currency + "_" + transfer.Originator.Name,
+					Debit:        nostro,
+					ValueDate:    valueDate,
+					ValueDateRaw: transfer.ValueDate,
+					Amount:       transfer.Amount.Value,
+					Currency:     transfer.Amount.Currency,
+				})
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+					IDTransfer:   transfer.IDTransfer + "_FWD",
+					Credit:       envelope.Currency + "_" + transfer.Type,
+					Debit:        envelope.Currency + "_" + transfer.Originator.Name,
+					ValueDate:    valueDate,
+					ValueDateRaw: transfer.ValueDate,
+					Amount:       transfer.Amount.Value,
+					Currency:     transfer.Amount.Currency,
+				})
+			} else {
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+					IDTransfer:   transfer.IDTransfer,
+					Credit:       envelope.Currency + "_" + transfer.Type,
+					Debit:        nostro,
+					ValueDate:    valueDate,
+					ValueDateRaw: transfer.ValueDate,
+					Amount:       transfer.Amount.Value,
+					Currency:     transfer.Amount.Currency,
+				})
+			}
+		} else {
+			if transfer.Originator != nil {
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+					IDTransfer:   transfer.IDTransfer,
+					Credit:       nostro,
+					Debit:        envelope.Currency + "_" + transfer.Originator.Name,
+					ValueDate:    valueDate,
+					ValueDateRaw: transfer.ValueDate,
+					Amount:       transfer.Amount.Value,
+					Currency:     transfer.Amount.Currency,
+				})
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+					IDTransfer:   transfer.IDTransfer + "_FWD",
+					Credit:       envelope.Currency + "_" + transfer.Originator.Name,
+					Debit:        envelope.Currency + "_" + transfer.Type,
+					ValueDate:    valueDate,
+					ValueDateRaw: transfer.ValueDate,
+					Amount:       transfer.Amount.Value,
+					Currency:     transfer.Amount.Currency,
+				})
+			} else {
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+					IDTransfer:   transfer.IDTransfer,
+					Credit:       nostro,
+					Debit:        envelope.Currency + "_" + transfer.Type,
+					ValueDate:    valueDate,
+					ValueDateRaw: transfer.ValueDate,
+					Amount:       transfer.Amount.Value,
+					Currency:     transfer.Amount.Currency,
+				})
+			}
+		}
 	}
 
 	result := make([]Transaction, 0)
@@ -115,6 +168,9 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 	deduplicated[envelope.Currency+"_SANCTION_PAYMENT"] = nil
 
 	for _, transfer := range envelope.Transactions {
+		if transfer.Originator != nil {
+			deduplicated[envelope.Currency+"_"+transfer.Originator.Name] = nil
+		}
 		if transfer.External != nil {
 			deduplicated[NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)] = nil
 		}
