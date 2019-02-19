@@ -1,3 +1,10 @@
+bondster-bco (1.1.1) unstable; urgency=low
+
+  * Pre-release cleanup
+  * Forward throught originators if possible
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Sat, 9 Feb 2019 22:37:10 +0100
+
 bondster-bco (1.1.0) unstable; urgency=low
 
   * Properly map env variable of vault
