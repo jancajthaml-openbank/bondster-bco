@@ -14,7 +14,7 @@ class VaultAccountHandler < WEBrick::HTTPServlet::AbstractServlet
   end
 
   def create_account(request)
-    puts "creating wall account #{request.body}"
+    #puts "creating wall account #{request.body}"
 
     begin
       body = JSON.parse(request.body)

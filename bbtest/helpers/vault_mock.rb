@@ -34,7 +34,7 @@ module VaultMock
   end
 
   def self.create_transaction(id, transfers)
-    puts "create treansaction #{id} , #{transfers}"
+    #puts "create treansaction #{id} , #{transfers}"
     #return false if self.accounts.has_key?(id)
 
     #self.accounts[id] = {
