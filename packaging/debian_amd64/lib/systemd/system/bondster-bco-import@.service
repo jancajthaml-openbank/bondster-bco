@@ -1,0 +1,23 @@
+[Unit]
+Description=openbank Bondster Marketplace Connection tenant %i
+PartOf=bondster-bco.service
+After=bondster-bco.service
+
+[Service]
+Type=notify
+Environment=BONDSTER_BCO_TENANT=%i
+EnvironmentFile=/etc/init/bondster-bco.conf
+StartLimitBurst=0
+ExecStart=/openbank/services/bondster-bco/bondster-bco-import %i
+StandardInput=null
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+Restart=always
+RestartSec=0
+TimeoutStartSec=0
+TimeoutSec=infinity
+KillMode=process
+
+[Install]
+WantedBy=bondster-bco.service

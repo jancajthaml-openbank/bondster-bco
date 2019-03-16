@@ -5,7 +5,7 @@ step "bondster-bco is restarted" do ||
   expect($?).to be_success, ids
 
   ids = ids.split("\n").map(&:strip).reject { |x|
-    x.empty? || !x.start_with?("bondster-bco@")
+    x.empty? || !x.start_with?("bondster-bco-import@")
   }.map { |x| x.chomp(".service") }
 
   expect(ids).not_to be_empty
@@ -14,7 +14,7 @@ step "bondster-bco is restarted" do ||
     %x(systemctl restart #{e} 2>&1)
   }
 
-  ids << "bondster-bco"
+  ids << "bondster-bco-rest"
 
   eventually() {
     ids.each { |e|
@@ -26,10 +26,10 @@ end
 
 step "tenant :tenant is offboarded" do |tenant|
   eventually() {
-    %x(journalctl -o short-precise -u bondster-bco@#{tenant}.service --no-pager > /reports/bondster-bco@#{tenant}.log 2>&1)
-    %x(systemctl stop bondster-bco@#{tenant} 2>&1)
-    %x(systemctl disable bondster-bco@#{tenant} 2>&1)
-    %x(journalctl -o short-precise -u bondster-bco@#{tenant}.service --no-pager > /reports/bondster-bco@#{tenant}.log 2>&1)
+    %x(journalctl -o short-precise -u bondster-bco-import@#{tenant}.service --no-pager > /reports/bondster-bco@#{tenant}.log 2>&1)
+    %x(systemctl stop bondster-bco-import@#{tenant} 2>&1)
+    %x(systemctl disable bondster-bco-import@#{tenant} 2>&1)
+    %x(journalctl -o short-precise -u bondster-bco-import@#{tenant}.service --no-pager > /reports/bondster-bco@#{tenant}.log 2>&1)
   }
 end
 
@@ -52,11 +52,11 @@ step "tenant :tenant is onbdoarded" do |tenant|
   %x(mkdir -p /etc/init)
   %x(echo '#{params}' > /etc/init/bondster-bco.conf)
 
-  %x(systemctl enable bondster-bco@#{tenant} 2>&1)
-  %x(systemctl start bondster-bco@#{tenant} 2>&1)
+  %x(systemctl enable bondster-bco-import@#{tenant} 2>&1)
+  %x(systemctl start bondster-bco-import@#{tenant} 2>&1)
 
   eventually() {
-    out = %x(systemctl show -p SubState bondster-bco@#{tenant} 2>&1 | sed 's/SubState=//g')
+    out = %x(systemctl show -p SubState bondster-bco-import@#{tenant} 2>&1 | sed 's/SubState=//g')
     expect(out.strip).to eq("running")
   }
 end
@@ -88,7 +88,7 @@ step "bondster-bco is reconfigured with" do |configuration|
   expect($?).to be_success, ids
 
   ids = ids.split("\n").map(&:strip).reject { |x|
-    x.empty? || !x.start_with?("bondster-bco")
+    x.empty? || !x.start_with?("bondster-bco-")
   }.map { |x| x.chomp(".service") }
 
   ids.each { |e|

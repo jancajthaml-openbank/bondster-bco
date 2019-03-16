@@ -21,8 +21,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-unit/daemon"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/utils"
+	"github.com/jancajthaml-openbank/bondster-bco-import/daemon"
+	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
 	log "github.com/sirupsen/logrus"
 )

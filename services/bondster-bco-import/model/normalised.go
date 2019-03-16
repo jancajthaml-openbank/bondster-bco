@@ -17,7 +17,7 @@ package model
 import (
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-unit/iban"
+	"github.com/jancajthaml-openbank/bondster-bco-import/iban"
 )
 
 // Transaction entity in wall format

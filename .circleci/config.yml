@@ -95,25 +95,25 @@ jobs:
           command: |
             mkdir -p /go/src/github.com/jancajthaml-openbank
             cp -r /home/circleci/project/services/bondster-bco-rest /go/src/github.com/jancajthaml-openbank/bondster-bco-rest
-            cp -r /home/circleci/project/services/bondster-bco-unit /go/src/github.com/jancajthaml-openbank/bondster-bco-unit
+            cp -r /home/circleci/project/services/bondster-bco-import /go/src/github.com/jancajthaml-openbank/bondster-bco-import
       - run:
           name: sync dependencies
           command: |
             ./dev/lifecycle/sync --pkg bondster-bco-rest
-            ./dev/lifecycle/sync --pkg bondster-bco-unit
+            ./dev/lifecycle/sync --pkg bondster-bco-import
       - run:
           name: move vendor folder to project
           command: |
             cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-rest/vendor /home/circleci/project/services/bondster-bco-rest/vendor
-            cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-unit/vendor /home/circleci/project/services/bondster-bco-unit/vendor
+            cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-import/vendor /home/circleci/project/services/bondster-bco-import/vendor
       - run:
           name: unit test bondster-bco-rest
           command: |
             ./dev/lifecycle/test --pkg bondster-bco-rest
       - run:
-          name: unit test bondster-bco-unit
+          name: unit test bondster-bco-import
           command: |
-            ./dev/lifecycle/test --pkg bondster-bco-unit
+            ./dev/lifecycle/test --pkg bondster-bco-import
 
   # -------------------------------------------------------------------------- #
 
@@ -130,22 +130,22 @@ jobs:
           command: |
             mkdir -p /go/src/github.com/jancajthaml-openbank
             cp -r /home/circleci/project/services/bondster-bco-rest /go/src/github.com/jancajthaml-openbank/bondster-bco-rest
-            cp -r /home/circleci/project/services/bondster-bco-unit /go/src/github.com/jancajthaml-openbank/bondster-bco-unit
+            cp -r /home/circleci/project/services/bondster-bco-import /go/src/github.com/jancajthaml-openbank/bondster-bco-import
       - run:
           name: sync dependencies
           command: |
             ./dev/lifecycle/sync --pkg bondster-bco-rest
-            ./dev/lifecycle/sync --pkg bondster-bco-unit
+            ./dev/lifecycle/sync --pkg bondster-bco-import
       - run:
           name: move vendor folder to project
           command: |
             cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-rest/vendor /home/circleci/project/services/bondster-bco-rest/vendor
-            cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-unit/vendor /home/circleci/project/services/bondster-bco-unit/vendor
+            cp -r /go/src/github.com/jancajthaml-openbank/bondster-bco-import/vendor /home/circleci/project/services/bondster-bco-import/vendor
       - run:
-          name: package binary of bondster-bco-unit
+          name: package binary of bondster-bco-import
           command: |
-            ./dev/lifecycle/package --arch linux/amd64 --pkg bondster-bco-unit
-            ./dev/lifecycle/package --arch linux/armhf --pkg bondster-bco-unit
+            ./dev/lifecycle/package --arch linux/amd64 --pkg bondster-bco-import
+            ./dev/lifecycle/package --arch linux/armhf --pkg bondster-bco-import
       - run:
           name: package binary of bondster-bco-rest
           command: |
@@ -256,9 +256,9 @@ jobs:
           keys:
             - bondster-binaries-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
       - run: if [ ! -f ./packaging/bin/bondster-bco-rest-linux-amd64 ] ; then exit 1 ; fi
-      - run: if [ ! -f ./packaging/bin/bondster-bco-unit-linux-amd64 ] ; then exit 1 ; fi
+      - run: if [ ! -f ./packaging/bin/bondster-bco-import-linux-amd64 ] ; then exit 1 ; fi
       - run: if [ ! -f ./packaging/bin/bondster-bco-rest-linux-armhf ] ; then exit 1 ; fi
-      - run: if [ ! -f ./packaging/bin/bondster-bco-unit-linux-armhf ] ; then exit 1 ; fi
+      - run: if [ ! -f ./packaging/bin/bondster-bco-import-linux-armhf ] ; then exit 1 ; fi
       - run: if [ ! -f ./packaging/bin/bondster-bco_${CIRCLE_TAG#v}_amd64.deb ] ; then exit 1 ; fi
       - run: if [ ! -f ./packaging/bin/bondster-bco_${CIRCLE_TAG#v}_armhf.deb ] ; then exit 1 ; fi
       - deploy:

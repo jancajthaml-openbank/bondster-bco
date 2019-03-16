@@ -13,7 +13,7 @@ services:
     image: openbankdev/bondster_bco_base
     volumes:
       - .:/project
-      - ./services/bondster-bco-unit:/go/src/github.com/jancajthaml-openbank/bondster-bco-unit
+      - ./services/bondster-bco-import:/go/src/github.com/jancajthaml-openbank/bondster-bco-import
       - ./services/bondster-bco-rest:/go/src/github.com/jancajthaml-openbank/bondster-bco-rest
     working_dir: /project
     environment:
