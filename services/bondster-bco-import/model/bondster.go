@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-unit/utils"
+	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
 
 // BondsterImportEnvelope represents bondster marketplace import statement entity

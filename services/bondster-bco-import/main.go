@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/jancajthaml-openbank/bondster-bco-unit/boot"
+	"github.com/jancajthaml-openbank/bondster-bco-import/boot"
 )
 
 func main() {

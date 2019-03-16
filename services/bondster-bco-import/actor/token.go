@@ -15,9 +15,9 @@
 package actor
 
 import (
-	"github.com/jancajthaml-openbank/bondster-bco-unit/daemon"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/model"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/persistence"
+	"github.com/jancajthaml-openbank/bondster-bco-import/daemon"
+	"github.com/jancajthaml-openbank/bondster-bco-import/model"
+	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 	log "github.com/sirupsen/logrus"

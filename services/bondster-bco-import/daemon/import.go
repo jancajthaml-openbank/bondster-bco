@@ -20,11 +20,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-unit/config"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/http"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/model"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/persistence"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/utils"
+	"github.com/jancajthaml-openbank/bondster-bco-import/config"
+	"github.com/jancajthaml-openbank/bondster-bco-import/http"
+	"github.com/jancajthaml-openbank/bondster-bco-import/model"
+	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
+	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	log "github.com/sirupsen/logrus"

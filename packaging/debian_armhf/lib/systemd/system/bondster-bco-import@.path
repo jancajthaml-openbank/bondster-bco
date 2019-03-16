@@ -1,0 +1,8 @@
+[Unit]
+Description=openbank Bondster Marketplace Connection tenant %i
+
+[Path]
+PathChanged=/etc/init/bondster-bco.conf
+
+[Install]
+WantedBy=bondster-bco-import@.service

@@ -61,7 +61,7 @@ func TenantPartial(system *daemon.SystemControl) func(w http.ResponseWriter, r *
 func TenantsPartial(system *daemon.SystemControl) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		units, err := system.ListUnits("bondster-bco@")
+		units, err := system.ListUnits("bondster-bco-import@")
 		if err != nil {
 			log.Errorf("Error when listing units, %+v", err)
 			w.Header().Set("Content-Type", "application/json")
@@ -87,7 +87,7 @@ func TenantsPartial(system *daemon.SystemControl) func(w http.ResponseWriter, r 
 
 // EnableUnit enables tenant unit
 func EnableUnit(system *daemon.SystemControl, tenant string, w http.ResponseWriter, r *http.Request) {
-	err := system.EnableUnit("bondster-bco@" + tenant + ".service")
+	err := system.EnableUnit("bondster-bco-import@" + tenant + ".service")
 	if err != nil {
 		log.Errorf("Error when enabling tenant %s, %+v", tenant, err)
 		w.Header().Set("Content-Type", "application/json")
@@ -105,7 +105,7 @@ func EnableUnit(system *daemon.SystemControl, tenant string, w http.ResponseWrit
 
 // DisableUnit disables tenant unit
 func DisableUnit(system *daemon.SystemControl, tenant string, w http.ResponseWriter, r *http.Request) {
-	err := system.DisableUnit("bondster-bco@" + tenant + ".service")
+	err := system.DisableUnit("bondster-bco-import@" + tenant + ".service")
 	if err != nil {
 		log.Errorf("Error when disabling tenant %s, %+v", tenant, err)
 		w.Header().Set("Content-Type", "application/json")

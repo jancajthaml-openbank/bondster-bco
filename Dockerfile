@@ -20,9 +20,9 @@ RUN \
     if \
       \
       [ ! -f /opt/artifacts/bondster-bco-rest-linux-amd64 ] || \
-      [ ! -f /opt/artifacts/bondster-bco-unit-linux-amd64 ] || \
+      [ ! -f /opt/artifacts/bondster-bco-import-linux-amd64 ] || \
       [ ! -f /opt/artifacts/bondster-bco-rest-linux-armhf ] || \
-      [ ! -f /opt/artifacts/bondster-bco-unit-linux-armhf ] || \
+      [ ! -f /opt/artifacts/bondster-bco-import-linux-armhf ] || \
       \
       [ -z "$(find . /opt/artifacts -type f -name 'bondster-bco_*_amd64.deb' -print)" ] || \
       [ -z "$(find /opt/artifacts -type f -name 'bondster-bco_*_armhf.deb' -print)" ] \

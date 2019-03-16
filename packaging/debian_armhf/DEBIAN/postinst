@@ -6,8 +6,14 @@ case "$1" in
 
   configure)
     if [ -f "/etc/init/bondster-bco.conf" ] ; then
+      systemctl unmask bondster-bco-rest.service >/dev/null
+      systemctl enable bondster-bco-rest.service >/dev/null
+
+      systemctl unmask bondster-bco-import.service >/dev/null
+
       systemctl unmask bondster-bco.service >/dev/null
       systemctl enable bondster-bco.service >/dev/null
+
       (systemctl start bondster-bco.service >/dev/null || :)
     else
       (>&2 echo "/etc/init/bondster-bco.conf file not found")

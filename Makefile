@@ -18,7 +18,7 @@ package:
 .PHONY: bundle-binaries
 bundle-binaries:
 	@echo "[info] packaging binaries for linux/amd64"
-	@docker-compose run --rm package --arch linux/amd64 --pkg bondster-bco-unit
+	@docker-compose run --rm package --arch linux/amd64 --pkg bondster-bco-import
 	@docker-compose run --rm package --arch linux/amd64 --pkg bondster-bco-rest
 
 .PHONY: bundle-debian
@@ -32,31 +32,27 @@ bootstrap:
 
 .PHONY: lint
 lint:
-	@docker-compose run --rm lint --pkg bondster-bco-unit || :
+	@docker-compose run --rm lint --pkg bondster-bco-import || :
 	@docker-compose run --rm lint --pkg bondster-bco-rest || :
 
 .PHONY: sec
 sec:
-	@docker-compose run --rm sec --pkg bondster-bco-unit || :
+	@docker-compose run --rm sec --pkg bondster-bco-import || :
 	@docker-compose run --rm sec --pkg bondster-bco-rest || :
 
 .PHONY: sync
 sync:
-	@echo "[info] sync bondster-bco-unit"
-	@docker-compose run --rm sync --pkg bondster-bco-unit
-	@echo "[info] sync bondster-bco-rest"
+	@docker-compose run --rm sync --pkg bondster-bco-import
 	@docker-compose run --rm sync --pkg bondster-bco-rest
 
 .PHONY: update
 update:
-	@docker-compose run --rm update --pkg bondster-bco-unit
+	@docker-compose run --rm update --pkg bondster-bco-import
 	@docker-compose run --rm update --pkg bondster-bco-rest
 
 .PHONY: test
 test:
-	@echo "[info] test bondster-bco-unit"
-	@docker-compose run --rm test --pkg bondster-bco-unit
-	@echo "[info] test bondster-bco-rest"
+	@docker-compose run --rm test --pkg bondster-bco-import
 	@docker-compose run --rm test --pkg bondster-bco-rest
 
 .PHONY: release

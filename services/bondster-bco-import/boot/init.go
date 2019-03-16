@@ -20,10 +20,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jancajthaml-openbank/bondster-bco-unit/actor"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/config"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/daemon"
-	"github.com/jancajthaml-openbank/bondster-bco-unit/utils"
+	"github.com/jancajthaml-openbank/bondster-bco-import/actor"
+	"github.com/jancajthaml-openbank/bondster-bco-import/config"
+	"github.com/jancajthaml-openbank/bondster-bco-import/daemon"
+	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	log "github.com/sirupsen/logrus"
