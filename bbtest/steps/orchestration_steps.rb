@@ -55,9 +55,22 @@ step "tenant :tenant is onbdoarded" do |tenant|
   %x(systemctl enable bondster-bco-import@#{tenant} 2>&1)
   %x(systemctl start bondster-bco-import@#{tenant} 2>&1)
 
+  ids = %x(systemctl list-units | awk '{ print $1 }')
+  expect($?).to be_success, ids
+
+  ids = ids.split("\n").map(&:strip).reject { |x|
+    x.empty? || !x.start_with?("bondster-bco-")
+  }.map { |x| x.chomp(".service") }
+
+  ids.each { |e|
+    %x(systemctl restart #{e} 2>&1)
+  }
+
   eventually() {
-    out = %x(systemctl show -p SubState bondster-bco-import@#{tenant} 2>&1 | sed 's/SubState=//g')
-    expect(out.strip).to eq("running")
+    ids.each { |e|
+      out = %x(systemctl show -p SubState #{e} 2>&1 | sed 's/SubState=//g')
+      expect(out.strip).to eq("running")
+    }
   }
 end
 
