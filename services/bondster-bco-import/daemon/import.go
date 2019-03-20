@@ -470,8 +470,16 @@ func (bondster BondsterImport) WaitReady(deadline time.Duration) (err error) {
 func (bondster BondsterImport) Start() {
 	defer bondster.MarkDone()
 
-	log.Infof("Start bondster-import daemon, sync %v now and then each %v", bondster.bondsterGateway, bondster.refreshRate)
 	bondster.MarkReady()
+
+	select {
+	case <-bondster.canStart:
+		break
+	case <-bondster.Done():
+		return
+	}
+
+	log.Infof("Start bondster-import daemon, sync %v now and then each %v", bondster.bondsterGateway, bondster.refreshRate)
 
 	bondster.importRoundtrip()
 
