@@ -1,3 +1,20 @@
+bondster-bco (1.1.2) unstable; urgency=low
+
+  * Blackbox-testing install and uninstall
+  * Namespaced unit with configuration change watch
+  * Bump github.com/json-iterator/go in /services/bondster-bco-unit
+  * Bump github.com/json-iterator/go in /services/bondster-bco-rest
+  * Bump github.com/sirupsen/logrus in /services/bondster-bco-unit
+  * Bump github.com/sirupsen/logrus in /services/bondster-bco-rest
+  * Bump github.com/jancajthaml-openbank/local-fs
+  * Bumps [github.com/jancajthaml-openbank/local-fs](https://github.com/jancajthaml-openbank/local-fs) from 1.0.1 to 1.0.2. - [Release notes](https://github.com/jancajthaml-openbank/local-fs/releases) - [Commits](jancajthaml-openbank/local-fs@v1.0.1...v1.0.2)
+  * Bump github.com/gorilla/mux in /services/bondster-bco-rest
+  * Added dependabot and sonar shield
+  * Preinstall same version required by debian dependency in bbtest
+  * Include security patches in zmq version constrain
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Mon, 18 Mar 2019 09:29:07 +0100
+
 bondster-bco (1.1.1) unstable; urgency=low
 
   * Pre-release cleanup
