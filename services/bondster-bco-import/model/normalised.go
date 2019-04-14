@@ -20,13 +20,13 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/iban"
 )
 
-// Transaction entity in wall format
+// Transaction entity in ledger-rest format
 type Transaction struct {
 	IDTransaction string     `json:"id"`
 	Transfers     []Transfer `json:"transfers"`
 }
 
-// Transfer entity in wall format
+// Transfer entity in ledger-rest format
 type Transfer struct {
 	IDTransfer   string    `json:"id"`
 	Credit       string    `json:"credit"`
