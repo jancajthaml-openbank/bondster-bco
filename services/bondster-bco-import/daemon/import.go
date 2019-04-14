@@ -30,12 +30,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// BondsterImport represents bondster gateway to wall import subroutine
+// BondsterImport represents bondster gateway to ledger import subroutine
 type BondsterImport struct {
 	Support
 	tenant          string
 	bondsterGateway string
-	wallGateway     string
+	ledgerGateway   string
 	vaultGateway    string
 	refreshRate     time.Duration
 	storage         *localfs.Storage
@@ -50,7 +50,7 @@ func NewBondsterImport(ctx context.Context, cfg config.Configuration, metrics *M
 		Support:         NewDaemonSupport(ctx),
 		tenant:          cfg.Tenant,
 		bondsterGateway: cfg.BondsterGateway,
-		wallGateway:     cfg.WallGateway,
+		ledgerGateway:   cfg.LedgerGateway,
 		vaultGateway:    cfg.VaultGateway,
 		refreshRate:     cfg.SyncRate,
 		storage:         storage,
@@ -285,25 +285,25 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 			return err
 		}
 
-		uri := bondster.wallGateway + "/transaction/" + bondster.tenant
+		uri := bondster.ledgerGateway + "/transaction/" + bondster.tenant
 		err = utils.Retry(3, time.Second, func() (err error) {
 			response, code, err = bondster.httpClient.Post(uri, request, nil)
 			if code == 200 || code == 201 || code == 400 {
 				return
 			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("wall POST %s error %d %+v", uri, code, string(response))
+				err = fmt.Errorf("ledger-rest POST %s error %d %+v", uri, code, string(response))
 			}
 			return
 		})
 
 		if err != nil {
-			return fmt.Errorf("wall POST %s error %+v", uri, err)
+			return fmt.Errorf("ledger-rest POST %s error %+v", uri, err)
 		} else if code == 409 {
-			return fmt.Errorf("wall transaction duplicate %+v", string(request))
+			return fmt.Errorf("ledger-rest transaction duplicate %+v", string(request))
 		} else if code == 400 {
-			return fmt.Errorf("wall transaction malformed request %+v", string(request))
+			return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
 		} else if code != 200 && code != 201 {
-			return fmt.Errorf("wall POST %s error %d %+v", uri, code, string(response))
+			return fmt.Errorf("ledger-rest POST %s error %d %+v", uri, code, string(response))
 		}
 
 		bondster.metrics.TransactionImported()

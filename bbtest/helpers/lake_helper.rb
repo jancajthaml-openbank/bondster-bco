@@ -61,8 +61,7 @@ end
 module LakeMock
 
   def self.parse_message(msg)
-
-    if groups = msg.match(/^Wall\/bbtest BondsterUnit\/([^\s]{1,100}) ([^\s]{1,100}) token TN$/i)
+    if groups = msg.match(/^BlackBox\/test BondsterUnit\/([^\s]{1,100}) ([^\s]{1,100}) token TN$/i)
       tenantId, reqId = groups.captures
       return LakeMessageTokenCreated.new(tenantId, reqId)
 
@@ -70,7 +69,7 @@ module LakeMock
       reqId, _ = groups.captures
       return LakeMessageTokenCreated.new(nil, reqId)
 
-    elsif groups = msg.match(/^Wall\/bbtest BondsterUnit\/([^\s]{1,100}) ([^\s]{1,100}) token TD$/i)
+    elsif groups = msg.match(/^BlackBox\/test BondsterUnit\/([^\s]{1,100}) ([^\s]{1,100}) token TD$/i)
       tenantId, reqId = groups.captures
       return LakeMessageTokenDeleted.new(tenantId, reqId)
 
@@ -78,7 +77,7 @@ module LakeMock
       reqId, _ = groups.captures
       return LakeMessageTokenDeleted.new(nil, reqId)
 
-    elsif groups = msg.match(/^Wall\/bbtest BondsterUnit\/([^\s]{1,100}) ([^\s]{1,100}) token EE$/i)
+    elsif groups = msg.match(/^BlackBox\/test BondsterUnit\/([^\s]{1,100}) ([^\s]{1,100}) token EE$/i)
       tenantId, reqId = groups.captures
       return LakeMessageError.new(tenantId, reqId)
 
@@ -129,7 +128,7 @@ module LakeMock
           next
         end
 
-        unless data.start_with?("Wall/bbtest")
+        unless data.start_with?("BlackBox/test")
           self.send(data)
           next
         end

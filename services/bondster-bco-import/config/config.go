@@ -24,9 +24,9 @@ type Configuration struct {
 	BondsterGateway string
 	// SyncRate represents interval in which new statements are synchronised
 	SyncRate time.Duration
-	// WallGateway represent wall gateway uri
-	WallGateway string
-	// VaultGateway represent vault gateway uri
+	// LedgerGateway represent ledger-rest gateway uri
+	LedgerGateway string
+	// VaultGateway represent vault-rest gateway uri
 	VaultGateway string
 	// RootStorage gives where to store journals
 	RootStorage string
