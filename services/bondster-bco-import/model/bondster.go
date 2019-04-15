@@ -58,7 +58,7 @@ type bondsterAmount struct {
 }
 
 // GetTransactions return list of bondster transactions
-func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
+func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transaction {
 	if envelope == nil {
 		return nil
 	}
@@ -77,18 +77,30 @@ func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
 		if transfer.Direction == "DEBIT" {
 			if transfer.Originator != nil {
 				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
-					IDTransfer:   transfer.IDTransfer,
-					Credit:       envelope.Currency + "_" + transfer.Originator.Name,
-					Debit:        nostro,
+					IDTransfer: transfer.IDTransfer,
+					Credit: AccountPair{
+						Tenant: tenant,
+						Name:   envelope.Currency + "_" + transfer.Originator.Name,
+					},
+					Debit: AccountPair{
+						Tenant: tenant,
+						Name:   nostro,
+					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
 					Amount:       transfer.Amount.Value,
 					Currency:     transfer.Amount.Currency,
 				})
 				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
-					IDTransfer:   transfer.IDTransfer + "_FWD",
-					Credit:       envelope.Currency + "_" + transfer.Type,
-					Debit:        envelope.Currency + "_" + transfer.Originator.Name,
+					IDTransfer: transfer.IDTransfer + "_FWD",
+					Credit: AccountPair{
+						Tenant: tenant,
+						Name:   envelope.Currency + "_" + transfer.Type,
+					},
+					Debit: AccountPair{
+						Tenant: tenant,
+						Name:   envelope.Currency + "_" + transfer.Originator.Name,
+					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
 					Amount:       transfer.Amount.Value,
@@ -96,9 +108,15 @@ func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
 				})
 			} else {
 				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
-					IDTransfer:   transfer.IDTransfer,
-					Credit:       envelope.Currency + "_" + transfer.Type,
-					Debit:        nostro,
+					IDTransfer: transfer.IDTransfer,
+					Credit: AccountPair{
+						Tenant: tenant,
+						Name:   envelope.Currency + "_" + transfer.Type,
+					},
+					Debit: AccountPair{
+						Tenant: tenant,
+						Name:   nostro,
+					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
 					Amount:       transfer.Amount.Value,
@@ -108,18 +126,30 @@ func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
 		} else {
 			if transfer.Originator != nil {
 				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
-					IDTransfer:   transfer.IDTransfer,
-					Credit:       nostro,
-					Debit:        envelope.Currency + "_" + transfer.Originator.Name,
+					IDTransfer: transfer.IDTransfer,
+					Credit: AccountPair{
+						Tenant: tenant,
+						Name:   nostro,
+					},
+					Debit: AccountPair{
+						Tenant: tenant,
+						Name:   envelope.Currency + "_" + transfer.Originator.Name,
+					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
 					Amount:       transfer.Amount.Value,
 					Currency:     transfer.Amount.Currency,
 				})
 				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
-					IDTransfer:   transfer.IDTransfer + "_FWD",
-					Credit:       envelope.Currency + "_" + transfer.Originator.Name,
-					Debit:        envelope.Currency + "_" + transfer.Type,
+					IDTransfer: transfer.IDTransfer + "_FWD",
+					Credit: AccountPair{
+						Tenant: tenant,
+						Name:   envelope.Currency + "_" + transfer.Originator.Name,
+					},
+					Debit: AccountPair{
+						Tenant: tenant,
+						Name:   envelope.Currency + "_" + transfer.Type,
+					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
 					Amount:       transfer.Amount.Value,
@@ -127,9 +157,15 @@ func (envelope *BondsterImportEnvelope) GetTransactions() []Transaction {
 				})
 			} else {
 				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
-					IDTransfer:   transfer.IDTransfer,
-					Credit:       nostro,
-					Debit:        envelope.Currency + "_" + transfer.Type,
+					IDTransfer: transfer.IDTransfer,
+					Credit: AccountPair{
+						Tenant: tenant,
+						Name:   nostro,
+					},
+					Debit: AccountPair{
+						Tenant: tenant,
+						Name:   envelope.Currency + "_" + transfer.Type,
+					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
 					Amount:       transfer.Amount.Value,

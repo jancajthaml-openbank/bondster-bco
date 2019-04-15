@@ -272,7 +272,7 @@ func (bondster BondsterImport) importNewTransactions(token *model.Token, currenc
 
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
-	for _, transaction := range envelope.GetTransactions() {
+	for _, transaction := range envelope.GetTransactions(bondster.tenant) {
 
 		for _, transfer := range transaction.Transfers {
 			if transfer.ValueDateRaw.After(lastSynced) {
