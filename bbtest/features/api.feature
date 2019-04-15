@@ -7,25 +7,25 @@ Feature: REST
       HTTP_PORT=443
     """
 
-    When I request curl GET https://localhost/tenant
+    When I request curl GET https://127.0.0.1/tenant
     Then curl responds with 200
     """
       []
     """
 
-    When I request curl POST https://localhost/tenant/APITESTA
+    When I request curl POST https://127.0.0.1/tenant/APITESTA
     Then curl responds with 200
     """
       {}
     """
 
-    When I request curl POST https://localhost/tenant/APITESTB
+    When I request curl POST https://127.0.0.1/tenant/APITESTB
     Then curl responds with 200
     """
       {}
     """
 
-    When I request curl GET https://localhost/tenant
+    When I request curl GET https://127.0.0.1/tenant
     Then curl responds with 200
     """
       [
@@ -33,13 +33,13 @@ Feature: REST
       ]
     """
 
-    When I request curl POST https://localhost/tenant/APITESTC
+    When I request curl POST https://127.0.0.1/tenant/APITESTC
     Then curl responds with 200
     """
       {}
     """
 
-    When I request curl DELETE https://localhost/tenant/APITESTC
+    When I request curl DELETE https://127.0.0.1/tenant/APITESTC
     Then curl responds with 200
     """
       {}
@@ -53,13 +53,13 @@ Feature: REST
       HTTP_PORT=443
     """
 
-    When I request curl GET https://localhost/token/API
+    When I request curl GET https://127.0.0.1/token/API
     Then curl responds with 200
     """
       []
     """
 
-    When I request curl POST https://localhost/token/API
+    When I request curl POST https://127.0.0.1/token/API
     """
       {
         "username": "X",
@@ -68,7 +68,7 @@ Feature: REST
     """
     Then curl responds with 200
 
-    When I request curl POST https://localhost/token/API
+    When I request curl POST https://127.0.0.1/token/API
     """
       {
         "username": "X",
@@ -77,6 +77,6 @@ Feature: REST
     """
     Then curl responds with 200
 
-    When I request curl GET https://localhost/token/API
+    When I request curl GET https://127.0.0.1/token/API
     Then curl responds with 200
 
