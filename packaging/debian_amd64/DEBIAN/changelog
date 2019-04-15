@@ -1,3 +1,19 @@
+bondster-bco (1.2.0) unstable; urgency=low
+
+  * Integrate ledger instead of wall
+  * Added proper purpose for self-signed cert
+  * Updated copyright year to 2019
+  * Bump github.com/gorilla/mux in /services/bondster-bco-rest
+  * Bump github.com/sirupsen/logrus in /services/bondster-bco-import
+  * Bump github.com/sirupsen/logrus in /services/bondster-bco-rest
+  * Bump github.com/jancajthaml-openbank/local-fs
+  * Require config file presence for units
+  * Bump github.com/jancajthaml-openbank/local-fs
+  * Update config.yml
+  * Start daemon after app starts
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Sun, 14 Apr 2019 15:52:49 +0200
+
 bondster-bco (1.1.2) unstable; urgency=low
 
   * Blackbox-testing install and uninstall
