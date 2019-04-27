@@ -1,3 +1,11 @@
+bondster-bco (1.2.2) unstable; urgency=low
+
+  * Simplified config resolver
+  * Nitpicking bbtest http_helper
+  * Better http helper in bbtests
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Mon, 22 Apr 2019 10:48:26 +0200
+
 bondster-bco (1.2.1) unstable; urgency=low
 
   * Proper ledger transaction api

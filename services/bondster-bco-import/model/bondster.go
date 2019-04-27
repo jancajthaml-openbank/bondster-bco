@@ -196,17 +196,12 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 	var deduplicated = make(map[string]interface{})
 
 	deduplicated[envelope.Currency+"_NOSTRO"] = nil
-	deduplicated[envelope.Currency+"_INVESTOR_INVESTMENT_FEE"] = nil
-	deduplicated[envelope.Currency+"_PRIMARY_MARKET_FINANCIAL"] = nil
-	deduplicated[envelope.Currency+"_PRINCIPAL_PAYMENT_FINANCIAL"] = nil
-	deduplicated[envelope.Currency+"_INTEREST_PAYMENT"] = nil
-	deduplicated[envelope.Currency+"_INVESTOR_DEPOSIT"] = nil
-	deduplicated[envelope.Currency+"_SANCTION_PAYMENT"] = nil
 
 	for _, transfer := range envelope.Transactions {
 		if transfer.Originator != nil {
 			deduplicated[envelope.Currency+"_"+transfer.Originator.Name] = nil
 		}
+		deduplicated[envelope.Currency+"_"+transfer.Type] = nil
 		if transfer.External != nil {
 			deduplicated[NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)] = nil
 		}
