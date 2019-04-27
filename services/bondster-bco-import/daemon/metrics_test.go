@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetFilename(t *testing.T) {
-	assert.Equal(t, "/a/b/c.import.d.e", getFilename("/a/b/c.e", "d"))
+	assert.Equal(t, "/a/b/c.d.e", getFilename("/a/b/c.e", "d"))
 	assert.Equal(t, "/a/b/c.d", getFilename("/a/b/c.d", ""))
 }
 

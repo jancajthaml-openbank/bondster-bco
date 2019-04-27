@@ -146,7 +146,7 @@ func getFilename(path, tenant string) string {
 	filename := filepath.Base(path)
 	filename = filename[:len(filename)-len(ext)]
 
-	return dirname + "/" + filename + ".import." + tenant + ext
+	return dirname + "/" + filename + "." + tenant + ext
 }
 
 // WaitReady wait for metrics to be ready
