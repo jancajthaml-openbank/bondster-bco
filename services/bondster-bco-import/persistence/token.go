@@ -15,6 +15,8 @@
 package persistence
 
 import (
+	"time"
+
 	localfs "github.com/jancajthaml-openbank/local-fs"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
@@ -44,10 +46,21 @@ func LoadTokens(storage *localfs.Storage) ([]model.Token, error) {
 	return result, nil
 }
 
-// CreateToken creates and persist new token entity
-func CreateToken(storage *localfs.Storage, id string, username string, password string) bool {
-	token := model.NewToken(id, username, password)
-	return PersistToken(storage, &token) != nil
+// LoadToken rehydrates token entity state from storage
+func LoadToken(storage *localfs.Storage, id string) *model.Token {
+	result := new(model.Token)
+	result.ID = id
+	return HydrateToken(storage, result)
+}
+
+// CreateToken persist token entity state to storage
+func CreateToken(storage *localfs.Storage, id string, username string, password string) *model.Token {
+	return PersistToken(storage, &model.Token{
+		ID:             id,
+		Username:       username,
+		Password:       password,
+		LastSyncedFrom: make(map[string]time.Time),
+	})
 }
 
 // DeleteToken deletes existing token entity

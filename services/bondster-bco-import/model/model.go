@@ -45,16 +45,14 @@ type DeleteToken struct {
 	ID string
 }
 
-// GetToken is inbound request for token details
-type GetToken struct {
+// SynchronizeToken is inbound request to perform synchronization
+type SynchronizeToken struct {
 }
 
 // NewToken returns new Token
-func NewToken(id string, username string, password string) Token {
+func NewToken(id string) Token {
 	return Token{
 		ID:             id,
-		Username:       username,
-		Password:       password,
 		LastSyncedFrom: make(map[string]time.Time),
 	}
 }

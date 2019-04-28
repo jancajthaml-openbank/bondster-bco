@@ -21,7 +21,7 @@ class VaultAccountPartial < WEBrick::HTTPServlet::AbstractServlet
     response.body = body
   end
 
-  def process_port(request)
+  def process_post(request)
     path = request.path.split("/").map(&:strip).reject(&:empty?)
 
     case path.length

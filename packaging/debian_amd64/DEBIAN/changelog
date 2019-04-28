@@ -1,3 +1,10 @@
+bondster-bco (1.2.3) unstable; urgency=low
+
+  * Added missing accounts discovery, added metrics test
+  * Strictly compare values in http steps of bbtest
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Sat, 27 Apr 2019 22:28:33 +0200
+
 bondster-bco (1.2.2) unstable; urgency=low
 
   * Simplified config resolver

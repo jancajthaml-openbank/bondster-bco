@@ -75,9 +75,8 @@ func Initialize() Application {
 	actorSystem := daemon.NewActorSystem(ctx, cfg, &metrics, &storage)
 	actorSystem.Support.RegisterOnRemoteMessage(actor.ProcessRemoteMessage(&actorSystem))
 	actorSystem.Support.RegisterOnLocalMessage(actor.ProcessLocalMessage(&actorSystem))
-	actor.SpawnTokenSignletonActor(&actorSystem)
 
-	bondster := daemon.NewBondsterImport(ctx, cfg, &metrics, &actorSystem, &storage)
+	bondster := daemon.NewBondsterImport(ctx, cfg, &metrics, &actorSystem, &storage, actor.ProcessLocalMessage(&actorSystem))
 
 	return Application{
 		cfg:         cfg,
