@@ -1,3 +1,10 @@
+bondster-bco (1.2.4) unstable; urgency=low
+
+  * Cleanup
+  * Converted import daemon workflow to actor, synchronize new token after creation
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Sun, 28 Apr 2019 15:34:11 +0200
+
 bondster-bco (1.2.3) unstable; urgency=low
 
   * Added missing accounts discovery, added metrics test

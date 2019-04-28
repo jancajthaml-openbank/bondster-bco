@@ -98,8 +98,9 @@ func ExistToken(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			log.Debugf("%s ~ (Exist CreateToken) Error", state.ID)
 
 		case model.SynchronizeToken:
+			log.Debugf("%s ~ (Exist SynchronizeToken) Begin", state.ID)
 			importStatements(s, state)
-			log.Debugf("%s ~ (Exist SynchronizeToken) OK", state.ID)
+			log.Debugf("%s ~ (Exist SynchronizeToken) End", state.ID)
 
 		case model.DeleteToken:
 			if !persistence.DeleteToken(s.Storage, state.ID) {
@@ -427,6 +428,8 @@ func getCurrencies(s *daemon.ActorSystem, session *model.Session) ([]string, err
 }
 
 func importStatements(s *daemon.ActorSystem, token model.Token) {
+	log.Debugf("Importing statements for %+v", token.ID)
+
 	session, err := login(s, token)
 	if err != nil {
 		log.Warnf("Unable to login because %+v", err)
@@ -440,13 +443,14 @@ func importStatements(s *daemon.ActorSystem, token model.Token) {
 	}
 
 	if token.UpdateCurrencies(currencies) && !persistence.UpdateToken(s.Storage, &token) {
-		log.Errorf("update of token currencies has failed, currencies : %+v, token: %+v", currencies, token)
+		log.Warnf("Update of token currencies has failed, currencies: %+v, token: %s", currencies, token.ID)
 	}
 
 	for currency := range token.LastSyncedFrom {
+		log.Debugf("Import %+v %s Begin", token.ID, currency)
 		if err := importNewTransactions(s, &token, currency, session); err != nil {
 			log.Warnf("Import token %s statements failed with %+v", token.ID, err)
-			continue
 		}
+		log.Debugf("Import %+v %s End", token.ID, currency)
 	}
 }
