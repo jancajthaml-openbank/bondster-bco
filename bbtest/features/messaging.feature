@@ -1,24 +1,20 @@
 Feature: Messaging behaviour
 
   Scenario: token
-    Given tenant MSG is onbdoarded
+    Given tenant MSG1 is onbdoarded
 
-    When tenant MSG receives "token req_id_1 NT token_1 X Y"
-    Then tenant MSG responds with "req_id_1 token TN"
-    And no other messages were received
+    When lake recieves "BondsterUnit/MSG1 BondsterRest token_1 req_id_1 NT X Y"
+    Then lake responds with "BondsterRest BondsterUnit/MSG1 req_id_1 token_1 TN"
 
-    When tenant MSG receives "token req_id_2 NT token_2 X Y"
-    And tenant MSG receives "token req_id_2 NT token_2 X Y"
-    Then tenant MSG responds with "req_id_2 token TN"
-    And tenant MSG responds with "req_id_2 token EE"
-    And no other messages were received
+    When lake recieves "BondsterUnit/MSG1 BondsterRest token_2 req_id_2 NT X Y"
+    And  lake recieves "BondsterUnit/MSG1 BondsterRest token_2 req_id_2 NT X Y"
+    Then lake responds with "BondsterRest BondsterUnit/MSG1 req_id_2 token_2 TN"
+    And  lake responds with "BondsterRest BondsterUnit/MSG1 req_id_2 token_2 EE"
 
-    When tenant MSG receives "token req_id_3 NT token_3 X Y"
-    And tenant MSG receives "token req_id_3 DT token_3"
-    Then tenant MSG responds with "req_id_3 token TN"
-    And tenant MSG responds with "req_id_3 token TD"
-    And no other messages were received
+    When lake recieves "BondsterUnit/MSG1 BondsterRest token_3 req_id_3 DT"
+    Then lake responds with "BondsterRest BondsterUnit/MSG1 req_id_3 token_3 EE"
 
-    When tenant MSG receives "token req_id_4 DT token_4"
-    Then tenant MSG responds with "req_id_4 token EE"
-    And no other messages were received
+    When lake recieves "BondsterUnit/MSG1 BondsterRest token_4 req_id_4 NT X Y"
+    And  lake recieves "BondsterUnit/MSG1 BondsterRest token_4 req_id_4 DT"
+    Then lake responds with "BondsterRest BondsterUnit/MSG1 req_id_4 token_4 TN"
+    And  lake responds with "BondsterRest BondsterUnit/MSG1 req_id_4 token_4 TD"
