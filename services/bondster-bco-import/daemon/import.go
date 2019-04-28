@@ -35,19 +35,16 @@ type BondsterImport struct {
 	bondsterGateway string
 	refreshRate     time.Duration
 	storage         *localfs.Storage
-	metrics         *Metrics
-	system          *ActorSystem
 }
 
 // NewBondsterImport returns bondster import fascade
-func NewBondsterImport(ctx context.Context, cfg config.Configuration, metrics *Metrics, system *ActorSystem, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) BondsterImport {
+func NewBondsterImport(ctx context.Context, cfg config.Configuration, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) BondsterImport {
 	return BondsterImport{
 		Support:         NewDaemonSupport(ctx),
 		callback:        callback,
 		bondsterGateway: cfg.BondsterGateway,
 		refreshRate:     cfg.SyncRate,
 		storage:         storage,
-		system:          system,
 	}
 }
 
@@ -85,20 +82,6 @@ func (bondster BondsterImport) importRoundtrip() {
 		from := system.Coordinates{Name: "token_import_cron"}
 		bondster.callback(msg, to, from)
 	}
-
-	/*
-		var wg sync.WaitGroup
-
-		for _, item := range tokens {
-			wg.Add(1)
-			go func(token model.Token) {
-				defer wg.Done()
-				bondster.importStatements(token)
-			}(item)
-		}
-
-		wg.Wait()
-	*/
 }
 
 // WaitReady wait for bondster import to be ready
