@@ -26,6 +26,7 @@ type Token struct {
 	ID             string
 	Username       string
 	Password       string
+	CreatedAt      time.Time
 	LastSyncedFrom map[string]time.Time
 }
 
@@ -81,6 +82,8 @@ func (entity *Token) Serialise() ([]byte, error) {
 	buffer.WriteString(entity.Username)
 	buffer.WriteString("\n")
 	buffer.WriteString(entity.Password)
+	buffer.WriteString("\n")
+	buffer.WriteString(entity.CreatedAt.Format(time.RFC3339))
 	for currency, syncTime := range entity.LastSyncedFrom {
 		buffer.WriteString("\n")
 		buffer.WriteString(currency)
@@ -99,13 +102,17 @@ func (entity *Token) Deserialise(data []byte) error {
 
 	// FIXME more optimal split
 	lines := strings.Split(string(data), "\n")
-	if len(lines) < 2 {
+	if len(lines) < 3 {
 		return fmt.Errorf("malformed data")
 	}
 
-	entity.Username = lines[0]
-	entity.Password = lines[1]
-	for _, syncTime := range lines[2:] {
+	if cast, err := time.Parse(time.RFC3339, lines[0]); err == nil {
+		entity.CreatedAt = cast
+	}
+
+	entity.Username = lines[1]
+	entity.Password = lines[2]
+	for _, syncTime := range lines[3:] {
 		if len(syncTime) < 7 {
 			continue
 		}
