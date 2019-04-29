@@ -79,11 +79,11 @@ func (entity *Token) Serialise() ([]byte, error) {
 		return nil, fmt.Errorf("called Token.Serialise over nil")
 	}
 	var buffer bytes.Buffer
+	buffer.WriteString(entity.CreatedAt.Format(time.RFC3339))
+	buffer.WriteString("\n")
 	buffer.WriteString(entity.Username)
 	buffer.WriteString("\n")
 	buffer.WriteString(entity.Password)
-	buffer.WriteString("\n")
-	buffer.WriteString(entity.CreatedAt.Format(time.RFC3339))
 	for currency, syncTime := range entity.LastSyncedFrom {
 		buffer.WriteString("\n")
 		buffer.WriteString(currency)
