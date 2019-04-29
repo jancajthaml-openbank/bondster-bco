@@ -133,7 +133,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					},
 					Debit: AccountPair{
 						Tenant: tenant,
-						Name:   envelope.Currency + "_" + transfer.Originator.Name,
+						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
@@ -144,11 +144,11 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					IDTransfer: transfer.IDTransfer + "_FWD",
 					Credit: AccountPair{
 						Tenant: tenant,
-						Name:   envelope.Currency + "_" + transfer.Originator.Name,
+						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 					},
 					Debit: AccountPair{
 						Tenant: tenant,
-						Name:   envelope.Currency + "_" + transfer.Type,
+						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
 					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
@@ -164,7 +164,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					},
 					Debit: AccountPair{
 						Tenant: tenant,
-						Name:   envelope.Currency + "_" + transfer.Type,
+						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
 					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
@@ -195,13 +195,13 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 
 	var deduplicated = make(map[string]interface{})
 
-	deduplicated[envelope.Currency+"_NOSTRO"] = nil
+	deduplicated[envelope.Currency+"_TYPE_NOSTRO"] = nil
 
 	for _, transfer := range envelope.Transactions {
 		if transfer.Originator != nil {
-			deduplicated[envelope.Currency+"_"+transfer.Originator.Name] = nil
+			deduplicated[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = nil
 		}
-		deduplicated[envelope.Currency+"_"+transfer.Type] = nil
+		deduplicated[envelope.Currency+"_TYPE_"+transfer.Type] = nil
 		if transfer.External != nil {
 			deduplicated[NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)] = nil
 		}
