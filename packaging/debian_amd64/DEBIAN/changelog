@@ -1,3 +1,12 @@
+bondster-bco (1.2.5) unstable; urgency=low
+
+  * Iban calculator bugfix
+  * Bugfix serialize token with createdAt
+  * Added createdAt to token listing
+  * Add _TYPE_ and _ORIGINATOR_ in meta data accounts
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Tue, 30 Apr 2019 07:44:27 +0200
+
 bondster-bco (1.2.4) unstable; urgency=low
 
   * Better logging
