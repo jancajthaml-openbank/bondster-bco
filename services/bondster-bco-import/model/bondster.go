@@ -69,7 +69,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 		return envelope.Transactions[i].ValueDate.Before(envelope.Transactions[j].ValueDate)
 	})
 
-	var nostro = envelope.Currency + "_NOSTRO"
+	var nostro = envelope.Currency + "_TYPE_NOSTRO"
 
 	for _, transfer := range envelope.Transactions {
 		valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
@@ -80,7 +80,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					IDTransfer: transfer.IDTransfer,
 					Credit: AccountPair{
 						Tenant: tenant,
-						Name:   envelope.Currency + "_" + transfer.Originator.Name,
+						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 					},
 					Debit: AccountPair{
 						Tenant: tenant,
@@ -95,11 +95,11 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					IDTransfer: transfer.IDTransfer + "_FWD",
 					Credit: AccountPair{
 						Tenant: tenant,
-						Name:   envelope.Currency + "_" + transfer.Type,
+						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
 					},
 					Debit: AccountPair{
 						Tenant: tenant,
-						Name:   envelope.Currency + "_" + transfer.Originator.Name,
+						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 					},
 					ValueDate:    valueDate,
 					ValueDateRaw: transfer.ValueDate,
@@ -111,7 +111,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					IDTransfer: transfer.IDTransfer,
 					Credit: AccountPair{
 						Tenant: tenant,
-						Name:   envelope.Currency + "_" + transfer.Type,
+						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
 					},
 					Debit: AccountPair{
 						Tenant: tenant,

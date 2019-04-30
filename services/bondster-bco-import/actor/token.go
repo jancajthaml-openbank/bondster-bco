@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/daemon"
+	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
@@ -124,102 +125,6 @@ func ExistToken(s *daemon.ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func getLoginScenario(s *daemon.ActorSystem, device string, channel string) error {
-	var (
-		err      error
-		response []byte
-		code     int
-		uri      string
-	)
-
-	uri = s.BondsterGateway + "/router/api/public/authentication/getLoginScenario"
-
-	headers := map[string]string{
-		"device":            device,
-		"channeluuid":       channel,
-		"x-active-language": "cs",
-		"host":              "bondster.com",
-		"origin":            "https://bondster.com",
-		"referer":           "https://bondster.com/ib/cs",
-		"accept":            "application/json",
-	}
-
-	response, code, err = s.HttpClient.Post(uri, nil, headers)
-	if err != nil {
-		return fmt.Errorf("bondster get login scenario Error %+v", err)
-		return err
-	} else if code != 200 {
-		return fmt.Errorf("bondster get login scenario error %d %+v", code, string(response))
-	}
-
-	var scenario = new(model.LoginScenario)
-	err = utils.JSON.Unmarshal(response, scenario)
-	if err != nil {
-		return err
-	}
-
-	if scenario.Value != "USR_PWD" {
-		return fmt.Errorf("bondster unsupported login scenario %s", string(response))
-	}
-
-	return nil
-}
-
-func validateLoginStep(s *daemon.ActorSystem, device string, channel string, token model.Token) (*model.JWT, error) {
-	var (
-		err      error
-		response []byte
-		request  []byte
-		code     int
-		uri      string
-	)
-
-	step := model.LoginStep{
-		Code: "USR_PWD",
-		Values: []model.LoginStepValue{
-			{
-				Type:  "USERNAME",
-				Value: token.Username,
-			},
-			{
-				Type:  "PWD",
-				Value: token.Password,
-			},
-		},
-	}
-
-	request, err = utils.JSON.Marshal(step)
-	if err != nil {
-		return nil, err
-	}
-
-	uri = s.BondsterGateway + "/router/api/public/authentication/validateLoginStep"
-
-	headers := map[string]string{
-		"device":            device,
-		"channeluuid":       channel,
-		"x-active-language": "cs",
-		"host":              "bondster.com",
-		"origin":            "https://bondster.com",
-		"referer":           "https://bondster.com/ib/cs",
-		"accept":            "application/json",
-	}
-
-	response, code, err = s.HttpClient.Post(uri, request, headers)
-	if err != nil {
-		return nil, err
-	} else if code != 200 {
-		return nil, fmt.Errorf("bondster validate login step error %d %+v", code, string(response))
-	}
-
-	var session = new(model.JWT)
-	err = utils.JSON.Unmarshal(response, session)
-	if err != nil {
-		return nil, err
-	}
-	return session, nil
-}
-
 func importNewTransactions(s *daemon.ActorSystem, token *model.Token, currency string, session *model.Session) error {
 	var (
 		err      error
@@ -259,7 +164,8 @@ func importNewTransactions(s *daemon.ActorSystem, token *model.Token, currency s
 
 	if err != nil {
 		return fmt.Errorf("bondster transaction search error %+v, request: %+v", err, string(request))
-	} else if code != 200 {
+	}
+	if code != 200 {
 		return fmt.Errorf("bondster transaction search error %d %+v, request: %+v", code, string(response), string(request))
 	}
 
@@ -299,23 +205,17 @@ func importNewTransactions(s *daemon.ActorSystem, token *model.Token, currency s
 		if err != nil {
 			return err
 		}
-		uri := s.VaultGateway + "/account/" + s.Tenant
-		err = utils.Retry(3, time.Second, func() (err error) {
-			response, code, err = s.HttpClient.Post(uri, request, nil)
-			if code == 200 || code == 409 || code == 400 {
-				return
-			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("vault POST %s error %d %+v", uri, code, string(response))
-			}
-			return
-		})
 
+		uri := s.VaultGateway + "/account/" + s.Tenant
+		response, code, err = s.HttpClient.Post(uri, request, nil)
 		if err != nil {
-			return fmt.Errorf("vault POST %s error %+v", uri, err)
-		} else if code == 400 {
-			return fmt.Errorf("vault account malformed request %+v", string(request))
-		} else if code != 200 && code != 409 {
-			return fmt.Errorf("vault POST %s error %d %+v", uri, code, string(response))
+			return fmt.Errorf("vault-rest create account %s error %+v", uri, err)
+		}
+		if code == 400 {
+			return fmt.Errorf("vault-rest account malformed request %+v", string(request))
+		}
+		if code != 200 && code != 409 {
+			return fmt.Errorf("vault-rest create account %s error %d %+v", uri, code, string(response))
 		}
 	}
 
@@ -335,24 +235,18 @@ func importNewTransactions(s *daemon.ActorSystem, token *model.Token, currency s
 		}
 
 		uri := s.LedgerGateway + "/transaction/" + s.Tenant
-		err = utils.Retry(3, time.Second, func() (err error) {
-			response, code, err = s.HttpClient.Post(uri, request, nil)
-			if code == 200 || code == 201 || code == 400 {
-				return
-			} else if code >= 500 && err == nil {
-				err = fmt.Errorf("ledger-rest POST %s error %d %+v", uri, code, string(response))
-			}
-			return
-		})
-
+		response, code, err = s.HttpClient.Post(uri, request, nil)
 		if err != nil {
-			return fmt.Errorf("ledger-rest POST %s error %+v", uri, err)
-		} else if code == 409 {
+			return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
+		}
+		if code == 409 {
 			return fmt.Errorf("ledger-rest transaction duplicate %+v", string(request))
-		} else if code == 400 {
+		}
+		if code == 400 {
 			return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
-		} else if code != 200 && code != 201 {
-			return fmt.Errorf("ledger-rest POST %s error %d %+v", uri, code, string(response))
+		}
+		if code != 200 && code != 201 {
+			return fmt.Errorf("ledger-rest create transaction %s error %d %+v", uri, code, string(response))
 		}
 
 		s.Metrics.TransactionImported()
@@ -370,75 +264,18 @@ func importNewTransactions(s *daemon.ActorSystem, token *model.Token, currency s
 	return nil
 }
 
-func login(s *daemon.ActorSystem, token model.Token) (session *model.Session, err error) {
-	var jwt *model.JWT
-
-	device := utils.RandDevice()
-	channel := utils.UUID()
-
-	if err = getLoginScenario(s, device, channel); err != nil {
-		log.Warnf("Unable to get login scenario for token %+v", token.ID)
-		return
-	}
-
-	if jwt, err = validateLoginStep(s, device, channel, token); err != nil {
-		log.Warnf("Unable to validate login step for token %+v", token.ID)
-		return
-	}
-	log.Debugf("Logged in with token %s", token.ID)
-
-	session = &model.Session{
-		JWT:     jwt.Value,
-		Device:  device,
-		Channel: channel,
-	}
-	return
-}
-
-func getCurrencies(s *daemon.ActorSystem, session *model.Session) ([]string, error) {
-	var (
-		err      error
-		response []byte
-		code     int
-		uri      string
-	)
-
-	uri = s.BondsterGateway + "/clientusersetting/api/private/market/getContactInformation"
-
-	headers := map[string]string{
-		"device":        session.Device,
-		"channeluuid":   session.Channel,
-		"authorization": "Bearer " + session.JWT,
-	}
-
-	response, code, err = s.HttpClient.Post(uri, nil, headers)
-	if err != nil {
-		return nil, fmt.Errorf("bondster get contact information error %+v", err)
-	} else if code != 200 {
-		return nil, fmt.Errorf("bondster get contact information error %d %+v", code, string(response))
-	}
-
-	var currencies = new(model.PotrfolioCurrencies)
-	err = utils.JSON.Unmarshal(response, currencies)
-	if err != nil {
-		return nil, err
-	}
-
-	return currencies.Value, nil
-}
-
 func importStatements(s *daemon.ActorSystem, token model.Token) {
-	log.Debugf("Importing statements for %+v", token.ID)
+	log.Debugf("Importing statements for %s", token.ID)
 
-	session, err := login(s, token)
+	session, err := integration.GetSession(s.HttpClient, s.BondsterGateway, token)
 	if err != nil {
-		log.Warnf("Unable to login because %+v", err)
+		log.Warnf("Unable to get session for %s because %+v", token.ID, err)
 		return
 	}
 
-	currencies, err := getCurrencies(s, session)
+	currencies, err := integration.GetCurrencies(s.HttpClient, s.BondsterGateway, session)
 	if err != nil {
-		log.Warnf("Unable to get contact information because %+v", err)
+		log.Warnf("Unable to get currencies for %s because %+v", token.ID, err)
 		return
 	}
 
