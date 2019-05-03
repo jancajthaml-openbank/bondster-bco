@@ -7,10 +7,7 @@ services:
   # -------------------------------------------------------------------------- #
 
   go:
-    build:
-      dockerfile: dev/Dockerfile
-      context: .
-    image: openbankdev/bondster_bco_base
+    image: jancajthaml/go
     volumes:
       - .:/project
       - ./services/bondster-bco-import:/go/src/github.com/jancajthaml-openbank/bondster-bco-import
@@ -74,18 +71,10 @@ services:
 
   # -------------------------------------------------------------------------- #
 
-  bbtest:
-    build:
-      context: .
-      dockerfile: bbtest/Dockerfile
-    image: openbankdev/bondster_bco_bbtest
-
-  # -------------------------------------------------------------------------- #
-
   artifacts:
     build:
       dockerfile: Dockerfile
       context: .
-    image: openbank/bondster-bco
+    image: openbank/lake
 
 # ---------------------------------------------------------------------------- #
