@@ -1,9 +1,10 @@
 Package: bondster-bco
-Version: 1.2.5+improve-circleci-stage2
-Architecture: amd64
-Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
-Depends: init-system-helpers (>= 1.18~), libzmq5 (>= 4.2.1~), openssl (>= 1.1~)
-Section: openbank
+Version: 1.2.5+more-robust-debian-packaging
+Section: misc
 Priority: extra
-Vcs-Git: git@github.com:jancajthaml-openbank/bondster-bco.git
-Description: Openbank Bondster Marketplace Connection
+Architecture: amd64
+Vcs-Git: https://github.com/jancajthaml-openbank/bondster-bco.git
+Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
+Depends: libzmq5 (>= 4.2.1~), openssl (>= 1.1~), libc6
+Description: bondster marketplace connector for openbank
+ Service managing Bondster Marketplace tokens and synchronizing its transactions.

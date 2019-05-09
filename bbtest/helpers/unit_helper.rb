@@ -18,10 +18,20 @@ class UnitHelper
     raise "no version specified" unless ENV.has_key?('UNIT_VERSION')
     raise "no arch specified" unless ENV.has_key?('UNIT_ARCH')
 
-    version = ENV['UNIT_VERSION']
-    parts = version.split(/(?:v)([^-]+)\-(.+)/)
+    version = ENV['UNIT_VERSION'].gsub('v', '')
+    parts = version.split('-')
 
-    raise "invalid version #{version}" if parts.length != 3
+    docker_version = ""
+    debian_version = ""
+
+    if parts.length > 1
+      branch = version[parts[0].length+1..-1]
+      docker_version = "#{parts[0]}-#{branch}"
+      debian_version = "#{parts[0]}+#{branch}"
+    elsif parts.length == 1
+      docker_version = parts[0]
+      debian_version = parts[0]
+    end
 
     version = parts[1]
     branch = parts[2]
@@ -39,7 +49,7 @@ class UnitHelper
     begin
       file.write([
         "FROM alpine",
-        "COPY --from=openbank/bondster-bco:v#{version}-#{branch} /opt/artifacts/bondster-bco_#{version}+#{branch}_#{arch}.deb /opt/artifacts/bondster-bco.deb",
+        "COPY --from=openbank/bondster-bco:v#{docker_version} /opt/artifacts/bondster-bco_#{debian_version}_#{arch}.deb /opt/artifacts/bondster-bco.deb",
         "RUN ls -la /opt/artifacts"
       ].join("\n"))
       file.close
