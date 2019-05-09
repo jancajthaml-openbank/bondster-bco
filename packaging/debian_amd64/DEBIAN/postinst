@@ -6,20 +6,22 @@ case "$1" in
 
   configure)
     if [ -f "/etc/init/bondster-bco.conf" ] ; then
-      systemctl unmask \
-        bondster-bco.path \
-        bondster-bco-unit.service \
-        bondster-bco-rest.service \
-        bondster-bco.service \
-      >/dev/null
+      if [ -d /run/systemd/system ] ; then
+        systemctl unmask \
+          bondster-bco.path \
+          bondster-bco-unit.service \
+          bondster-bco-rest.service \
+          bondster-bco.service \
+        >/dev/null
 
-      systemctl enable \
-        bondster-bco.path \
-        bondster-bco-rest.service \
-        bondster-bco.service \
-      >/dev/null
+        systemctl enable \
+          bondster-bco.path \
+          bondster-bco-rest.service \
+          bondster-bco.service \
+        >/dev/null
 
-      (systemctl start bondster-bco.service >/dev/null || :)
+        (systemctl start bondster-bco.service >/dev/null || :)
+      fi
     else
       (>&2 echo "/etc/init/bondster-bco.conf file not found")
       exit 1

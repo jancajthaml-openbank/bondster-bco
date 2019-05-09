@@ -9,7 +9,7 @@ Type=notify
 Environment=BONDSTER_BCO_TENANT=%i
 EnvironmentFile=/etc/init/bondster-bco.conf
 StartLimitBurst=0
-ExecStart=/openbank/services/bondster-bco/bondster-bco-import %i
+ExecStart=/usr/bin/bondster-bco-import %i
 StandardInput=null
 LimitNOFILE=1048576
 LimitNPROC=infinity
