@@ -67,9 +67,7 @@ cat > ${target_unit} <<EOL
 .SH NAME
 bondster-bco-import \- starts openbank bondster marketplace connector import unit
 .SH DESCRIPTION
-The
-.B pldd
-bondster bco import manages tenant bondster tokens and imports transactions from bondster marketplace
+The bondster bco import manages tenant bondster tokens and imports transactions from bondster marketplace
 .EE
 EOL
 
@@ -78,9 +76,7 @@ cat > ${target_rest} <<EOL
 .SH NAME
 bondster-bco-rest \- starts openbank bondster marketplace connector REST server
 .SH DESCRIPTION
-The
-.B pldd
-bondster bco rest provides REST server for accessing and manipulating bondster bco units
+The bondster bco rest provides REST server for accessing and manipulating bondster bco units
 .EE
 EOL
 
@@ -155,6 +151,13 @@ generate_changelog() {
 
   cat ${target} | gzip -n -9 > ${target}.Debian.gz
   rm ${target}
+}
+
+check_files() {
+  chmod 0755 "${DEB_SOURCES}/DEBIAN/control"
+  chmod 0755 "${DEB_SOURCES}/DEBIAN/postinst"
+  chmod 0755 "${DEB_SOURCES}/DEBIAN/postrm"
+  chmod 0755 "${DEB_SOURCES}/DEBIAN/preinst"
 }
 
 ################################################################################
@@ -244,6 +247,8 @@ generate_manpage
 sed -i 's/Version.*/Version: '${VERSION#v}'/' "${DEB_SOURCES}/DEBIAN/control"
 
 find "${BIN_SOURCES}" -name "bondster-bco_*_${TARGET_ARCHITECTURE}.deb" -exec rm -f {} \;
+
+check_files
 
 dpkg-deb --build "${DEB_SOURCES}" "${BIN_SOURCES}"
 
