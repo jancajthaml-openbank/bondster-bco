@@ -19,28 +19,28 @@ import (
 )
 
 const (
-	// ReqTokens fio message request code for "Get Tokens"
+	// ReqTokens bondster message request code for "Get Tokens"
 	ReqTokens = "GT"
-	// RespTokens fio message response code for "Get Tokens"
+	// RespTokens bondster message response code for "Get Tokens"
 	RespTokens = "TG"
-	// ReqCreateToken fio message request code for "New Token"
+	// ReqCreateToken bondster message request code for "New Token"
 	ReqCreateToken = "NT"
-	// RespCreateToken fio message response code for "New Token"
+	// RespCreateToken bondster message response code for "New Token"
 	RespCreateToken = "TN"
-	// ReqDeleteToken fio message request code for "Delete Token"
+	// ReqDeleteToken bondster message request code for "Delete Token"
 	ReqDeleteToken = "DT"
-	// RespDeleteToken fio message response code for "Delete Token"
+	// RespDeleteToken bondster message response code for "Delete Token"
 	RespDeleteToken = "TD"
-	// FatalError fio message response code for "Error"
+	// FatalError bondster message response code for "Error"
 	FatalError = "EE"
 )
 
 // CreateTokenMessage is message for creation of new token
-func CreateTokenMessage(self string, token model.Token) string {
-	return token.ID + " " + self + " " + ReqCreateToken + " " + token.Username + " " + token.Password
+func CreateTokenMessage(tenant string, sender string, token model.Token) string {
+	return "BondsterUnit/" + tenant + " BondsterRest " + token.ID + " " + sender + " " + ReqCreateToken + " " + token.Username + " " + token.Password
 }
 
 // DeleteTokenMessage is message for deletion of new token
-func DeleteTokenMessage(self string, token string) string {
-	return token + " " + self + " " + ReqDeleteToken
+func DeleteTokenMessage(tenant string, sender string, token string) string {
+	return "BondsterUnit/" + tenant + " BondsterRest " + token + " " + sender + " " + ReqDeleteToken
 }

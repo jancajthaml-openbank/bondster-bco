@@ -16,6 +16,7 @@ package actor
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/daemon"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
@@ -26,24 +27,26 @@ import (
 
 var nilCoordinates = system.Coordinates{}
 
-func asEnvelopes(s *daemon.ActorSystem, parts []string) (system.Coordinates, system.Coordinates, string, error) {
-	if len(parts) < 4 {
-		return nilCoordinates, nilCoordinates, "", fmt.Errorf("invalid message received %+v", parts)
+func asEnvelopes(s *daemon.ActorSystem, msg string) (system.Coordinates, system.Coordinates, []string, error) {
+	parts := strings.Split(msg, " ")
+
+	if len(parts) < 5 {
+		return nilCoordinates, nilCoordinates, nil, fmt.Errorf("invalid message received %+v", parts)
 	}
 
-	region, receiver, sender, payload := parts[0], parts[1], parts[2], parts[3]
+	recieverRegion, senderRegion, receiverName, senderName := parts[0], parts[1], parts[2], parts[3]
 
 	from := system.Coordinates{
-		Name:   sender,
-		Region: region,
+		Name:   senderName,
+		Region: senderRegion,
 	}
 
 	to := system.Coordinates{
-		Name:   receiver,
-		Region: s.Name,
+		Name:   receiverName,
+		Region: recieverRegion,
 	}
 
-	return from, to, payload, nil
+	return from, to, parts, nil
 }
 
 func spawnTokenActor(s *daemon.ActorSystem, id string) (*system.Envelope, error) {
@@ -61,8 +64,8 @@ func spawnTokenActor(s *daemon.ActorSystem, id string) (*system.Envelope, error)
 
 // ProcessRemoteMessage processing of remote message to this bondster-bco
 func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
-	return func(parts []string) {
-		from, to, payload, err := asEnvelopes(s, parts)
+	return func(msg string) {
+		from, to, parts, err := asEnvelopes(s, msg)
 		if err != nil {
 			log.Warn(err.Error())
 			return
@@ -71,7 +74,10 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Errorf("procesRemoteMessage recovered in [remote %v -> local %v] : %+v", from, to, r)
-				s.SendRemote(from.Region, FatalErrorMessage(to.Name, from.Name))
+				s.SendRemote(FatalErrorMessage(system.Context{
+					Receiver: to,
+					Sender:   from,
+				}))
 			}
 		}()
 
@@ -82,20 +88,23 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 
 		if err != nil {
 			log.Warnf("Actor not found [remote %v -> local %v]", from, to)
-			s.SendRemote(from.Region, FatalErrorMessage(to.Name, from.Name))
+			s.SendRemote(FatalErrorMessage(system.Context{
+				Receiver: to,
+				Sender:   from,
+			}))
 			return
 		}
 
 		var message interface{}
 
-		switch payload {
+		switch parts[4] {
 
 		case ReqCreateToken:
-			if len(parts) == 6 {
+			if len(parts) == 7 {
 				message = model.CreateToken{
-					ID:       parts[2],
-					Username: parts[4],
-					Password: parts[5],
+					ID:       parts[3],
+					Username: parts[5],
+					Password: parts[6],
 				}
 			} else {
 				message = nil
@@ -103,7 +112,7 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 
 		case ReqDeleteToken:
 			message = model.DeleteToken{
-				ID: parts[2],
+				ID: parts[3],
 			}
 
 		default:
@@ -111,12 +120,15 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 		}
 
 		if message == nil {
-			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, parts)
-			s.SendRemote(from.Region, FatalErrorMessage(to.Name, from.Name))
+			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, msg)
+			s.SendRemote(FatalErrorMessage(system.Context{
+				Receiver: to,
+				Sender:   from,
+			}))
 			return
 		}
 
-		ref.Tell(message, from)
+		ref.Tell(message, to, from)
 	}
 }
 
@@ -136,6 +148,6 @@ func ProcessLocalMessage(s *daemon.ActorSystem) system.ProcessLocalMessage {
 			log.Warnf("Actor not found [local %s]", to)
 			return
 		}
-		ref.Tell(message, from)
+		ref.Tell(message, to, from)
 	}
 }
