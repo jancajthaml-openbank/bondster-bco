@@ -8,7 +8,7 @@ step "lake recieves :data" do |data|
 end
 
 step "lake responds with :data" do |data|
-  eventually() {
+  eventually(timeout: 20, backoff: 1) {
     ok = LakeMock.pulled_message?(data)
     expect(ok).to be(true), "message #{data} was not found in #{LakeMock.mailbox()}"
   }

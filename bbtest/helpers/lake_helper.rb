@@ -32,8 +32,8 @@ module LakeMock
           end
         rescue Timeout::Error => _
           break if self.poisonPill or self.pull_channel.nil?
-          next
         end
+
         next if data.empty?
 
         if data.end_with?("]")
@@ -49,6 +49,7 @@ module LakeMock
         self.send(data)
       end
     end
+
   end
 
   def self.stop

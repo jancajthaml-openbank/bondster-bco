@@ -2,6 +2,7 @@ Feature: Messaging behaviour
 
   Scenario: token
     Given tenant MSG1 is onbdoarded
+    And   lake is empty
 
     When lake recieves "BondsterUnit/MSG1 BondsterRest token_1 req_id_1 NT X Y"
     Then lake responds with "BondsterRest BondsterUnit/MSG1 req_id_1 token_1 TN"
