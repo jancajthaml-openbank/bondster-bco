@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package daemon
+package integration
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/config"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
+	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -30,7 +30,7 @@ import (
 
 // BondsterImport represents bondster gateway to ledger import subroutine
 type BondsterImport struct {
-	Support
+	utils.DaemonSupport
 	callback        func(msg interface{}, to system.Coordinates, from system.Coordinates)
 	bondsterGateway string
 	refreshRate     time.Duration
@@ -38,12 +38,12 @@ type BondsterImport struct {
 }
 
 // NewBondsterImport returns bondster import fascade
-func NewBondsterImport(ctx context.Context, cfg config.Configuration, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) BondsterImport {
+func NewBondsterImport(ctx context.Context, bondsterEndpoint string, syncRate time.Duration, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) BondsterImport {
 	return BondsterImport{
-		Support:         NewDaemonSupport(ctx),
+		DaemonSupport:   utils.NewDaemonSupport(ctx),
 		callback:        callback,
-		bondsterGateway: cfg.BondsterGateway,
-		refreshRate:     cfg.SyncRate,
+		bondsterGateway: bondsterEndpoint,
+		refreshRate:     syncRate,
 		storage:         storage,
 	}
 }
@@ -71,7 +71,7 @@ func (bondster BondsterImport) importRoundtrip() {
 		return
 	}
 
-	if bondster.ctx.Err() != nil {
+	if bondster.IsDone() {
 		return
 	}
 
@@ -118,7 +118,7 @@ func (bondster BondsterImport) Start() {
 	bondster.MarkReady()
 
 	select {
-	case <-bondster.canStart:
+	case <-bondster.CanStart:
 		break
 	case <-bondster.Done():
 		return

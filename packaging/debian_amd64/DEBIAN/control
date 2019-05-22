@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.5+bbtest-flake
+Version: 1.2.5+single-app-struct
 Section: misc
 Priority: extra
 Architecture: amd64

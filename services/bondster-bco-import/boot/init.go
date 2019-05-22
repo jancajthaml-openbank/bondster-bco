@@ -20,50 +20,45 @@ import (
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/actor"
 	"github.com/jancajthaml-openbank/bondster-bco-import/config"
-	"github.com/jancajthaml-openbank/bondster-bco-import/daemon"
+	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
+	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
-	log "github.com/sirupsen/logrus"
 )
 
-// Application encapsulate initialized application
-type Application struct {
+// Program encapsulate initialized application
+type Program struct {
 	cfg         config.Configuration
 	interrupt   chan os.Signal
-	metrics     daemon.Metrics
-	bondster    daemon.BondsterImport
-	actorSystem daemon.ActorSystem
+	metrics     metrics.Metrics
+	bondster    integration.BondsterImport
+	actorSystem actor.ActorSystem
 	cancel      context.CancelFunc
 }
 
 // Initialize application
-func Initialize() Application {
+func Initialize() Program {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg := config.GetConfig()
 
 	utils.SetupLogger(cfg.LogLevel)
 
-	log.Infof(">>> Setup <<<")
-
 	storage := localfs.NewStorage(cfg.RootStorage)
 	storage.SetEncryptionKey(cfg.EncryptionKey)
 
-	metrics := daemon.NewMetrics(ctx, cfg)
+	metricsDaemon := metrics.NewMetrics(ctx, cfg.Tenant, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
-	actorSystem := daemon.NewActorSystem(ctx, cfg, &metrics, &storage)
-	actorSystem.Support.RegisterOnRemoteMessage(actor.ProcessRemoteMessage(&actorSystem))
-	actorSystem.Support.RegisterOnLocalMessage(actor.ProcessLocalMessage(&actorSystem))
+	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, cfg.BondsterGateway, cfg.VaultGateway, cfg.LedgerGateway, &metricsDaemon, &storage)
+	bondsterDaemon := integration.NewBondsterImport(ctx, cfg.BondsterGateway, cfg.SyncRate, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))
 
-	bondster := daemon.NewBondsterImport(ctx, cfg, &storage, actor.ProcessLocalMessage(&actorSystem))
-
-	return Application{
+	return Program{
 		cfg:         cfg,
 		interrupt:   make(chan os.Signal, 1),
-		metrics:     metrics,
-		actorSystem: actorSystem,
-		bondster:    bondster,
+		metrics:     metricsDaemon,
+		actorSystem: actorSystemDaemon,
+		bondster:    bondsterDaemon,
 		cancel:      cancel,
 	}
 }

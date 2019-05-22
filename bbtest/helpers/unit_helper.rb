@@ -18,7 +18,7 @@ class UnitHelper
     raise "no version specified" unless ENV.has_key?('UNIT_VERSION')
     raise "no arch specified" unless ENV.has_key?('UNIT_ARCH')
 
-    version = ENV['UNIT_VERSION'].gsub('v', '')
+    version = ENV['UNIT_VERSION'].sub(/v/, '')
     parts = version.split('-')
 
     docker_version = ""
@@ -32,9 +32,6 @@ class UnitHelper
       docker_version = parts[0]
       debian_version = parts[0]
     end
-
-    version = parts[1]
-    branch = parts[2]
 
     arch = ENV['UNIT_ARCH']
 
