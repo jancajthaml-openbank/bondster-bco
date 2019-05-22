@@ -17,12 +17,11 @@ package integration
 import (
 	"fmt"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/http"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
 
-func GetCurrencies(client http.Client, gateway string, session *model.Session) ([]string, error) {
+func GetCurrencies(client Client, gateway string, session *model.Session) ([]string, error) {
 	var (
 		err      error
 		response []byte

@@ -12,44 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package daemon
+package actor
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/config"
-	"github.com/jancajthaml-openbank/bondster-bco-import/http"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/metrics"
 
 	system "github.com/jancajthaml-openbank/actor-system"
-	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // ActorSystem represents actor system subroutine
 type ActorSystem struct {
 	system.Support
-	Tenant          string
-	Storage         *localfs.Storage
-	Metrics         *Metrics
-	BondsterGateway string
-	LedgerGateway   string
-	VaultGateway    string
-	HttpClient      http.Client
+	Metrics *metrics.Metrics
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, cfg config.Configuration, metrics *Metrics, storage *localfs.Storage) ActorSystem {
-	return ActorSystem{
-		Support:         system.NewSupport(ctx, "BondsterUnit/"+cfg.Tenant, cfg.LakeHostname),
-		Storage:         storage,
-		Tenant:          cfg.Tenant,
-		Metrics:         metrics,
-		BondsterGateway: cfg.BondsterGateway,
-		LedgerGateway:   cfg.LedgerGateway,
-		VaultGateway:    cfg.VaultGateway,
-		HttpClient:      http.NewClient(),
+func NewActorSystem(ctx context.Context, lakeEndpoint string, metrics *metrics.Metrics) ActorSystem {
+	result := ActorSystem{
+		Support: system.NewSupport(ctx, "BondsterRest", lakeEndpoint),
+		Metrics: metrics,
 	}
+
+	result.Support.RegisterOnRemoteMessage(ProcessRemoteMessage(&result))
+
+	return result
 }
 
 // GreenLight daemon noop
@@ -74,7 +64,7 @@ func (system ActorSystem) WaitReady(deadline time.Duration) (err error) {
 
 	ticker := time.NewTicker(deadline)
 	select {
-	case <-system.IsReady:
+	case <-system.Support.IsReady:
 		ticker.Stop()
 		err = nil
 		return

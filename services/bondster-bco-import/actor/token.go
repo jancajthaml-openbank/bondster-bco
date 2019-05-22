@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/daemon"
 	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
@@ -29,7 +28,7 @@ import (
 )
 
 // NilToken represents token that is neither existing neither non existing
-func NilToken(s *daemon.ActorSystem) func(interface{}, system.Context) {
+func NilToken(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.Token)
 
@@ -48,7 +47,7 @@ func NilToken(s *daemon.ActorSystem) func(interface{}, system.Context) {
 }
 
 // NonExistToken represents token that does not exist
-func NonExistToken(s *daemon.ActorSystem) func(interface{}, system.Context) {
+func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.Token)
 
@@ -88,7 +87,7 @@ func NonExistToken(s *daemon.ActorSystem) func(interface{}, system.Context) {
 }
 
 // ExistToken represents account that does exist
-func ExistToken(s *daemon.ActorSystem) func(interface{}, system.Context) {
+func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.Token)
 
@@ -125,7 +124,7 @@ func ExistToken(s *daemon.ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importNewTransactions(s *daemon.ActorSystem, token *model.Token, currency string, session *model.Session) error {
+func importNewTransactions(s *ActorSystem, token *model.Token, currency string, session *model.Session) error {
 	var (
 		err      error
 		response []byte
@@ -264,7 +263,7 @@ func importNewTransactions(s *daemon.ActorSystem, token *model.Token, currency s
 	return nil
 }
 
-func importStatements(s *daemon.ActorSystem, token model.Token) {
+func importStatements(s *ActorSystem, token model.Token) {
 	log.Debugf("Importing statements for %s", token.ID)
 
 	session, err := integration.GetSession(s.HttpClient, s.BondsterGateway, token)
