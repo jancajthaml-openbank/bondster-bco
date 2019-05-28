@@ -48,7 +48,7 @@ func Initialize() Program {
 	storage := localfs.NewStorage(cfg.RootStorage)
 	storage.SetEncryptionKey(cfg.EncryptionKey)
 
-	metricsDaemon := metrics.NewMetrics(ctx, cfg.Tenant, cfg.MetricsOutput, cfg.MetricsRefreshRate)
+	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
 	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, cfg.BondsterGateway, cfg.VaultGateway, cfg.LedgerGateway, &metricsDaemon, &storage)
 	bondsterDaemon := integration.NewBondsterImport(ctx, cfg.BondsterGateway, cfg.SyncRate, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))

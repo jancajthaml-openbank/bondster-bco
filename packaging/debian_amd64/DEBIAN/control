@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.5+single-app-struct
+Version: 1.2.5+better-metrics
 Section: misc
 Priority: extra
 Architecture: amd64

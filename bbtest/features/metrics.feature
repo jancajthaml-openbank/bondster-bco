@@ -13,6 +13,6 @@ Feature: Metrics test
       deletedTokens
       importedTransactions
       importedTransfers
-      listTransactionLatency
-      searchTransactionLatency
+      transactionListLatency
+      transactionSearchLatency
     """
