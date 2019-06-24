@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.5+better-metrics
+Version: 1.2.5+account-format
 Section: misc
 Priority: extra
 Architecture: amd64

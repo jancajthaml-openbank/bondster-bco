@@ -30,10 +30,11 @@ class VaultAccountPartial < WEBrick::HTTPServlet::AbstractServlet
         body = JSON.parse(request.body)
 
         raise JSON::ParserError if body["name"].nil? || body["name"].empty?
+        raise JSON::ParserError if body["format"].nil? || body["format"].empty?
         raise JSON::ParserError if body["currency"].nil? || body["currency"].empty?
         raise JSON::ParserError if body["isBalanceCheck"].nil?
 
-        if VaultMock.create_account(path[1], body["name"], body["currency"], body["isBalanceCheck"] != "false")
+        if VaultMock.create_account(path[1], body["name"], body["format"], body["currency"], body["isBalanceCheck"] != "false")
           return 200, "{}"
         else
           return 409, "{}"
