@@ -25,11 +25,12 @@ module VaultMock
     return self.tenants[tenant][id]
   end
 
-  def self.create_account(tenant, id, currency, is_balance_check)
+  def self.create_account(tenant, id, format, currency, is_balance_check)
     return if self.tenants.has_key?(tenant) && self.tenants[tenant].has_key?(id)
     self.tenants[tenant] = Hash.new() unless self.tenants.has_key?(tenant)
     self.tenants[tenant][id] = {
       :currency => currency,
+      :format => format,
       :isBalanceCheck => is_balance_check,
     }
     return

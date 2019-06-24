@@ -184,7 +184,6 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 	}
 
 	return result
-
 }
 
 // GetAccounts return list of bondster accounts
@@ -193,27 +192,55 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 		return nil
 	}
 
-	var deduplicated = make(map[string]interface{})
+	var normalizedAccount string
+	var deduplicated = make(map[string]Account)
 
-	deduplicated[envelope.Currency+"_TYPE_NOSTRO"] = nil
+	deduplicated[envelope.Currency+"_TYPE_NOSTRO"] = Account{
+		Name:           envelope.Currency + "_TYPE_NOSTRO",
+		Format:         "BONDSTER_TECHNICAL",
+		Currency:       envelope.Currency,
+		IsBalanceCheck: false,
+	}
 
 	for _, transfer := range envelope.Transactions {
 		if transfer.Originator != nil {
-			deduplicated[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = nil
+			deduplicated[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = Account{
+				Name:           envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
+				Format:         "BONDSTER_ORIGINATOR",
+				Currency:       envelope.Currency,
+				IsBalanceCheck: false,
+			}
+
 		}
-		deduplicated[envelope.Currency+"_TYPE_"+transfer.Type] = nil
+		deduplicated[envelope.Currency+"_TYPE_"+transfer.Type] = Account{
+			Name:           envelope.Currency + "_TYPE_" + transfer.Type,
+			Format:         "BONDSTER_TECHNICAL",
+			Currency:       envelope.Currency,
+			IsBalanceCheck: false,
+		}
 		if transfer.External != nil {
-			deduplicated[NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)] = nil
+			normalizedAccount = NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)
+			if normalizedAccount != transfer.External.Number {
+				deduplicated[normalizedAccount] = Account{
+					Name:           normalizedAccount,
+					Format:         "IBAN",
+					Currency:       envelope.Currency,
+					IsBalanceCheck: false,
+				}
+			} else {
+				deduplicated[normalizedAccount] = Account{
+					Name:           normalizedAccount,
+					Format:         "BONDSTER_UNKNOWN",
+					Currency:       envelope.Currency,
+					IsBalanceCheck: false,
+				}
+			}
 		}
 	}
 
 	result := make([]Account, 0)
-	for account := range deduplicated {
-		result = append(result, Account{
-			Name:           account,
-			Currency:       envelope.Currency,
-			IsBalanceCheck: false,
-		})
+	for _, item := range deduplicated {
+		result = append(result, item)
 	}
 
 	return result
