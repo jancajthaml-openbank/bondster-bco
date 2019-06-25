@@ -2,26 +2,34 @@
 
 set -e
 
+if [ "$(ps -o comm -p 1 --no-headers | tr -d ' ')" = "systemd" ] ; then
+  SYSTEMD_AVAIL=true
+else
+  SYSTEMD_AVAIL=false
+fi
+
+enable() {
+  wanted_by=$(cat /lib/systemd/system/${1} | sed -n -e 's/^.*WantedBy=//p')
+  mkdir -p /etc/systemd/system/${wanted_by}.wants
+  ln -s \
+    "/lib/systemd/system/${1}" \
+    "/etc/systemd/system/${wanted_by}.wants/${1}"
+}
+
 case "$1" in
 
   configure)
-    if [ -f "/etc/init/bondster-bco.conf" ] ; then
-      if [ -d /run/systemd/system ] ; then
-        systemctl unmask \
-          bondster-bco.path \
-          bondster-bco-unit.service \
-          bondster-bco-rest.service \
-          bondster-bco.service \
-        >/dev/null
+    if [ -f /etc/init/bondster-bco.conf ] ; then
 
-        systemctl enable \
-          bondster-bco.path \
-          bondster-bco-rest.service \
-          bondster-bco.service \
-        >/dev/null
+      enable bondster-bco.path
+      enable bondster-bco.service
+      enable bondster-bco-rest.service
 
+      if [ ${SYSTEMD_AVAIL} ] ; then
+        (systemctl daemon-reload || :)
         (systemctl start bondster-bco.service >/dev/null || :)
       fi
+
     else
       (>&2 echo "/etc/init/bondster-bco.conf file not found")
       exit 1
