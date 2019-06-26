@@ -44,6 +44,7 @@ func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bon
 		Support:         system.NewSupport(ctx, "BondsterUnit/"+tenant, lakeEndpoint),
 		Storage:         storage,
 		Metrics:         metrics,
+		Tenant:          tenant,
 		BondsterGateway: bondsterEndpoint,
 		LedgerGateway:   ledgerEndpoint,
 		VaultGateway:    vaultEndpoint,
