@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.5+account-format
+Version: 1.2.7+vault-create-account
 Section: misc
 Priority: extra
 Architecture: amd64
