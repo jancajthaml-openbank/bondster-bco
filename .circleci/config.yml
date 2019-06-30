@@ -471,10 +471,14 @@ jobs:
           name: Unit test bondster-bco-rest
           command: /home/circleci/project/dev/lifecycle/test --pkg bondster-bco-rest
           no_output_timeout: 5m
+      - store_test_results:
+          path: /home/circleci/project/reports/unit-tests-bondster-bco-rest
       - run:
           name: Unit test bondster-bco-import
           command: /home/circleci/project/dev/lifecycle/test --pkg bondster-bco-import
           no_output_timeout: 5m
+      - store_test_results:
+          path: /home/circleci/project/reports/unit-tests-bondster-bco-import
 
   # -------------------------------------------------------------------------- #
 
