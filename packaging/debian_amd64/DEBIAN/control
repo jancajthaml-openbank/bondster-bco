@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.7+collect-test-coverage
+Version: 1.2.7+persistence-unit-test-coverage
 Section: misc
 Priority: extra
 Architecture: amd64

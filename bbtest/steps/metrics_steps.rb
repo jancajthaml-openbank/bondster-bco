@@ -2,14 +2,11 @@ require_relative 'placeholders'
 
 require 'json'
 
-step "metrics for tenant :tenant should report :count created accounts" do |tenant, count|
-  metrics_file = "/reports/metrics.#{tenant}.json"
+step "metrics file :path has permissions :permissions" do |path, permissions|
+  expect(File.file?(path)).to be(true)
 
-  eventually(timeout: 3) {
-    expect(File.file?(metrics_file)).to be(true)
-    metrics = File.open(metrics_file, 'rb') { |f| JSON.parse(f.read) }
-    expect(metrics["createdAccounts"]).to eq(count)
-  }
+  actual = File.stat(path).mode.to_s(8).split('')[-4..-1].join
+  expect(actual).to eq(permissions)
 end
 
 step "metrics file :path should have following keys:" do |path, keys|
