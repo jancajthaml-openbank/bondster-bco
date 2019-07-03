@@ -15,43 +15,11 @@
 package metrics
 
 import (
-	"context"
 	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
-
-	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
-
-// Metrics represents metrics subroutine
-type Metrics struct {
-	utils.DaemonSupport
-	output                   string
-	refreshRate              time.Duration
-	createdTokens            metrics.Counter
-	deletedTokens            metrics.Counter
-	transactionSearchLatency metrics.Timer
-	transactionListLatency   metrics.Timer
-	importedTransfers        metrics.Meter
-	importedTransactions     metrics.Meter
-}
-
-// NewMetrics returns metrics fascade
-func NewMetrics(ctx context.Context, output string, refreshRate time.Duration) Metrics {
-	return Metrics{
-		DaemonSupport:            utils.NewDaemonSupport(ctx),
-		output:                   output,
-		refreshRate:              refreshRate,
-		createdTokens:            metrics.NewCounter(),
-		deletedTokens:            metrics.NewCounter(),
-		importedTransfers:        metrics.NewMeter(),
-		importedTransactions:     metrics.NewMeter(),
-		transactionSearchLatency: metrics.NewTimer(),
-		transactionListLatency:   metrics.NewTimer(),
-	}
-}
 
 // TokenCreated increments token created by one
 func (metrics *Metrics) TokenCreated() {

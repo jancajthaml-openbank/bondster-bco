@@ -16,3 +16,11 @@ Feature: Metrics test
       transactionListLatency
       transactionSearchLatency
     """
+    And metrics file /reports/metrics.M2.json has permissions -rw-r--r--
+    And metrics file /reports/metrics.json should have following keys:
+    """
+      createTokenLatency
+      deleteTokenLatency
+      getTokenLatency
+    """
+    And metrics file /reports/metrics.json has permissions -rw-r--r--

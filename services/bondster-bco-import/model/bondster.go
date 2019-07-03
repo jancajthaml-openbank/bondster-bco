@@ -220,20 +220,11 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 		}
 		if transfer.External != nil {
 			normalizedAccount = NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)
-			if normalizedAccount != transfer.External.Number {
-				deduplicated[normalizedAccount] = Account{
-					Name:           normalizedAccount,
-					Format:         "IBAN",
-					Currency:       envelope.Currency,
-					IsBalanceCheck: false,
-				}
-			} else {
-				deduplicated[normalizedAccount] = Account{
-					Name:           normalizedAccount,
-					Format:         "BONDSTER_UNKNOWN",
-					Currency:       envelope.Currency,
-					IsBalanceCheck: false,
-				}
+			deduplicated[normalizedAccount] = Account{
+				Name:           normalizedAccount,
+				Format:         "IBAN",
+				Currency:       envelope.Currency,
+				IsBalanceCheck: false,
 			}
 		}
 	}
