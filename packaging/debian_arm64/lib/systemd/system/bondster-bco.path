@@ -5,6 +5,8 @@ ConditionPathExists=/etc/init/bondster-bco.conf
 
 [Path]
 PathChanged=/etc/init/bondster-bco.conf
+PathModified=/etc/init/bondster-bco.conf
+Unit=bondster-bco.service
 
 [Install]
 WantedBy=bondster-bco.service

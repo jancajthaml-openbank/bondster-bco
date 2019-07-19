@@ -15,11 +15,25 @@
 package main
 
 import (
+	log "github.com/sirupsen/logrus"
+
 	"github.com/jancajthaml-openbank/bondster-bco-import/boot"
+	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
 
+func exit(program *boot.Program) {
+	program.Stop()
+	log.Info(">>> Stop <<<")
+}
+
+func start() boot.Program {
+	log.SetFormatter(new(utils.LogFormat))
+	log.Info(">>> Start <<<")
+	return boot.Initialize()
+}
+
 func main() {
-	application := boot.Initialize()
-	defer application.Stop()
-	application.Run()
+	program := start()
+	defer exit(&program)
+	program.Run()
 }

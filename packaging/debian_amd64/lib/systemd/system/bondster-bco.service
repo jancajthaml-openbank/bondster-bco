@@ -5,7 +5,7 @@ ConditionPathExists=/etc/init/bondster-bco.conf
 
 [Service]
 Type=oneshot
-ExecStart=/bin/true
+ExecStart=/bin/echo start bondster-bco namespace
 RemainAfterExit=yes
 
 [Install]
