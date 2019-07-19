@@ -15,16 +15,11 @@
 package utils
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
 )
 
 const hexLo = "0123456789abcdef"
 const hexHi = "0000000000000000111111111111111122222222222222223333333333333333444444444444444455555555555555556666666666666666777777777777777788888888888888889999999999999999aaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbccccccccccccccccddddddddddddddddeeeeeeeeeeeeeeeeffffffffffffffff"
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 // UUID generates uuid-4
 func UUID() string {

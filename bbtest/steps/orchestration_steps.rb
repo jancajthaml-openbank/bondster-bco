@@ -26,31 +26,19 @@ end
 
 step "tenant :tenant is offboarded" do |tenant|
   eventually() {
-    %x(journalctl -o short-precise -u bondster-bco-import@#{tenant}.service --no-pager > /reports/bondster-bco@#{tenant}.log 2>&1)
+    %x(journalctl -o short-precise -u bondster-bco-import@#{tenant}.service --no-pager > /tmp/reports/bondster-bco@#{tenant}.log 2>&1)
     %x(systemctl stop bondster-bco-import@#{tenant} 2>&1)
     %x(systemctl disable bondster-bco-import@#{tenant} 2>&1)
-    %x(journalctl -o short-precise -u bondster-bco-import@#{tenant}.service --no-pager > /reports/bondster-bco@#{tenant}.log 2>&1)
+    %x(journalctl -o short-precise -u bondster-bco-import@#{tenant}.service --no-pager > /tmp/reports/bondster-bco@#{tenant}.log 2>&1)
   }
 end
 
 step "tenant :tenant is onbdoarded" do |tenant|
-  params = [
-    "BONDSTER_BCO_STORAGE=/data",
-    "BONDSTER_BCO_LOG_LEVEL=DEBUG",
-    "BONDSTER_BCO_BONDSTER_GATEWAY=https://127.0.0.1:4000",
-    "BONDSTER_BCO_SYNC_RATE=1h",
-    "BONDSTER_BCO_VAULT_GATEWAY=https://127.0.0.1:4400",
-    "BONDSTER_BCO_LEDGER_GATEWAY=https://127.0.0.1:4401",
-    "BONDSTER_BCO_METRICS_OUTPUT=/reports",
-    "BONDSTER_BCO_LAKE_HOSTNAME=127.0.0.1",
-    "BONDSTER_BCO_METRICS_REFRESHRATE=1h",
-    "BONDSTER_BCO_HTTP_PORT=443",
-    "BONDSTER_BCO_SECRETS=/opt/bondster-bco/secrets",
-    "BONDSTER_BCO_ENCRYPTION_KEY=/opt/bondster-bco/secrets/fs_encryption.key"
-  ].join("\n").inspect.delete('\"')
+  config = Array[UnitHelper.default_config.map {|k,v| "BONDSTER_BCO_#{k}=#{v}"}]
+  config = config.join("\n").inspect.delete('\"')
 
   %x(mkdir -p /etc/init)
-  %x(echo '#{params}' > /etc/init/bondster-bco.conf)
+  %x(echo '#{config}' > /etc/init/bondster-bco.conf)
 
   %x(systemctl enable bondster-bco-import@#{tenant} 2>&1)
   %x(systemctl start bondster-bco-import@#{tenant} 2>&1)
@@ -76,22 +64,7 @@ end
 
 step "bondster-bco is reconfigured with" do |configuration|
   params = Hash[configuration.split("\n").map(&:strip).reject(&:empty?).map {|el| el.split '='}]
-  defaults = {
-    "STORAGE" => "/data",
-    "LOG_LEVEL" => "DEBUG",
-    "BONDSTER_GATEWAY" => "https://127.0.0.1:4000",
-    "SYNC_RATE" => "1h",
-    "VAULT_GATEWAY" => "https://127.0.0.1:4400",
-    "LEDGER_GATEWAY" => "https://127.0.0.1:4401",
-    "LAKE_HOSTNAME" => "127.0.0.1",
-    "METRICS_OUTPUT" => "/reports",
-    "METRICS_REFRESHRATE" => "1h",
-    "HTTP_PORT" => "443",
-    "SECRETS" => "/opt/bondster-bco/secrets",
-    "ENCRYPTION_KEY" => "/opt/bondster-bco/secrets/fs_encryption.key"
-  }
-
-  config = Array[defaults.merge(params).map {|k,v| "BONDSTER_BCO_#{k}=#{v}"}]
+  config = Array[UnitHelper.default_config.merge(params).map {|k,v| "BONDSTER_BCO_#{k}=#{v}"}]
   config = config.join("\n").inspect.delete('\"')
 
   %x(mkdir -p /etc/init)

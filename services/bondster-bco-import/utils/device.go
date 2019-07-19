@@ -15,16 +15,11 @@
 package utils
 
 import (
-	"math/rand"
+	"crypto/rand"
 	"strconv"
-	"time"
 )
 
-const numbers = "123456789"
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
+const numbers = "0123456789532108"
 
 func checksum(cc string) string {
 	var (
@@ -50,17 +45,20 @@ scan:
 
 // RandDevice returns random device fingerprint
 func RandDevice() string {
+	r := make([]byte, 16)
+	rand.Read(r)
+
 	device := string([]byte{
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
-		numbers[rand.Intn(9)],
+		numbers[int(r[0]&0x0F)],
+		numbers[int(r[1]&0x0F)],
+		numbers[int(r[2]&0x0F)],
+		numbers[int(r[3]&0x0F)],
+		numbers[int(r[4]&0x0F)],
+		numbers[int(r[5]&0x0F)],
+		numbers[int(r[6]&0x0F)],
+		numbers[int(r[7]&0x0F)],
+		numbers[int(r[8]&0x0F)],
+		numbers[int(r[9]&0x0F)],
 	})
 	control := checksum(device)
 	return device + "." + control
