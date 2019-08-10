@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.7+use-python-for-bbtest
+Version: 1.2.7+validate-token
 Section: misc
 Priority: extra
 Architecture: amd64
