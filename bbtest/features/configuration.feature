@@ -1,33 +1,33 @@
 Feature: Service can be configured
 
   Scenario: configure log level to DEBUG
-    Given tenant CONFIGURATION_DEBUG is onbdoarded
-    And bondster-bco is reconfigured with
-    """
-      LOG_LEVEL=DEBUG
-    """
+    Given tenant CONFIGURATION_DEBUG is onboarded
+    And   bondster-bco is configured with
+      | property  | value |
+      | LOG_LEVEL | DEBUG |
+
     Then journalctl of "bondster-bco-import@CONFIGURATION_DEBUG.service" contains following
     """
       Log level set to DEBUG
     """
 
   Scenario: configure log level to ERROR
-    Given tenant CONFIGURATION_ERROR is onbdoarded
-    And bondster-bco is reconfigured with
-    """
-      LOG_LEVEL=ERROR
-    """
+    Given tenant CONFIGURATION_ERROR is onboarded
+    And   bondster-bco is configured with
+      | property  | value |
+      | LOG_LEVEL | ERROR |
+
     Then journalctl of "bondster-bco-import@CONFIGURATION_ERROR.service" contains following
     """
       Log level set to ERROR
     """
 
   Scenario: configure log level to INFO
-    Given tenant CONFIGURATION_INFO is onbdoarded
-    And bondster-bco is reconfigured with
-    """
-      LOG_LEVEL=INFO
-    """
+    Given tenant CONFIGURATION_INFO is onboarded
+    And   bondster-bco is configured with
+      | property  | value |
+      | LOG_LEVEL | INFO  |
+
     Then journalctl of "bondster-bco-import@CONFIGURATION_INFO.service" contains following
     """
       Log level set to INFO
