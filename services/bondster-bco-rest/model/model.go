@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/jancajthaml-openbank/bondster-bco-rest/utils"
 )
 
 // ReplyTimeout message
@@ -39,7 +41,32 @@ type Token struct {
 
 // MarshalJSON serialises Token as json
 func (entity Token) MarshalJSON() ([]byte, error) {
-	return []byte("{\"value\":\"" + entity.ID + "\",\"createdAt\":\"" + entity.CreatedAt.Format(time.RFC3339) + "\"}"), nil
+	return []byte("{\"id\":\"" + entity.ID + "\",\"createdAt\":\"" + entity.CreatedAt.Format(time.RFC3339) + "\"}"), nil
+}
+
+// UnmarshalJSON unmarshal json of Token entity
+func (entity *Token) UnmarshalJSON(data []byte) error {
+	if entity == nil {
+		return fmt.Errorf("cannot unmarshall to nil pointer")
+	}
+	all := struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{}
+	err := utils.JSON.Unmarshal(data, &all)
+	if err != nil {
+		return err
+	}
+	if all.Username == "" {
+		return fmt.Errorf("missing attribute \"username\"")
+	}
+
+	if all.Password == "" {
+		return fmt.Errorf("missing attribute \"password\"")
+	}
+	entity.Username = all.Username
+	entity.Password = all.Password
+	return nil
 }
 
 // Deserialise Token entity from persistent data

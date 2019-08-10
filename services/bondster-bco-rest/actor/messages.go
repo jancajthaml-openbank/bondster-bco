@@ -37,10 +37,10 @@ const (
 
 // CreateTokenMessage is message for creation of new token
 func CreateTokenMessage(tenant string, sender string, token model.Token) string {
-	return "BondsterUnit/" + tenant + " BondsterRest " + token.ID + " " + sender + " " + ReqCreateToken + " " + token.Username + " " + token.Password
+	return "BondsterImport/" + tenant + " BondsterRest " + token.ID + " " + sender + " " + ReqCreateToken + " " + token.Username + " " + token.Password
 }
 
 // DeleteTokenMessage is message for deletion of new token
 func DeleteTokenMessage(tenant string, sender string, token string) string {
-	return "BondsterUnit/" + tenant + " BondsterRest " + token + " " + sender + " " + ReqDeleteToken
+	return "BondsterImport/" + tenant + " BondsterRest " + token + " " + sender + " " + ReqDeleteToken
 }

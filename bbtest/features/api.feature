@@ -97,6 +97,19 @@ Feature: REST
 
     When I request HTTP https://127.0.0.1/token/API
       | key    | value |
+      | method | POST  |
+      """
+      {
+        "username": "",
+        "password": ""
+      }
+      """
+    Then HTTP response is
+      | key    | value |
+      | status | 400   |
+
+    When I request HTTP https://127.0.0.1/token/API
+      | key    | value |
       | method | GET   |
     Then HTTP response is
       | key    | value |
