@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.7+validate-token
+Version: 1.2.8+health-check-status
 Section: misc
 Priority: extra
 Architecture: amd64

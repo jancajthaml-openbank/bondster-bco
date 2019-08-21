@@ -33,6 +33,8 @@ func loadConfFromEnv() Configuration {
 	rootStorage := getEnvString("BONDSTER_BCO_STORAGE", "/data")
 	lakeHostname := getEnvString("BONDSTER_BCO_LAKE_HOSTNAME", "")
 	port := getEnvInteger("BONDSTER_BCO_HTTP_PORT", 4001)
+	minFreeDiskSpace := getEnvInteger("BONDSTER_BCO_STORAGE_THRESHOLD", 0)
+	minFreeMemory := getEnvInteger("BONDSTER_BCO_MEMORY_THRESHOLD", 0)
 	metricsOutput := getEnvFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp")
 	metricsRefreshRate := getEnvDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second)
 
@@ -59,6 +61,8 @@ func loadConfFromEnv() Configuration {
 		LogLevel:           logLevel,
 		MetricsRefreshRate: metricsRefreshRate,
 		MetricsOutput:      metricsOutput + "/metrics.json",
+		MinFreeDiskSpace:   uint64(minFreeDiskSpace),
+		MinFreeMemory:      uint64(minFreeMemory),
 	}
 }
 
