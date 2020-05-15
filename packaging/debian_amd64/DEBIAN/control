@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.9+metrics-memory
+Version: 1.2.9+improve-daemons
 Section: misc
 Priority: extra
 Architecture: amd64

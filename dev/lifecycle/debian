@@ -204,61 +204,18 @@ check_files() {
   chmod 0755 "${DEB_SOURCES}/DEBIAN/postinst"
   chmod 0755 "${DEB_SOURCES}/DEBIAN/postrm"
   chmod 0755 "${DEB_SOURCES}/DEBIAN/preinst"
+  chmod 0755 "${DEB_SOURCES}/usr/bin/bondster-bco-rest"
+  chmod 0755 "${DEB_SOURCES}/usr/bin/bondster-bco-import"
 }
 
 ################################################################################
 
-case ${TARGET_ARCHITECTURE} in
-
-  armhf)
-    arm-linux-gnueabihf-objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/bondster-bco-rest-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/bondster-bco-rest"
-    arm-linux-gnueabihf-objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/bondster-bco-import-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/bondster-bco-import"
-  ;;
-
-  arm64)
-    aarch64-linux-gnu-objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/bondster-bco-rest-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/bondster-bco-rest"
-    aarch64-linux-gnu-objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/bondster-bco-import-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/bondster-bco-import"
-  ;;
-
-  amd64)
-    objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/bondster-bco-rest-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/bondster-bco-rest"
-    objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/bondster-bco-import-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/bondster-bco-import"
-  ;;
-
-  *)
-    cp \
-      "${BIN_SOURCES}/bondster-bco-rest-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/bondster-bco-rest"
-    cp \
-      "${BIN_SOURCES}/bondster-bco-import-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/bondster-bco-import"
-  ;;
-
-esac
+cp \
+  "${BIN_SOURCES}/bondster-bco-rest-linux-${TARGET_ARCHITECTURE}" \
+  "${DEB_SOURCES}/usr/bin/bondster-bco-rest"
+cp \
+  "${BIN_SOURCES}/bondster-bco-import-linux-${TARGET_ARCHITECTURE}" \
+  "${DEB_SOURCES}/usr/bin/bondster-bco-import"
 
 generate_changelog
 generate_manpage

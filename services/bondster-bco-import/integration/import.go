@@ -16,7 +16,6 @@ package integration
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
@@ -33,17 +32,17 @@ type BondsterImport struct {
 	utils.DaemonSupport
 	callback        func(msg interface{}, to system.Coordinates, from system.Coordinates)
 	bondsterGateway string
-	refreshRate     time.Duration
+	syncRate        time.Duration
 	storage         *localfs.Storage
 }
 
 // NewBondsterImport returns bondster import fascade
 func NewBondsterImport(ctx context.Context, bondsterEndpoint string, syncRate time.Duration, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) BondsterImport {
 	return BondsterImport{
-		DaemonSupport:   utils.NewDaemonSupport(ctx),
+		DaemonSupport:   utils.NewDaemonSupport(ctx, "bondster"),
 		callback:        callback,
 		bondsterGateway: bondsterEndpoint,
-		refreshRate:     syncRate,
+		syncRate:        syncRate,
 		storage:         storage,
 	}
 }
@@ -71,10 +70,6 @@ func (bondster BondsterImport) importRoundtrip() {
 		return
 	}
 
-	if bondster.IsDone() {
-		return
-	}
-
 	for _, item := range tokens {
 		log.Debugf("Request to import token %s", item)
 		msg := model.SynchronizeToken{}
@@ -84,58 +79,34 @@ func (bondster BondsterImport) importRoundtrip() {
 	}
 }
 
-// WaitReady wait for bondster import to be ready
-func (bondster BondsterImport) WaitReady(deadline time.Duration) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch x := e.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("unknown panic")
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-bondster.IsReady:
-		ticker.Stop()
-		err = nil
-		return
-	case <-ticker.C:
-		err = fmt.Errorf("daemon was not ready within %v seconds", deadline)
-		return
-	}
-}
-
 // Start handles everything needed to start bondster import daemon
 func (bondster BondsterImport) Start() {
-	defer bondster.MarkDone()
-
 	bondster.MarkReady()
 
 	select {
 	case <-bondster.CanStart:
 		break
 	case <-bondster.Done():
+		bondster.MarkDone()
 		return
 	}
 
-	log.Infof("Start bondster-import daemon, sync %v now and then each %v", bondster.bondsterGateway, bondster.refreshRate)
+	log.Infof("Start bondster-import daemon, sync %v now and then each %v", bondster.bondsterGateway, bondster.syncRate)
 
 	bondster.importRoundtrip()
 
-	for {
-		select {
-		case <-bondster.Done():
-			log.Info("Stopping bondster-import daemon")
-			log.Info("Stop bondster-import daemon")
-			return
-		case <-time.After(bondster.refreshRate):
-			bondster.importRoundtrip()
+	go func() {
+		for {
+			select {
+			case <-bondster.Done():
+				bondster.MarkDone()
+				return
+			case <-time.After(bondster.syncRate):
+				bondster.importRoundtrip()
+			}
 		}
-	}
+	}()
+
+	<-bondster.IsDone
+	log.Info("Stop bondster-import daemon")
 }
