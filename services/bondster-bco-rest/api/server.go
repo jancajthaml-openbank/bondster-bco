@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import (
 // api of http
 type Server struct {
 	utils.DaemonSupport
-	Storage       *localfs.Storage
+	Storage       *localfs.EncryptedStorage
 	SystemControl *system.SystemControl
 	DiskMonitor   *system.DiskMonitor
 	MemoryMonitor *system.MemoryMonitor
@@ -55,7 +55,7 @@ type tcpKeepAliveListener struct {
 
 func cloneTLSConfig(cfg *tls.Config) *tls.Config {
 	if cfg == nil {
-		return &tls.Config{}
+		return cfg
 	}
 	return &tls.Config{
 		Rand:                     cfg.Rand,
@@ -81,7 +81,7 @@ func cloneTLSConfig(cfg *tls.Config) *tls.Config {
 }
 
 // NewServer returns new secure server instance
-func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *actor.ActorSystem, systemControl *system.SystemControl, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.Storage) Server {
+func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *actor.ActorSystem, systemControl *system.SystemControl, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.EncryptedStorage) Server {
 	router := mux.NewRouter()
 
 	cert, err := ioutil.ReadFile(secretsPath + "/domain.local.crt")

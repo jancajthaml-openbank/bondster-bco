@@ -33,11 +33,11 @@ type BondsterImport struct {
 	callback        func(msg interface{}, to system.Coordinates, from system.Coordinates)
 	bondsterGateway string
 	syncRate        time.Duration
-	storage         *localfs.Storage
+	storage         *localfs.EncryptedStorage
 }
 
 // NewBondsterImport returns bondster import fascade
-func NewBondsterImport(ctx context.Context, bondsterEndpoint string, syncRate time.Duration, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) BondsterImport {
+func NewBondsterImport(ctx context.Context, bondsterEndpoint string, syncRate time.Duration, storage *localfs.EncryptedStorage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) BondsterImport {
 	return BondsterImport{
 		DaemonSupport:   utils.NewDaemonSupport(ctx, "bondster"),
 		callback:        callback,
