@@ -103,7 +103,7 @@ func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *a
 		DiskMonitor:   diskMonitor,
 		MemoryMonitor: memoryMonitor,
 		underlying: &http.Server{
-			Addr:         fmt.Sprintf(":%d", port),
+			Addr:         fmt.Sprintf("127.0.0.1:%d", port),
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 5 * time.Second,
 			Handler:      router,
