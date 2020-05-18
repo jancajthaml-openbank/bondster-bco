@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import (
 
 // Program encapsulate initialized application
 type Program struct {
-	cfg         config.Configuration
 	interrupt   chan os.Signal
+	cfg         config.Configuration
 	metrics     metrics.Metrics
 	bondster    integration.BondsterImport
 	actorSystem actor.ActorSystem
@@ -45,8 +45,7 @@ func Initialize() Program {
 
 	utils.SetupLogger(cfg.LogLevel)
 
-	storage := localfs.NewStorage(cfg.RootStorage)
-	storage.SetEncryptionKey(cfg.EncryptionKey)
+	storage := localfs.NewEncryptedStorage(cfg.RootStorage, cfg.EncryptionKey)
 
 	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
@@ -54,8 +53,8 @@ func Initialize() Program {
 	bondsterDaemon := integration.NewBondsterImport(ctx, cfg.BondsterGateway, cfg.SyncRate, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))
 
 	return Program{
-		cfg:         cfg,
 		interrupt:   make(chan os.Signal, 1),
+		cfg:         cfg,
 		metrics:     metricsDaemon,
 		actorSystem: actorSystemDaemon,
 		bondster:    bondsterDaemon,

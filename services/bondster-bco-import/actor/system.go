@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import (
 type ActorSystem struct {
 	system.Support
 	Tenant          string
-	Storage         *localfs.Storage
+	Storage         *localfs.EncryptedStorage
 	Metrics         *metrics.Metrics
 	BondsterGateway string
 	LedgerGateway   string
@@ -39,7 +39,7 @@ type ActorSystem struct {
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bondsterEndpoint string, vaultEndpoint string, ledgerEndpoint string, metrics *metrics.Metrics, storage *localfs.Storage) ActorSystem {
+func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bondsterEndpoint string, vaultEndpoint string, ledgerEndpoint string, metrics *metrics.Metrics, storage *localfs.EncryptedStorage) ActorSystem {
 	result := ActorSystem{
 		Support:         system.NewSupport(ctx, "BondsterImport/"+tenant, lakeEndpoint),
 		Storage:         storage,
