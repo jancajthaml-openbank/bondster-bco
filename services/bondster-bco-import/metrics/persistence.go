@@ -15,32 +15,97 @@
 package metrics
 
 import (
+	"bytes"
 	"fmt"
-	"io"
-	"os"
-
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
+	"os"
+	"strconv"
+	"time"
 )
+
+// MarshalJSON serialises Metrics as json bytes
+func (metrics *Metrics) MarshalJSON() ([]byte, error) {
+	if metrics == nil {
+		return nil, fmt.Errorf("cannot marshall nil")
+	}
+
+	if metrics.createdTokens == nil || metrics.deletedTokens == nil ||
+		metrics.transactionSearchLatency == nil || metrics.transactionListLatency == nil ||
+		metrics.importedTransfers == nil || metrics.importedTransactions == nil {
+		return nil, fmt.Errorf("cannot marshall nil references")
+	}
+
+	var buffer bytes.Buffer
+
+	buffer.WriteString("{\"createdTokens\":")
+	buffer.WriteString(strconv.FormatInt(metrics.createdTokens.Count(), 10))
+	buffer.WriteString(",\"deletedTokens\":")
+	buffer.WriteString(strconv.FormatInt(metrics.deletedTokens.Count(), 10))
+	buffer.WriteString(",\"transactionSearchLatency\":")
+	buffer.WriteString(strconv.FormatFloat(metrics.transactionSearchLatency.Percentile(0.95), 'f', -1, 64))
+	buffer.WriteString(",\"transactionListLatency\":")
+	buffer.WriteString(strconv.FormatFloat(metrics.transactionListLatency.Percentile(0.95), 'f', -1, 64))
+	buffer.WriteString(",\"importedTransfers\":")
+	buffer.WriteString(strconv.FormatInt(metrics.importedTransfers.Count(), 10))
+	buffer.WriteString(",\"importedTransactions\":")
+	buffer.WriteString(strconv.FormatInt(metrics.importedTransactions.Count(), 10))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+// UnmarshalJSON deserializes Metrics from json bytes
+func (metrics *Metrics) UnmarshalJSON(data []byte) error {
+	if metrics == nil {
+		return fmt.Errorf("cannot unmarshall to nil")
+	}
+
+	if metrics.createdTokens == nil || metrics.deletedTokens == nil ||
+		metrics.transactionSearchLatency == nil || metrics.transactionListLatency == nil ||
+		metrics.importedTransfers == nil || metrics.importedTransactions == nil {
+		return fmt.Errorf("cannot unmarshall to nil references")
+	}
+
+	aux := &struct {
+		CreatedTokens            int64   `json:"createdTokens"`
+		DeletedTokens            int64   `json:"deletedTokens"`
+		ImportedTransfers        int64   `json:"importedTransfers"`
+		ImportedTransactions     int64   `json:"importedTransactions"`
+		TransactionSearchLatency float64 `json:"transactionSearchLatency"`
+		TransactionListLatency   float64 `json:"transactionListLatency"`
+	}{}
+
+	if err := utils.JSON.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	metrics.createdTokens.Clear()
+	metrics.createdTokens.Inc(aux.CreatedTokens)
+	metrics.deletedTokens.Clear()
+	metrics.deletedTokens.Inc(aux.DeletedTokens)
+	metrics.transactionSearchLatency.Update(time.Duration(aux.TransactionSearchLatency))
+	metrics.transactionListLatency.Update(time.Duration(aux.TransactionListLatency))
+	metrics.importedTransfers.Mark(aux.ImportedTransfers)
+	metrics.importedTransactions.Mark(aux.ImportedTransactions)
+
+	return nil
+}
 
 // Persist saved metrics state to storage
 func (metrics *Metrics) Persist() error {
 	if metrics == nil {
 		return fmt.Errorf("cannot persist nil reference")
 	}
-	tempFile := metrics.output + "_temp"
 	data, err := utils.JSON.Marshal(metrics)
 	if err != nil {
 		return err
 	}
-	f, err := os.OpenFile(tempFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	err = metrics.storage.WriteFile("metrics." + metrics.tenant + ".json", data)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	if _, err := f.Write(data); err != nil {
-		return err
-	}
-	if err := os.Rename(tempFile, metrics.output); err != nil {
+	err = os.Chmod(metrics.storage.Root+"/metrics." + metrics.tenant + ".json", 0644)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -51,24 +116,11 @@ func (metrics *Metrics) Hydrate() error {
 	if metrics == nil {
 		return fmt.Errorf("cannot hydrate nil reference")
 	}
-	fi, err := os.Stat(metrics.output)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	f, err := os.OpenFile(metrics.output, os.O_RDONLY, 0444)
+	data, err := metrics.storage.ReadFileFully("metrics." + metrics.tenant + ".json")
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	buf := make([]byte, fi.Size())
-	_, err = f.Read(buf)
-	if err != nil && err != io.EOF {
-		return err
-	}
-	err = utils.JSON.Unmarshal(buf, metrics)
+	err = utils.JSON.Unmarshal(data, metrics)
 	if err != nil {
 		return err
 	}

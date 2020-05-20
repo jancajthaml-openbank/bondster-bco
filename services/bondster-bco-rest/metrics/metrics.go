@@ -15,10 +15,36 @@
 package metrics
 
 import (
+	"context"
 	"time"
 
+	localfs "github.com/jancajthaml-openbank/local-fs"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/utils"
+	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
+
+// Metrics holds metrics counters
+type Metrics struct {
+	utils.DaemonSupport
+	storage            localfs.PlaintextStorage
+	refreshRate        time.Duration
+	getTokenLatency    metrics.Timer
+	createTokenLatency metrics.Timer
+	deleteTokenLatency metrics.Timer
+}
+
+// NewMetrics returns blank metrics holder
+func NewMetrics(ctx context.Context, output string, refreshRate time.Duration) Metrics {
+	return Metrics{
+		DaemonSupport:      utils.NewDaemonSupport(ctx, "metrics"),
+		storage:            localfs.NewPlaintextStorage(output),
+		refreshRate:        refreshRate,
+		createTokenLatency: metrics.NewTimer(),
+		deleteTokenLatency: metrics.NewTimer(),
+		getTokenLatency:    metrics.NewTimer(),
+	}
+}
 
 // TimeGetToken measure execution of GetToken
 func (metrics *Metrics) TimeGetToken(f func()) {
@@ -43,6 +69,8 @@ func (metrics Metrics) Start() {
 	if err := metrics.Hydrate(); err != nil {
 		log.Warn(err.Error())
 	}
+
+	metrics.Persist()
 	metrics.MarkReady()
 
 	select {
@@ -53,7 +81,7 @@ func (metrics Metrics) Start() {
 		return
 	}
 
-	log.Infof("Start metrics daemon, update each %v into %v", metrics.refreshRate, metrics.output)
+	log.Infof("Start metrics daemon, update each %v into %v", metrics.refreshRate, metrics.storage.Root)
 
 	go func() {
 		for {
@@ -68,6 +96,6 @@ func (metrics Metrics) Start() {
 		}
 	}()
 
-	<-metrics.IsDone
+	metrics.WaitStop()
 	log.Info("Stop metrics daemon")
 }

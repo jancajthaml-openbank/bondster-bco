@@ -29,12 +29,10 @@ import (
 
 // Program encapsulate initialized application
 type Program struct {
-	interrupt   chan os.Signal
-	cfg         config.Configuration
-	metrics     metrics.Metrics
-	bondster    integration.BondsterImport
-	actorSystem actor.ActorSystem
-	cancel      context.CancelFunc
+	interrupt chan os.Signal
+	cfg       config.Configuration
+	daemons   []utils.Daemon
+	cancel    context.CancelFunc
 }
 
 // Initialize application
@@ -47,17 +45,19 @@ func Initialize() Program {
 
 	storage := localfs.NewEncryptedStorage(cfg.RootStorage, cfg.EncryptionKey)
 
-	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
-
+	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.Tenant, cfg.MetricsRefreshRate)
 	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, cfg.BondsterGateway, cfg.VaultGateway, cfg.LedgerGateway, &metricsDaemon, &storage)
 	bondsterDaemon := integration.NewBondsterImport(ctx, cfg.BondsterGateway, cfg.SyncRate, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))
 
+	var daemons = make([]utils.Daemon, 0)
+	daemons = append(daemons, metricsDaemon)
+	daemons = append(daemons, actorSystemDaemon)
+	daemons = append(daemons, bondsterDaemon)
+
 	return Program{
-		interrupt:   make(chan os.Signal, 1),
-		cfg:         cfg,
-		metrics:     metricsDaemon,
-		actorSystem: actorSystemDaemon,
-		bondster:    bondsterDaemon,
-		cancel:      cancel,
+		interrupt: make(chan os.Signal, 1),
+		cfg:       cfg,
+		daemons:   daemons,
+		cancel:    cancel,
 	}
 }
