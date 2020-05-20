@@ -107,6 +107,6 @@ func (bondster BondsterImport) Start() {
 		}
 	}()
 
-	<-bondster.IsDone
+	bondster.WaitStop()
 	log.Info("Stop bondster-import daemon")
 }
