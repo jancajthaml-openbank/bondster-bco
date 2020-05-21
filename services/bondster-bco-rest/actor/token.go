@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,17 @@ func CreateToken(sys *ActorSystem, tenant string, token Token) (result interface
 			}
 		})
 
-		sys.SendRemote(CreateTokenMessage(tenant, envelope.Name, token))
+		sys.SendMessage(
+			CreateTokenMessage(token),
+			system.Coordinates{
+				Region: "BondsterImport/"+tenant,
+				Name: token.ID,
+			},
+			system.Coordinates{
+				Region: "BondsterRest",
+				Name: envelope.Name,
+			},
+		)
 
 		select {
 
@@ -65,7 +75,7 @@ func CreateToken(sys *ActorSystem, tenant string, token Token) (result interface
 }
 
 // DeleteToken deletes existing token for target tenant
-func DeleteToken(sys *ActorSystem, tenant string, token string) (result interface{}) {
+func DeleteToken(sys *ActorSystem, tenant string, tokenId string) (result interface{}) {
 	sys.Metrics.TimeDeleteToken(func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -83,14 +93,24 @@ func DeleteToken(sys *ActorSystem, tenant string, token string) (result interfac
 		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
 			switch msg := context.Data.(type) {
 			case *TokenDeleted:
-				log.Infof("Token %s/%s deleted", tenant, token)
+				log.Infof("Token %s/%s deleted", tenant, tokenId)
 				ch <- msg
 			default:
 				ch <- nil
 			}
 		})
 
-		sys.SendRemote(DeleteTokenMessage(tenant, envelope.Name, token))
+		sys.SendMessage(
+			DeleteTokenMessage(),
+			system.Coordinates{
+				Region: "BondsterImport/"+tenant,
+				Name: tokenId,
+			},
+			system.Coordinates{
+				Region: "BondsterRest",
+				Name: envelope.Name,
+			},
+		)
 
 		select {
 

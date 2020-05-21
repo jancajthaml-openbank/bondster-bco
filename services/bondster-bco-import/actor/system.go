@@ -16,7 +16,6 @@ package actor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
@@ -28,20 +27,20 @@ import (
 
 // ActorSystem represents actor system subroutine
 type ActorSystem struct {
-	system.Support
-	Tenant          string
-	Storage         *localfs.EncryptedStorage
-	Metrics         *metrics.Metrics
-	BondsterGateway string
-	LedgerGateway   string
-	VaultGateway    string
-	HttpClient      integration.Client
+	system.System
+	Tenant        string
+	Storage       *localfs.EncryptedStorage
+	Metrics       *metrics.Metrics
+	BondsterGateway    string
+	LedgerGateway string
+	VaultGateway  string
+	HttpClient    integration.Client
 }
 
 // NewActorSystem returns actor system fascade
 func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bondsterEndpoint string, vaultEndpoint string, ledgerEndpoint string, metrics *metrics.Metrics, storage *localfs.EncryptedStorage) ActorSystem {
 	result := ActorSystem{
-		Support:         system.NewSupport(ctx, "BondsterImport/"+tenant, lakeEndpoint),
+		System:          system.NewSystem(ctx, "BondsterImport/"+tenant, lakeEndpoint),
 		Storage:         storage,
 		Metrics:         metrics,
 		Tenant:          tenant,
@@ -51,55 +50,31 @@ func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bon
 		HttpClient:      integration.NewClient(),
 	}
 
-	result.Support.RegisterOnLocalMessage(ProcessLocalMessage(&result))
-	result.Support.RegisterOnRemoteMessage(ProcessRemoteMessage(&result))
-
+	result.System.RegisterOnMessage(ProcessMessage(&result))
 	return result
 }
 
 // Start daemon noop
 func (system ActorSystem) Start() {
-	system.Support.Start()
+	system.System.Start()
 }
 
 // Stop daemon noop
 func (system ActorSystem) Stop() {
-	system.Support.Stop()
+	system.System.Stop()
 }
 
 // WaitStop daemon noop
 func (system ActorSystem) WaitStop() {
-
+	system.System.WaitStop()
 }
 
 // GreenLight daemon noop
 func (system ActorSystem) GreenLight() {
-
+	system.System.GreenLight()
 }
 
 // WaitReady wait for system to be ready
-func (system ActorSystem) WaitReady(deadline time.Duration) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch x := e.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("unknown panic")
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-system.Support.IsReady:
-		ticker.Stop()
-		err = nil
-		return
-	case <-ticker.C:
-		err = fmt.Errorf("actor-system was not ready within %v seconds", deadline)
-		return
-	}
+func (system ActorSystem) WaitReady(deadline time.Duration) error {
+	return system.System.WaitReady(deadline)
 }
