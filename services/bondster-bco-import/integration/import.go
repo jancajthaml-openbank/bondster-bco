@@ -18,11 +18,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
-	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,14 +28,14 @@ import (
 // BondsterImport represents bondster gateway to ledger import subroutine
 type BondsterImport struct {
 	utils.DaemonSupport
-	callback        func(msg interface{}, to system.Coordinates, from system.Coordinates)
+	callback        func(token string)
 	bondsterGateway string
 	syncRate        time.Duration
 	storage         *localfs.EncryptedStorage
 }
 
 // NewBondsterImport returns bondster import fascade
-func NewBondsterImport(ctx context.Context, bondsterEndpoint string, syncRate time.Duration, storage *localfs.EncryptedStorage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) BondsterImport {
+func NewBondsterImport(ctx context.Context, bondsterEndpoint string, syncRate time.Duration, storage *localfs.EncryptedStorage, callback func(token string)) BondsterImport {
 	return BondsterImport{
 		DaemonSupport:   utils.NewDaemonSupport(ctx, "bondster"),
 		callback:        callback,
@@ -72,10 +70,11 @@ func (bondster BondsterImport) importRoundtrip() {
 
 	for _, item := range tokens {
 		log.Debugf("Request to import token %s", item)
-		msg := model.SynchronizeToken{}
-		to := system.Coordinates{Name: item}
-		from := system.Coordinates{Name: "token_import_cron"}
-		bondster.callback(msg, to, from)
+		//msg := model.SynchronizeToken{}
+		//to := system.Coordinates{Name: item}
+		//from := system.Coordinates{Name: "token_import_cron"}
+		//bondster.callback(msg, to, from)
+		bondster.callback(item)
 	}
 }
 

@@ -24,6 +24,7 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
+	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
@@ -43,11 +44,44 @@ func Initialize() Program {
 
 	utils.SetupLogger(cfg.LogLevel)
 
-	storage := localfs.NewEncryptedStorage(cfg.RootStorage, cfg.EncryptionKey)
-
-	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.Tenant, cfg.MetricsRefreshRate)
-	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, cfg.BondsterGateway, cfg.VaultGateway, cfg.LedgerGateway, &metricsDaemon, &storage)
-	bondsterDaemon := integration.NewBondsterImport(ctx, cfg.BondsterGateway, cfg.SyncRate, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))
+	storage := localfs.NewEncryptedStorage(
+		cfg.RootStorage,
+		cfg.EncryptionKey,
+	)
+	metricsDaemon := metrics.NewMetrics(
+		ctx,
+		cfg.MetricsOutput,
+		cfg.Tenant,
+		cfg.MetricsRefreshRate,
+	)
+	actorSystemDaemon := actor.NewActorSystem(
+		ctx,
+		cfg.Tenant,
+		cfg.LakeHostname,
+		cfg.BondsterGateway,
+		cfg.VaultGateway,
+		cfg.LedgerGateway,
+		&metricsDaemon,
+		&storage,
+	)
+	bondsterDaemon := integration.NewBondsterImport(
+		ctx,
+		cfg.BondsterGateway,
+		cfg.SyncRate,
+		&storage,
+		func(token string) {
+			actorSystemDaemon.SendMessage(actor.SynchronizeTokens,
+				system.Coordinates{
+					Region: actorSystemDaemon.Name,
+					Name: token,
+				},
+				system.Coordinates{
+					Region: actorSystemDaemon.Name,
+					Name: "token_import_cron",
+				},
+			)
+		},
+	)
 
 	var daemons = make([]utils.Daemon, 0)
 	daemons = append(daemons, metricsDaemon)
