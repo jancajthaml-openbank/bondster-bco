@@ -154,8 +154,6 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 		"host":              "bondster.com",
 		"origin":            "https://bondster.com",
 		"referer":           "https://bondster.com/ib/cs/statement",
-		"accept":            "application/json",
-		"content-type":      "application/json",
 	}
 
 	s.Metrics.TimeTransactionSearchLatency(func() {

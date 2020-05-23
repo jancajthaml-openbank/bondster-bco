@@ -139,15 +139,12 @@ func (client Client) Get(url string, headers map[string]string) (contents []byte
 		return
 	}
 
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("accept", "application/json")
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
-	for
-
-	}
 	resp, err = client.underlying.Do(req)
 	if err != nil {
 		return
