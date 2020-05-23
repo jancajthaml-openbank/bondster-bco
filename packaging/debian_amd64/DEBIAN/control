@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.9+upgrade-actor-system
+Version: 1.2.9+integration
 Section: misc
 Priority: extra
 Architecture: amd64

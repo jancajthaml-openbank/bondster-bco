@@ -36,12 +36,12 @@ type Client struct {
 func NewClient() Client {
 	return Client{
 		underlying: &http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: 120 * time.Second,
 			Transport: &http.Transport{
 				DialContext: (&net.Dialer{
-					Timeout: 5 * time.Second,
+					Timeout: 30 * time.Second,
 				}).DialContext,
-				TLSHandshakeTimeout: 5 * time.Second,
+				TLSHandshakeTimeout: 10 * time.Second,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify:       true,
 					MinVersion:               tls.VersionTLS12,
@@ -91,8 +91,8 @@ func (client Client) Post(url string, body []byte, headers map[string]string) (c
 		return
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("content-type", "application/json")
+	req.Header.Set("accept", "application/json")
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
@@ -123,7 +123,7 @@ func (client Client) Get(url string, headers map[string]string) (contents []byte
 			_, err = io.Copy(ioutil.Discard, resp.Body)
 			resp.Body.Close()
 		} else if resp == nil && err != nil {
-			err = fmt.Errorf("runtime error, no response")
+			err = fmt.Errorf("runtime error, no response %+v", err)
 		}
 
 		if err != nil {
@@ -145,6 +145,9 @@ func (client Client) Get(url string, headers map[string]string) (contents []byte
 		req.Header.Set(k, v)
 	}
 
+	for
+
+	}
 	resp, err = client.underlying.Do(req)
 	if err != nil {
 		return
