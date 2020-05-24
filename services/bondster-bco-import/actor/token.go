@@ -153,8 +153,7 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 		"x-active-language": "cs",
 		"host":              "bondster.com",
 		"origin":            "https://bondster.com",
-		"referer":           "https://bondster.com/ib/cs",
-		"accept":            "application/json",
+		"referer":           "https://bondster.com/ib/cs/statement",
 	}
 
 	s.Metrics.TimeTransactionSearchLatency(func() {
@@ -162,10 +161,10 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 	})
 
 	if err != nil {
-		return fmt.Errorf("bondster transaction search error %+v, request: %+v", err, string(request))
+		return fmt.Errorf("bondster transaction search error %+v request: %+v", err, string(request))
 	}
 	if code != 200 {
-		return fmt.Errorf("bondster transaction search error %d %+v, request: %+v", code, string(response), string(request))
+		return fmt.Errorf("bondster transaction search error %d %+v request: %+v", code, string(response), string(request))
 	}
 
 	var search = new(model.TransfersSearchResult)
@@ -213,6 +212,9 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 		if code == 400 {
 			return fmt.Errorf("vault-rest account malformed request %+v", string(request))
 		}
+		if code == 504 {
+			return fmt.Errorf("vault-rest create account timeout")
+		}
 		if code != 200 && code != 409 {
 			return fmt.Errorf("vault-rest create account %s error %d %+v", uri, code, string(response))
 		}
@@ -221,7 +223,6 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
 	for _, transaction := range envelope.GetTransactions(s.Tenant) {
-
 		for _, transfer := range transaction.Transfers {
 			if transfer.ValueDateRaw.After(lastSynced) {
 				lastSynced = transfer.ValueDateRaw
@@ -243,6 +244,9 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 		}
 		if code == 400 {
 			return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
+		}
+		if code == 504 {
+			return fmt.Errorf("ledger-rest create transaction timeout")
 		}
 		if code != 200 && code != 201 {
 			return fmt.Errorf("ledger-rest create transaction %s error %d %+v", uri, code, string(response))

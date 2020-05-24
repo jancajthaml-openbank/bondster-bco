@@ -42,7 +42,6 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 		"host":              "bondster.com",
 		"origin":            "https://bondster.com",
 		"referer":           "https://bondster.com/ib/cs",
-		"accept":            "application/json",
 	}
 
 	uri = gateway + "/router/api/public/authentication/getLoginScenario"
@@ -104,6 +103,7 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 		JWT:     jwt.Value,
 		Device:  device,
 		Channel: channel,
+
 	}
 
 	return session, nil
