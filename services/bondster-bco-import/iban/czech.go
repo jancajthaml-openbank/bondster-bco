@@ -27,11 +27,9 @@ func init() {
 	for i := 0; i < 10; i++ {
 		checkSumToString[i] = "0" + strconv.Itoa(i)
 	}
-
 	for i := 10; i < 98; i++ {
 		checkSumToString[i] = strconv.Itoa(i)
 	}
-
 	checkSumToString[98] = "98"
 }
 

@@ -108,7 +108,6 @@ func UpdateToken(storage *localfs.EncryptedStorage, entity *model.Token) bool {
 		return false
 	}
 	path := utils.TokenPath(entity.ID)
-	// FIXME check nil
 	data, err := entity.Serialise()
 	if err != nil {
 		return false

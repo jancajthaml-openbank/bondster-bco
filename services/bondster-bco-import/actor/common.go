@@ -27,13 +27,6 @@ import (
 func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
 
-		defer func() {
-			if r := recover(); r != nil {
-				log.Errorf("procesRemoteMessage recovered in [remote %v -> local %v] : %+v", from, to, r)
-				s.SendMessage(FatalErrorMessage(), to, from)
-			}
-		}()
-
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
 			ref, err = spawnTokenActor(s, to.Name)
@@ -41,7 +34,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 
 		if err != nil {
 			log.Warnf("Actor not found [remote %v -> local %v]", from, to)
-			s.SendMessage(FatalErrorMessage(), to, from)
+			s.SendMessage(FatalError, to, from)
 			return
 		}
 
@@ -76,7 +69,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 
 		if message == nil {
 			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, parts)
-			s.SendMessage(FatalErrorMessage(), to, from)
+			s.SendMessage(FatalError, to, from)
 			return
 		}
 
