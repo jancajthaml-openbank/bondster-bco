@@ -18,26 +18,12 @@ import (
   "time"
 )
 
-func GetMonthsBetween(startDate time.Time, endDate time.Time) []time.Time {
+func GetMonthsWithin(startDate time.Time, endDate time.Time) []time.Time {
   dates := make([]time.Time, 0)
-
   for ; startDate.Before(endDate); startDate = startDate.AddDate(0, 1, 0) {
-    dates = append(dates, startDate.AddDate(0, 1, 0).Add(time.Nanosecond*-1))
+    date := startDate.AddDate(0, 1, 0).Add(time.Nanosecond*-1)
+    date = time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, time.UTC)
+    dates = append(dates, date)
   }
-  return dates
-}
-
-func GetDatesBetween(startDate time.Time, endDate time.Time) []time.Time {
-  dates := make([]time.Time, 0)
-
-  for ; !startDate.After(endDate); startDate = startDate.AddDate(0, 0, 1) {
-    switch startDate.Weekday() {
-    case time.Sunday, time.Saturday:
-      continue
-    default:
-      dates = append(dates, startDate)
-    }
-  }
-
   return dates
 }

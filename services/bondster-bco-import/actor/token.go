@@ -175,6 +175,19 @@ func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, l
 		return err
 	}
 
+	if len(search.IDs) == 0 {
+		log.Debugf("No transaction occured between %+v and %+v", fromDate, toDate)
+
+		if toDate.After(token.LastSyncedFrom[currency]) {
+			token.LastSyncedFrom[currency] = toDate
+			if !persistence.UpdateToken(storage, token) {
+				log.Warnf("Unable to update token %+v", token)
+			}
+		}
+
+		return nil
+	}
+
 	request, err = utils.JSON.Marshal(search)
 	if err != nil {
 		return err
@@ -268,24 +281,19 @@ func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, l
 }
 
 func importNewStatements(s *ActorSystem, token *model.Token, currency string, session *model.Session) {
-	now := time.Now()
+	startTime := token.LastSyncedFrom[currency]
+	endTime := time.Now()
 
-	months := utils.GetMonthsBetween(token.LastSyncedFrom[currency], now)
+	months := utils.GetMonthsWithin(startTime, endTime)
 
-	for _, month := range months {
-		currentMonth := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, time.UTC)
-		nextMonth := time.Date(month.Year(), month.Month()+1, 0, 0, 0, 0, 0, time.UTC)
-		nextMonth.AddDate(0, 1, 0).Add(time.Nanosecond * -1)
-
-		var days []time.Time
-		if nextMonth.After(now) {
-			days = utils.GetDatesBetween(currentMonth, now)
-		} else {
-			days = utils.GetDatesBetween(currentMonth, nextMonth)
+	for _, firstDate := range months {
+		lastDate := firstDate.AddDate(0, 1, 0).Add(time.Nanosecond*-1)
+		if lastDate.After(endTime) {
+			lastDate = endTime
 		}
-
-		firstDate := days[0]
-		lastDate := days[len(days) - 1]
+		if firstDate.Before(startTime) {
+			firstDate = startTime
+		}
 
 		log.Debugf("Importing bondster statements from %+v to %+v", firstDate, lastDate)
 
