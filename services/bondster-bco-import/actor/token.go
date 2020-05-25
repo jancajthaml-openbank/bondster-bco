@@ -20,9 +20,11 @@ import (
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
+	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
+	localfs "github.com/jancajthaml-openbank/local-fs"
 	system "github.com/jancajthaml-openbank/actor-system"
 	log "github.com/sirupsen/logrus"
 )
@@ -57,12 +59,12 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 			tokenResult := persistence.CreateToken(s.Storage, state.ID, msg.Username, msg.Password)
 
 			if tokenResult == nil {
-				s.SendMessage(FatalErrorMessage(), context.Sender, context.Receiver)
+				s.SendMessage(FatalError, context.Sender, context.Receiver)
 				log.Debugf("%s ~ (NonExist CreateToken) Error", state.ID)
 				return
 			}
 
-			s.SendMessage(TokenCreatedMessage(), context.Sender, context.Receiver)
+			s.SendMessage(RespCreateToken, context.Sender, context.Receiver)
 			log.Infof("New Token %s Created", state.ID)
 			log.Debugf("%s ~ (NonExist CreateToken) OK", state.ID)
 			s.Metrics.TokenCreated()
@@ -71,14 +73,14 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 			context.Self.Tell(model.SynchronizeToken{}, context.Receiver, context.Sender)
 
 		case model.DeleteToken:
-			s.SendMessage(FatalErrorMessage(), context.Sender, context.Receiver)
+			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.Debugf("%s ~ (NonExist DeleteToken) Error", state.ID)
 
 		case model.SynchronizeToken:
 			break
 
 		default:
-			s.SendMessage(FatalErrorMessage(), context.Sender, context.Receiver)
+			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.Debugf("%s ~ (NonExist Unknown Message) Error", state.ID)
 		}
 
@@ -94,7 +96,7 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 		switch context.Data.(type) {
 
 		case model.CreateToken:
-			s.SendMessage(FatalErrorMessage(), context.Sender, context.Receiver)
+			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.Debugf("%s ~ (Exist CreateToken) Error", state.ID)
 
 		case model.SynchronizeToken:
@@ -104,18 +106,18 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		case model.DeleteToken:
 			if !persistence.DeleteToken(s.Storage, state.ID) {
-				s.SendMessage(FatalErrorMessage(), context.Sender, context.Receiver)
+				s.SendMessage(FatalError, context.Sender, context.Receiver)
 				log.Debugf("%s ~ (Exist DeleteToken) Error", state.ID)
 				return
 			}
 			log.Infof("Token %s Deleted", state.ID)
 			log.Debugf("%s ~ (Exist DeleteToken) OK", state.ID)
 			s.Metrics.TokenDeleted()
-			s.SendMessage(TokenDeletedMessage(), context.Sender, context.Receiver)
+			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
 			context.Self.Become(state, NonExistToken(s))
 
 		default:
-			s.SendMessage(FatalErrorMessage(), context.Sender, context.Receiver)
+			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.Warnf("%s ~ (Exist Unknown Message) Error", state.ID)
 
 		}
@@ -124,7 +126,9 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importNewTransactions(s *ActorSystem, token *model.Token, currency string, session *model.Session) error {
+func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, ledgerGateway string, tenant string, httpClient integration.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *model.Session, fromDate time.Time, toDate time.Time) error {
+	log.Debugf("Importing bondster statements from %+v to %+v", fromDate, toDate)
+
 	var (
 		err      error
 		response []byte
@@ -133,17 +137,15 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 		uri      string
 	)
 
-	criteria := model.TransfersSearchRequest{
-		From: token.LastSyncedFrom[currency],
-		To:   time.Now(),
-	}
-
-	request, err = utils.JSON.Marshal(criteria)
+	request, err = utils.JSON.Marshal(model.TransfersSearchRequest{
+		From: fromDate,
+		To:   toDate,
+	})
 	if err != nil {
 		return err
 	}
 
-	uri = s.BondsterGateway + "/mktinvestor/api/private/transaction/search"
+	uri = bondsterGateway + "/mktinvestor/api/private/transaction/search"
 
 	headers := map[string]string{
 		"device":            session.Device,
@@ -156,8 +158,8 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 		"referer":           "https://bondster.com/ib/cs/statement",
 	}
 
-	s.Metrics.TimeTransactionSearchLatency(func() {
-		response, code, err = s.HttpClient.Post(uri, request, headers)
+	metrics.TimeTransactionSearchLatency(func() {
+		response, code, err = httpClient.Post(uri, request, headers)
 	})
 
 	if err != nil {
@@ -169,7 +171,6 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 
 	var search = new(model.TransfersSearchResult)
 	err = utils.JSON.Unmarshal(response, search)
-
 	if err != nil {
 		return err
 	}
@@ -179,10 +180,10 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 		return err
 	}
 
-	uri = s.BondsterGateway + "/mktinvestor/api/private/transaction/list"
+	uri = bondsterGateway + "/mktinvestor/api/private/transaction/list"
 
-	s.Metrics.TimeTransactionListLatency(func() {
-		response, code, err = s.HttpClient.Post(uri, request, headers)
+	metrics.TimeTransactionListLatency(func() {
+		response, code, err = httpClient.Post(uri, request, headers)
 	})
 
 	if err != nil {
@@ -204,8 +205,8 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 			return err
 		}
 
-		uri := s.VaultGateway + "/account/" + s.Tenant
-		response, code, err = s.HttpClient.Post(uri, request, nil)
+		uri := vaultGateway + "/account/" + tenant
+		response, code, err = httpClient.Post(uri, request, nil)
 		if err != nil {
 			return fmt.Errorf("vault-rest create account %s error %+v", uri, err)
 		}
@@ -222,7 +223,7 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
-	for _, transaction := range envelope.GetTransactions(s.Tenant) {
+	for _, transaction := range envelope.GetTransactions(tenant) {
 		for _, transfer := range transaction.Transfers {
 			if transfer.ValueDateRaw.After(lastSynced) {
 				lastSynced = transfer.ValueDateRaw
@@ -234,8 +235,8 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 			return err
 		}
 
-		uri := s.LedgerGateway + "/transaction/" + s.Tenant
-		response, code, err = s.HttpClient.Post(uri, request, nil)
+		uri := ledgerGateway + "/transaction/" + tenant
+		response, code, err = httpClient.Post(uri, request, nil)
 		if err != nil {
 			return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
 		}
@@ -252,19 +253,49 @@ func importNewTransactions(s *ActorSystem, token *model.Token, currency string, 
 			return fmt.Errorf("ledger-rest create transaction %s error %d %+v", uri, code, string(response))
 		}
 
-		s.Metrics.TransactionImported()
-		s.Metrics.TransfersImported(int64(len(transaction.Transfers)))
+		metrics.TransactionImported()
+		metrics.TransfersImported(int64(len(transaction.Transfers)))
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = lastSynced
-			if !persistence.UpdateToken(s.Storage, token) {
+			if !persistence.UpdateToken(storage, token) {
 				log.Warnf("Unable to update token %+v", token)
 			}
 		}
-
 	}
 
 	return nil
+}
+
+func importNewStatements(s *ActorSystem, token *model.Token, currency string, session *model.Session) {
+	now := time.Now()
+
+	months := utils.GetMonthsBetween(token.LastSyncedFrom[currency], now)
+
+	for _, month := range months {
+		currentMonth := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, time.UTC)
+		nextMonth := time.Date(month.Year(), month.Month()+1, 0, 0, 0, 0, 0, time.UTC)
+		nextMonth.AddDate(0, 1, 0).Add(time.Nanosecond * -1)
+
+		var days []time.Time
+		if nextMonth.After(now) {
+			days = utils.GetDatesBetween(currentMonth, now)
+		} else {
+			days = utils.GetDatesBetween(currentMonth, nextMonth)
+		}
+
+		firstDate := days[0]
+		lastDate := days[len(days) - 1]
+
+		log.Debugf("Importing bondster statements from %+v to %+v", firstDate, lastDate)
+
+		err := importStatementsForTimeRange(s.BondsterGateway, s.VaultGateway, s.LedgerGateway, s.Tenant, s.HttpClient, s.Storage, s.Metrics, token, currency, session, firstDate, lastDate)
+		if err != nil {
+			log.Warnf("Import token %s statements failed with %+v", token.ID, err)
+		}
+	}
+
+	return
 }
 
 func importStatements(s *ActorSystem, token model.Token) {
@@ -288,9 +319,7 @@ func importStatements(s *ActorSystem, token model.Token) {
 
 	for currency := range token.LastSyncedFrom {
 		log.Debugf("Import %+v %s Begin", token.ID, currency)
-		if err := importNewTransactions(s, &token, currency, session); err != nil {
-			log.Warnf("Import token %s statements failed with %+v", token.ID, err)
-		}
+		importNewStatements(s, &token, currency, session)
 		log.Debugf("Import %+v %s End", token.ID, currency)
 	}
 }
