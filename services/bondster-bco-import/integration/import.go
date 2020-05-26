@@ -70,10 +70,6 @@ func (bondster BondsterImport) importRoundtrip() {
 
 	for _, item := range tokens {
 		log.Debugf("Request to import token %s", item)
-		//msg := model.SynchronizeToken{}
-		//to := system.Coordinates{Name: item}
-		//from := system.Coordinates{Name: "token_import_cron"}
-		//bondster.callback(msg, to, from)
 		bondster.callback(item)
 	}
 }
