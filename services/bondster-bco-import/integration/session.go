@@ -56,7 +56,7 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 	var scenario = new(model.LoginScenario)
 	err = utils.JSON.Unmarshal(response, scenario)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bondster unsupported login scenario invalid response %s", string(response))
 	}
 
 	if scenario.Value != "USR_PWD" {
@@ -95,6 +95,7 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 	err = utils.JSON.Unmarshal(response, jwt)
 	if err != nil {
 		return nil, err
+		return nil, fmt.Errorf("bondster validate login step invalid response %s", string(response))
 	}
 
 	log.Debugf("Logged in with token %s", token.ID)
