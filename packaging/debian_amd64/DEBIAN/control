@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.9+import-per-month
+Version: 1.2.9+update-bondster-domain
 Section: misc
 Priority: extra
 Architecture: amd64

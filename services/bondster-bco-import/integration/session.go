@@ -39,9 +39,9 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 		"device":            device,
 		"channeluuid":       channel,
 		"x-active-language": "cs",
-		"host":              "bondster.com",
-		"origin":            "https://bondster.com",
-		"referer":           "https://bondster.com/ib/cs",
+		"host":              "ib.bondster.com",
+		"origin":            "https://ib.bondster.com",
+		"referer":           "https://ib.bondster.com/cs",
 	}
 
 	uri = gateway + "/router/api/public/authentication/getLoginScenario"

@@ -32,9 +32,13 @@ func GetCurrencies(client Client, gateway string, session *model.Session) ([]str
 	uri = gateway + "/clientusersetting/api/private/market/getContactInformation"
 
 	headers := map[string]string{
-		"device":        session.Device,
-		"channeluuid":   session.Channel,
-		"authorization": "Bearer " + session.JWT,
+		"device":            session.Device,
+		"channeluuid":       session.Channel,
+		"x-active-language": "cs",
+		"authorization":     "Bearer " + session.JWT,
+		"host":              "ib.bondster.com",
+		"origin":            "https://ib.bondster.com",
+		"referer":           "https://ib.bondster.com/cs",
 	}
 
 	response, code, err = client.Post(uri, nil, headers)
