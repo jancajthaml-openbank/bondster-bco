@@ -12,7 +12,7 @@ case "$1" in
 
       echo "BONDSTER_BCO_STORAGE=/data" > /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_LOG_LEVEL=INFO" >> /etc/init/bondster-bco.conf
-      echo "BONDSTER_BCO_BONDSTER_GATEWAY=https://bondster.com/ib/proxy" >> /etc/init/bondster-bco.conf
+      echo "BONDSTER_BCO_BONDSTER_GATEWAY=https://ib.bondster.com/proxy" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_SYNC_RATE=1h" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_LEDGER_GATEWAY=https://127.0.0.1:4401" >> /etc/init/bondster-bco.conf
       echo "BONDSTER_BCO_VAULT_GATEWAY=https://127.0.0.1:4400" >> /etc/init/bondster-bco.conf

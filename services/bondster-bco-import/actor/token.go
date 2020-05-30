@@ -153,9 +153,9 @@ func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, l
 		"authorization":     "Bearer " + session.JWT,
 		"x-account-context": currency,
 		"x-active-language": "cs",
-		"host":              "bondster.com",
-		"origin":            "https://bondster.com",
-		"referer":           "https://bondster.com/ib/cs/statement",
+		"host":              "ib.bondster.com",
+		"origin":            "https://ib.bondster.com",
+		"referer":           "https://ib.bondster.com/cs/statement",
 	}
 
 	metrics.TimeTransactionSearchLatency(func() {
@@ -286,6 +286,8 @@ func importNewStatements(s *ActorSystem, token *model.Token, currency string, se
 
 	months := utils.GetMonthsWithin(startTime, endTime)
 
+	// FIXME import by weeks
+
 	for _, firstDate := range months {
 		lastDate := firstDate.AddDate(0, 1, 0).Add(time.Nanosecond*-1)
 		if lastDate.After(endTime) {
@@ -296,10 +298,10 @@ func importNewStatements(s *ActorSystem, token *model.Token, currency string, se
 		}
 
 		log.Debugf("Importing bondster statements from %+v to %+v", firstDate, lastDate)
-
 		err := importStatementsForTimeRange(s.BondsterGateway, s.VaultGateway, s.LedgerGateway, s.Tenant, s.HttpClient, s.Storage, s.Metrics, token, currency, session, firstDate, lastDate)
 		if err != nil {
-			log.Warnf("Import token %s statements failed with %+v", token.ID, err)
+			log.Errorf("Import token %s statements failed with %+v", token.ID, err)
+			return
 		}
 	}
 
