@@ -77,6 +77,8 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 		},
 	}
 
+	// FIXME if re-captcha then handle
+
 	request, err = utils.JSON.Marshal(step)
 	if err != nil {
 		return nil, err

@@ -126,7 +126,7 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, ledgerGateway string, tenant string, httpClient integration.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *model.Session, interval utils.TimeRange) error {
+func importStatementsForInterval(bondsterGateway string, vaultGateway string, ledgerGateway string, tenant string, httpClient integration.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *model.Session, interval utils.TimeRange) error {
 	log.Debugf("Importing bondster statements fot interval %+v", interval)
 
 	var (
@@ -278,20 +278,14 @@ func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, l
 }
 
 func importNewStatements(s *ActorSystem, token *model.Token, currency string, session *model.Session) {
-	startTime := token.LastSyncedFrom[currency]
-	endTime := time.Now()
-
-	timeRanges := utils.SliceByMonths(startTime, endTime)
-
-	for _, timeRange := range timeRanges {
-		log.Debugf("Importing bondster statements range %+v", timeRange)
-		err := importStatementsForTimeRange(s.BondsterGateway, s.VaultGateway, s.LedgerGateway, s.Tenant, s.HttpClient, s.Storage, s.Metrics, token, currency, session, timeRange)
+	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
+		log.Debugf("Importing bondster statements range %+v", interval)
+		err := importStatementsForInterval(s.BondsterGateway, s.VaultGateway, s.LedgerGateway, s.Tenant, s.HttpClient, s.Storage, s.Metrics, token, currency, session, interval)
 		if err != nil {
 			log.Errorf("Import token %s statements failed with %+v", token.ID, err)
 			return
 		}
 	}
-
 	return
 }
 
