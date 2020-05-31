@@ -18,7 +18,41 @@ import (
   "time"
 )
 
-func GetMonthsWithin(startDate time.Time, endDate time.Time) []time.Time {
+type TimeRange struct {
+	StartTime time.Time
+	EndTime   time.Time
+}
+
+func (value *TimeRange) String() string {
+	if value == nil {
+		return "<nil>"
+	}
+	return value.StartTime.Format(time.RFC3339) + " - " + value.EndTime.Format(time.RFC3339)
+}
+
+func SliceByMonths(startDate time.Time, endDate time.Time) []TimeRange {
+  dates := make([]TimeRange, 0)
+  current := time.Date(startDate.Year(), startDate.Month(), 1, 0, 0, 0, 0, time.UTC)
+
+  for current.Before(endDate) {
+    date := current.AddDate(0, 1, 0).AddDate(0, 0, -1)
+    dates = append(dates, TimeRange{
+    	StartTime: time.Date(current.Year(), current.Month(), 1, 0, 0, 0, 0, time.UTC),
+    	EndTime: time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC),
+    })
+    current = date.AddDate(0, 0, 1)
+  }
+	if dates[len(dates)-1].EndTime.After(endDate) {
+		dates[len(dates)-1].EndTime = endDate
+	}
+	if dates[0].StartTime.Before(startDate) {
+		dates[0].StartTime = startDate
+	}
+  return dates
+}
+
+/*
+func GetWeeksWithin(startDate time.Time, endDate time.Time) []time.Time {
   dates := make([]time.Time, 0)
   for ; startDate.Before(endDate); startDate = startDate.AddDate(0, 1, 0) {
     date := startDate.AddDate(0, 1, 0).Add(time.Nanosecond*-1)
@@ -27,3 +61,4 @@ func GetMonthsWithin(startDate time.Time, endDate time.Time) []time.Time {
   }
   return dates
 }
+*/
