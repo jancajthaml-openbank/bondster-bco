@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.9+update-bondster-domain
+Version: 1.2.9+synchronize-weekly
 Section: misc
 Priority: extra
 Architecture: amd64

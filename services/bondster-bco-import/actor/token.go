@@ -126,8 +126,8 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, ledgerGateway string, tenant string, httpClient integration.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *model.Session, fromDate time.Time, toDate time.Time) error {
-	log.Debugf("Importing bondster statements from %+v to %+v", fromDate, toDate)
+func importStatementsForInterval(bondsterGateway string, vaultGateway string, ledgerGateway string, tenant string, httpClient integration.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *model.Session, interval utils.TimeRange) error {
+	log.Debugf("Importing bondster statements fot interval %+v", interval)
 
 	var (
 		err      error
@@ -138,8 +138,8 @@ func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, l
 	)
 
 	request, err = utils.JSON.Marshal(model.TransfersSearchRequest{
-		From: fromDate,
-		To:   toDate,
+		From: interval.StartTime,
+		To:   interval.EndTime,
 	})
 	if err != nil {
 		return err
@@ -176,15 +176,12 @@ func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, l
 	}
 
 	if len(search.IDs) == 0 {
-		log.Debugf("No transaction occured between %+v and %+v", fromDate, toDate)
-
-		if toDate.After(token.LastSyncedFrom[currency]) {
-			token.LastSyncedFrom[currency] = toDate
+		if interval.EndTime.After(token.LastSyncedFrom[currency]) {
+			token.LastSyncedFrom[currency] = interval.EndTime
 			if !persistence.UpdateToken(storage, token) {
 				log.Warnf("Unable to update token %+v", token)
 			}
 		}
-
 		return nil
 	}
 
@@ -281,30 +278,14 @@ func importStatementsForTimeRange(bondsterGateway string, vaultGateway string, l
 }
 
 func importNewStatements(s *ActorSystem, token *model.Token, currency string, session *model.Session) {
-	startTime := token.LastSyncedFrom[currency]
-	endTime := time.Now()
-
-	months := utils.GetMonthsWithin(startTime, endTime)
-
-	// FIXME import by weeks
-
-	for _, firstDate := range months {
-		lastDate := firstDate.AddDate(0, 1, 0).Add(time.Nanosecond*-1)
-		if lastDate.After(endTime) {
-			lastDate = endTime
-		}
-		if firstDate.Before(startTime) {
-			firstDate = startTime
-		}
-
-		log.Debugf("Importing bondster statements from %+v to %+v", firstDate, lastDate)
-		err := importStatementsForTimeRange(s.BondsterGateway, s.VaultGateway, s.LedgerGateway, s.Tenant, s.HttpClient, s.Storage, s.Metrics, token, currency, session, firstDate, lastDate)
+	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
+		log.Debugf("Importing bondster statements range %+v", interval)
+		err := importStatementsForInterval(s.BondsterGateway, s.VaultGateway, s.LedgerGateway, s.Tenant, s.HttpClient, s.Storage, s.Metrics, token, currency, session, interval)
 		if err != nil {
 			log.Errorf("Import token %s statements failed with %+v", token.ID, err)
 			return
 		}
 	}
-
 	return
 }
 
