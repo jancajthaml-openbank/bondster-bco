@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.9+synchronize-weekly
+Version: 1.2.9+non-blocking-token-actor
 Section: misc
 Priority: extra
 Architecture: amd64
