@@ -55,6 +55,9 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		switch msg := context.Data.(type) {
 
+		case model.ProbeMessage:
+			break
+
 		case model.CreateToken:
 			tokenResult := persistence.CreateToken(s.Storage, state.ID, msg.Username, msg.Password)
 
@@ -95,14 +98,20 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		switch context.Data.(type) {
 
+		case model.ProbeMessage:
+			break
+
 		case model.CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.Debugf("%s ~ (Exist CreateToken) Error", state.ID)
 
 		case model.SynchronizeToken:
-			log.Debugf("%s ~ (Exist SynchronizeToken) Begin", state.ID)
-			importStatements(s, state)
-			log.Debugf("%s ~ (Exist SynchronizeToken) End", state.ID)
+			log.Debugf("%s ~ (Exist SynchronizeToken)", state.ID)
+			context.Self.Become(t_state, SynchronizingToken(s))
+			go importStatements(s, state, func() {
+				context.Self.Become(t_state, NilToken(s))
+				context.Self.Tell(model.ProbeMessage{}, context.Receiver, context.Receiver)
+			})
 
 		case model.DeleteToken:
 			if !persistence.DeleteToken(s.Storage, state.ID) {
@@ -119,6 +128,37 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.Warnf("%s ~ (Exist Unknown Message) Error", state.ID)
+
+		}
+
+		return
+	}
+}
+
+// SynchronizingToken represents account that is currently synchronizing
+func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
+	return func(t_state interface{}, context system.Context) {
+		state := t_state.(model.Token)
+
+		switch context.Data.(type) {
+
+		case model.ProbeMessage:
+			break
+
+		case model.CreateToken:
+			s.SendMessage(FatalError, context.Sender, context.Receiver)
+			log.Debugf("%s ~ (Synchronizing CreateToken) Error", state.ID)
+
+		case model.SynchronizeToken:
+			log.Debugf("%s ~ (Synchronizing SynchronizeToken)", state.ID)
+
+		case model.DeleteToken:
+			s.SendMessage(FatalError, context.Sender, context.Receiver)
+			log.Debugf("%s ~ (Synchronizing DeleteToken) Error", state.ID)
+
+		default:
+			s.SendMessage(FatalError, context.Sender, context.Receiver)
+			log.Warnf("%s ~ (Synchronizing Unknown Message) Error", state.ID)
 
 		}
 
@@ -289,7 +329,7 @@ func importNewStatements(s *ActorSystem, token *model.Token, currency string, se
 	return
 }
 
-func importStatements(s *ActorSystem, token model.Token) {
+func importStatements(s *ActorSystem, token model.Token, callback func()) {
 	log.Debugf("Importing statements for %s", token.ID)
 
 	session, err := integration.GetSession(s.HttpClient, s.BondsterGateway, token)
@@ -312,5 +352,6 @@ func importStatements(s *ActorSystem, token model.Token) {
 		log.Debugf("Import %+v %s Begin", token.ID, currency)
 		importNewStatements(s, &token, currency, session)
 		log.Debugf("Import %+v %s End", token.ID, currency)
+		callback()
 	}
 }

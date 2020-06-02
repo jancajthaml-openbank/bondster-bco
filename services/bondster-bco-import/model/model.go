@@ -50,6 +50,10 @@ type DeleteToken struct {
 type SynchronizeToken struct {
 }
 
+// ProbeMessage is internal noop message
+type ProbeMessage struct {
+}
+
 // NewToken returns new Token
 func NewToken(id string) Token {
 	return Token{
