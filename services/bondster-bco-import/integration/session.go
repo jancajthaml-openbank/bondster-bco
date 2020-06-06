@@ -19,8 +19,6 @@ import (
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func GetSession(client Client, gateway string, token model.Token) (*model.Session, error) {

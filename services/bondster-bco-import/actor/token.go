@@ -26,7 +26,6 @@ import (
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	system "github.com/jancajthaml-openbank/actor-system"
-	log "github.com/sirupsen/logrus"
 )
 
 // NilToken represents token that is neither existing neither non existing
