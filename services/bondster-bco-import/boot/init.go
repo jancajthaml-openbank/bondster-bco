@@ -23,6 +23,7 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
+	"github.com/jancajthaml-openbank/bondster-bco-import/logging"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -42,7 +43,7 @@ func Initialize() Program {
 
 	cfg := config.GetConfig()
 
-	utils.SetupLogger(cfg.LogLevel)
+	logging.SetupLogger(cfg.LogLevel)
 
 	storage := localfs.NewEncryptedStorage(
 		cfg.RootStorage,

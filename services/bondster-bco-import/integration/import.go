@@ -22,7 +22,6 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
-	log "github.com/sirupsen/logrus"
 )
 
 // BondsterImport represents bondster gateway to ledger import subroutine
