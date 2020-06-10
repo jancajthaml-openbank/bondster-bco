@@ -56,16 +56,12 @@ func NormalizeAccountNumber(number string, bankCode string) string {
 	if len(number) > 2 && (number[0] >= 'A' && number[0] <= 'Z') && (number[1] >= 'A' && number[1] <= 'Z') {
 		return number
 	}
-
 	if bankCode == "" {
 		return number
 	}
-
 	calculatedIBAN := iban.Calculate(number, bankCode)
-
 	if calculatedIBAN == "" {
 		return number
 	}
-
 	return calculatedIBAN
 }
