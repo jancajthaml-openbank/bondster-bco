@@ -28,7 +28,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
-			ref, err = spawnTokenActor(s, to.Name)
+			ref, err = NewTokenActor(s, to.Name)
 		}
 
 		if err != nil {
@@ -76,7 +76,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 	}
 }
 
-func spawnTokenActor(s *ActorSystem, id string) (*system.Envelope, error) {
+func NewTokenActor(s *ActorSystem, id string) (*system.Envelope, error) {
 	envelope := system.NewEnvelope(id, model.NewToken(id))
 
 	err := s.RegisterActor(envelope, NilToken(s))
@@ -84,7 +84,5 @@ func spawnTokenActor(s *ActorSystem, id string) (*system.Envelope, error) {
 		log.Warnf("%s ~ Spawning Token Error unable to register", id)
 		return nil, err
 	}
-
-	log.Debugf("%s ~ Token Spawned", id)
 	return envelope, nil
 }

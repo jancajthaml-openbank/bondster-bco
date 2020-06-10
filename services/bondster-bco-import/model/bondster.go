@@ -182,7 +182,6 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 			Transfers:     transfers,
 		})
 	}
-
 	return result
 }
 
@@ -210,7 +209,6 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 				Currency:       envelope.Currency,
 				IsBalanceCheck: false,
 			}
-
 		}
 		deduplicated[envelope.Currency+"_TYPE_"+transfer.Type] = Account{
 			Name:           envelope.Currency + "_TYPE_" + transfer.Type,
