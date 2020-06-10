@@ -37,10 +37,10 @@ func NilToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		if tokenHydration == nil {
 			context.Self.Become(state, NonExistToken(s))
-			log.Debugf("%s ~ Nil -> NonExist", state.ID)
+			log.WithField("token", state.ID).Debugf("Nil -> NonExist")
 		} else {
 			context.Self.Become(*tokenHydration, ExistToken(s))
-			log.Debugf("%s ~ Nil -> Exist", state.ID)
+			log.WithField("token", state.ID).Debugf("Nil -> Exist")
 		}
 
 		context.Self.Receive(context)
@@ -62,13 +62,13 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 			if tokenResult == nil {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.Debugf("%s ~ (NonExist CreateToken) Error", state.ID)
+				log.WithField("token", state.ID).Debugf("(NonExist CreateToken) Error")
 				return
 			}
 
 			s.SendMessage(RespCreateToken, context.Sender, context.Receiver)
-			log.Infof("New Token %s Created", state.ID)
-			log.Debugf("%s ~ (NonExist CreateToken) OK", state.ID)
+			log.WithField("token", state.ID).Infof("New Token Created")
+			log.WithField("token", state.ID).Debugf("(NonExist CreateToken) OK")
 			s.Metrics.TokenCreated()
 
 			context.Self.Become(*tokenResult, ExistToken(s))
@@ -76,14 +76,14 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		case model.DeleteToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debugf("%s ~ (NonExist DeleteToken) Error", state.ID)
+			log.WithField("token", state.ID).Debug("(NonExist DeleteToken) Error")
 
 		case model.SynchronizeToken:
 			break
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debugf("%s ~ (NonExist Unknown Message) Error", state.ID)
+			log.WithField("token", state.ID).Debugf("(NonExist Unknown Message) Error")
 		}
 
 		return
@@ -102,10 +102,10 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		case model.CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debugf("%s ~ (Exist CreateToken) Error", state.ID)
+			log.WithField("token", state.ID).Debug("(Exist CreateToken) Error")
 
 		case model.SynchronizeToken:
-			log.Debugf("%s ~ (Exist SynchronizeToken)", state.ID)
+			log.WithField("token", state.ID).Debug("(Exist SynchronizeToken)")
 			context.Self.Become(t_state, SynchronizingToken(s))
 			go importStatements(s, state, func() {
 				context.Self.Become(t_state, NilToken(s))
@@ -115,18 +115,18 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 		case model.DeleteToken:
 			if !persistence.DeleteToken(s.Storage, state.ID) {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.Debugf("%s ~ (Exist DeleteToken) Error", state.ID)
+				log.WithField("token", state.ID).Debug("(Exist DeleteToken) Error")
 				return
 			}
-			log.Infof("Token %s Deleted", state.ID)
-			log.Debugf("%s ~ (Exist DeleteToken) OK", state.ID)
+			log.WithField("token", state.ID).Info("Token Deleted")
+			log.WithField("token", state.ID).Debug("(Exist DeleteToken) OK")
 			s.Metrics.TokenDeleted()
 			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
 			context.Self.Become(state, NonExistToken(s))
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Warnf("%s ~ (Exist Unknown Message) Error", state.ID)
+			log.WithField("token", state.ID).Warn("(Exist Unknown Message) Error")
 
 		}
 
@@ -146,18 +146,18 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		case model.CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debugf("%s ~ (Synchronizing CreateToken) Error", state.ID)
+			log.WithField("token", state.ID).Debug("(Synchronizing CreateToken) Error")
 
 		case model.SynchronizeToken:
-			log.Debugf("%s ~ (Synchronizing SynchronizeToken)", state.ID)
+			log.WithField("token", state.ID).Debug("(Synchronizing SynchronizeToken)")
 
 		case model.DeleteToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debugf("%s ~ (Synchronizing DeleteToken) Error", state.ID)
+			log.WithField("token", state.ID).Debug("(Synchronizing DeleteToken) Error")
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Warnf("%s ~ (Synchronizing Unknown Message) Error", state.ID)
+			log.WithField("token", state.ID).Warn("(Synchronizing Unknown Message) Error")
 
 		}
 
@@ -166,7 +166,7 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 }
 
 func importStatementsForInterval(bondsterGateway string, vaultGateway string, ledgerGateway string, tenant string, httpClient integration.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *model.Session, interval utils.TimeRange) error {
-	log.Debugf("Importing bondster statements fot interval %+v", interval)
+	log.Debugf("Importing bondster statements for interval %+v", interval)
 
 	var (
 		err      error
@@ -218,7 +218,7 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 		if interval.EndTime.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = interval.EndTime
 			if !persistence.UpdateToken(storage, token) {
-				log.Warnf("Unable to update token %+v", token)
+				log.WithField("token", token).Warn("Unable to update token last synced")
 			}
 		}
 		return nil
@@ -273,42 +273,47 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
 	for _, transaction := range envelope.GetTransactions(tenant) {
+		for {
+			request, err = utils.JSON.Marshal(transaction)
+			if err != nil {
+				return err
+			}
+			uri := ledgerGateway + "/transaction/" + tenant
+			response, code, err = httpClient.Post(uri, request, nil)
+			if err != nil {
+				return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
+			}
+			if code == 409 {
+				// FIXME in future, follback original transaction and create new based on
+				// union of existing transaction and new (needs persistence)
+				transaction.IDTransaction = transaction.IDTransaction + "_"
+				continue
+			}
+			if code == 400 {
+				return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
+			}
+			if code == 504 {
+				return fmt.Errorf("ledger-rest create transaction timeout")
+			}
+			if code != 200 && code != 201 && code != 202 {
+				return fmt.Errorf("ledger-rest create transaction %s error %d %+v", uri, code, string(response))
+			}
+			break
+		}
+
+		metrics.TransactionImported()
+		metrics.TransfersImported(int64(len(transaction.Transfers)))
+
 		for _, transfer := range transaction.Transfers {
 			if transfer.ValueDateRaw.After(lastSynced) {
 				lastSynced = transfer.ValueDateRaw
 			}
 		}
 
-		request, err = utils.JSON.Marshal(transaction)
-		if err != nil {
-			return err
-		}
-
-		uri := ledgerGateway + "/transaction/" + tenant
-		response, code, err = httpClient.Post(uri, request, nil)
-		if err != nil {
-			return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
-		}
-		if code == 409 {
-			return fmt.Errorf("ledger-rest transaction duplicate %+v", string(request))
-		}
-		if code == 400 {
-			return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
-		}
-		if code == 504 {
-			return fmt.Errorf("ledger-rest create transaction timeout")
-		}
-		if code != 200 && code != 201 {
-			return fmt.Errorf("ledger-rest create transaction %s error %d %+v", uri, code, string(response))
-		}
-
-		metrics.TransactionImported()
-		metrics.TransfersImported(int64(len(transaction.Transfers)))
-
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
-				log.Warnf("Unable to update token %+v", token)
+				log.WithField("token", token).Warn("Unable to update token")
 			}
 		}
 	}
@@ -318,10 +323,9 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 
 func importNewStatements(s *ActorSystem, token *model.Token, currency string, session *model.Session) {
 	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
-		log.Debugf("Importing bondster statements range %+v", interval)
 		err := importStatementsForInterval(s.BondsterGateway, s.VaultGateway, s.LedgerGateway, s.Tenant, s.HttpClient, s.Storage, s.Metrics, token, currency, session, interval)
 		if err != nil {
-			log.Errorf("Import token %s statements failed with %+v", token.ID, err)
+			log.WithField("token", token.ID).Errorf("Import statements failed with %+v", err)
 			return
 		}
 	}
@@ -333,24 +337,24 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 
 	session, err := integration.GetSession(s.HttpClient, s.BondsterGateway, token)
 	if err != nil {
-		log.Warnf("Unable to get session for %s because %+v", token.ID, err)
+		log.WithField("token", token.ID).Warnf("Unable to get session because %+v", err)
 		return
 	}
 
 	currencies, err := integration.GetCurrencies(s.HttpClient, s.BondsterGateway, session)
 	if err != nil {
-		log.Warnf("Unable to get currencies for %s because %+v", token.ID, err)
+		log.WithField("token", token.ID).Warnf("Unable to get currencies because %+v", err)
 		return
 	}
 
 	if token.UpdateCurrencies(currencies) && !persistence.UpdateToken(s.Storage, &token) {
-		log.Warnf("Update of token currencies has failed, currencies: %+v, token: %s", currencies, token.ID)
+		log.WithField("token", token.ID).Warnf("Update of token currencies has failed, currencies: %+v", currencies)
 	}
 
 	for currency := range token.LastSyncedFrom {
-		log.Debugf("Import %+v %s Begin", token.ID, currency)
+		log.WithField("token", token.ID).Debugf("Import for currency %s Begin", currency)
 		importNewStatements(s, &token, currency, session)
-		log.Debugf("Import %+v %s End", token.ID, currency)
+		log.WithField("token", token.ID).Debugf("Import for currency %s End", currency)
 		callback()
 	}
 }
