@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.10+improved-logging-import
+Version: 1.2.10+jwt-expiry-during-import
 Section: misc
 Priority: extra
 Architecture: amd64

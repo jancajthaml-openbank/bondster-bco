@@ -27,9 +27,8 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 
 	var (
 		err      error
-		response []byte
+		response Response
 		request  []byte
-		code     int
 		uri      string
 	)
 
@@ -43,22 +42,22 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 	}
 
 	uri = gateway + "/router/api/public/authentication/getLoginScenario"
-	response, code, err = client.Post(uri, nil, headers)
+	response, err = client.Post(uri, nil, headers)
 	if err != nil {
 		return nil, fmt.Errorf("bondster get login scenario Error %+v", err)
 	}
-	if code != 200 {
-		return nil, fmt.Errorf("bondster get login scenario error %d %+v", code, string(response))
+	if response.Status != 200 {
+		return nil, fmt.Errorf("bondster get login scenario error %s", response.String())
 	}
 
 	var scenario = new(model.LoginScenario)
-	err = utils.JSON.Unmarshal(response, scenario)
+	err = utils.JSON.Unmarshal(response.Data, scenario)
 	if err != nil {
-		return nil, fmt.Errorf("bondster unsupported login scenario invalid response %s", string(response))
+		return nil, fmt.Errorf("bondster unsupported login scenario invalid response %s", response.String())
 	}
 
 	if scenario.Value != "USR_PWD" {
-		return nil, fmt.Errorf("bondster unsupported login scenario %s", string(response))
+		return nil, fmt.Errorf("bondster unsupported login scenario %s", response.String())
 	}
 
 	step := model.LoginStep{
@@ -83,19 +82,19 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 	}
 
 	uri = gateway + "/router/api/public/authentication/validateLoginStep"
-	response, code, err = client.Post(uri, request, headers)
+	response, err = client.Post(uri, request, headers)
 	if err != nil {
 		return nil, err
 	}
-	if code != 200 {
-		return nil, fmt.Errorf("bondster validate login step error %d %+v", code, string(response))
+	if response.Status != 200 {
+		return nil, fmt.Errorf("bondster validate login step error %s", response.String())
 	}
 
 	var jwt = new(model.JWT)
-	err = utils.JSON.Unmarshal(response, jwt)
+	err = utils.JSON.Unmarshal(response.Data, jwt)
 	if err != nil {
 		return nil, err
-		return nil, fmt.Errorf("bondster validate login step invalid response %s", string(response))
+		return nil, fmt.Errorf("bondster validate login step invalid response %s", response.String())
 	}
 
 	log.Debugf("Logged in with token %s", token.ID)
@@ -104,7 +103,7 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 		JWT:     jwt.Value,
 		Device:  device,
 		Channel: channel,
-
+		SSID:    response.Header["ssid"],
 	}
 
 	return session, nil

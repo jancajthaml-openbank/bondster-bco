@@ -166,137 +166,99 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 }
 
 func importStatementsForInterval(bondsterGateway string, vaultGateway string, ledgerGateway string, tenant string, httpClient integration.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *model.Session, interval utils.TimeRange) error {
-	log.Debugf("Importing bondster statements for interval %+v", interval)
+	log.Debugf("Importing bondster statements for interval %s", interval.String())
 
 	var (
 		err      error
-		response []byte
+		transactionIds []string
+		statements *model.BondsterImportEnvelope
+		response integration.Response
 		request  []byte
-		code     int
-		uri      string
 	)
 
-	request, err = utils.JSON.Marshal(model.TransfersSearchRequest{
-		From: interval.StartTime,
-		To:   interval.EndTime,
-	})
-	if err != nil {
-		return err
-	}
-
-	uri = bondsterGateway + "/mktinvestor/api/private/transaction/search"
-
-	headers := map[string]string{
-		"device":            session.Device,
-		"channeluuid":       session.Channel,
-		"authorization":     "Bearer " + session.JWT,
-		"x-account-context": currency,
-		"x-active-language": "cs",
-		"host":              "ib.bondster.com",
-		"origin":            "https://ib.bondster.com",
-		"referer":           "https://ib.bondster.com/cs/statement",
-	}
-
 	metrics.TimeTransactionSearchLatency(func() {
-		response, code, err = httpClient.Post(uri, request, headers)
+		transactionIds, err = integration.GetTransactionIdsInInterval(httpClient, bondsterGateway, session, currency, interval)
 	})
-
-	if err != nil {
-		return fmt.Errorf("bondster transaction search error %+v request: %+v", err, string(request))
-	}
-	if code != 200 {
-		return fmt.Errorf("bondster transaction search error %d %+v request: %+v", code, string(response), string(request))
-	}
-
-	var search = new(model.TransfersSearchResult)
-	err = utils.JSON.Unmarshal(response, search)
 	if err != nil {
 		return err
 	}
 
-	if len(search.IDs) == 0 {
+	log.WithField("token", token).Debugf("found %d transactions", len(transactionIds))
+
+	if len(transactionIds) == 0 {
 		if interval.EndTime.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = interval.EndTime
 			if !persistence.UpdateToken(storage, token) {
-				log.WithField("token", token).Warn("Unable to update token last synced")
+				log.WithField("token", token.ID).Warn("Unable to update token last synced")
 			}
 		}
 		return nil
 	}
 
-	request, err = utils.JSON.Marshal(search)
-	if err != nil {
-		return err
-	}
-
-	uri = bondsterGateway + "/mktinvestor/api/private/transaction/list"
-
 	metrics.TimeTransactionListLatency(func() {
-		response, code, err = httpClient.Post(uri, request, headers)
+		statements, err = integration.GetTransactionDetails(httpClient, bondsterGateway, session, currency, transactionIds)
 	})
-
-	if err != nil {
-		return fmt.Errorf("bondster transaction list error %+v, request: %+v", err, string(request))
-	} else if code != 200 {
-		return fmt.Errorf("bondster transaction list error %d %+v, request: %+v", code, string(response), string(request))
-	}
-
-	var envelope = new(model.BondsterImportEnvelope)
-	err = utils.JSON.Unmarshal(response, &(envelope.Transactions))
 	if err != nil {
 		return err
 	}
-	envelope.Currency = currency
 
-	for _, account := range envelope.GetAccounts() {
+	// FIXME getStatements end here
+
+	accounts := statements.GetAccounts()
+	log.WithField("token", token.ID).Debugf("importing %d accounts", len(accounts))
+
+	for _, account := range accounts {
 		request, err = utils.JSON.Marshal(account)
 		if err != nil {
 			return err
 		}
 
 		uri := vaultGateway + "/account/" + tenant
-		response, code, err = httpClient.Post(uri, request, nil)
+		response, err = httpClient.Post(uri, request, nil)
 		if err != nil {
 			return fmt.Errorf("vault-rest create account %s error %+v", uri, err)
 		}
-		if code == 400 {
+		if response.Status == 400 {
 			return fmt.Errorf("vault-rest account malformed request %+v", string(request))
 		}
-		if code == 504 {
+		if response.Status == 504 {
 			return fmt.Errorf("vault-rest create account timeout")
 		}
-		if code != 200 && code != 409 {
-			return fmt.Errorf("vault-rest create account %s error %d %+v", uri, code, string(response))
+		if response.Status != 200 && response.Status != 409 {
+			return fmt.Errorf("vault-rest create account %s error %+v", uri, response)
 		}
 	}
 
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
-	for _, transaction := range envelope.GetTransactions(tenant) {
+	transactions := statements.GetTransactions(tenant)
+	log.WithField("token", token.ID).Debugf("importing %d transactions", len(transactions))
+
+	for _, transaction := range transactions {
 		for {
 			request, err = utils.JSON.Marshal(transaction)
 			if err != nil {
 				return err
 			}
 			uri := ledgerGateway + "/transaction/" + tenant
-			response, code, err = httpClient.Post(uri, request, nil)
+			response, err = httpClient.Post(uri, request, nil)
 			if err != nil {
 				return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
 			}
-			if code == 409 {
+			if response.Status == 409 {
 				// FIXME in future, follback original transaction and create new based on
 				// union of existing transaction and new (needs persistence)
 				transaction.IDTransaction = transaction.IDTransaction + "_"
 				continue
 			}
-			if code == 400 {
+			if response.Status == 400 {
 				return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
 			}
-			if code == 504 {
+			if response.Status == 504 {
 				return fmt.Errorf("ledger-rest create transaction timeout")
 			}
-			if code != 200 && code != 201 && code != 202 {
-				return fmt.Errorf("ledger-rest create transaction %s error %d %+v", uri, code, string(response))
+			if response.Status != 200 && response.Status != 201 && response.Status != 202 {
+				return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, response)
 			}
 			break
 		}
@@ -313,7 +275,7 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
-				log.WithField("token", token).Warn("Unable to update token")
+				log.WithField("token", token.ID).Warn("Unable to update token")
 			}
 		}
 	}
@@ -329,11 +291,10 @@ func importNewStatements(s *ActorSystem, token *model.Token, currency string, se
 			return
 		}
 	}
-	return
 }
 
 func importStatements(s *ActorSystem, token model.Token, callback func()) {
-	log.Debugf("Importing statements for %s", token.ID)
+	log.WithField("token", token.ID).Debugf("Importing statements")
 
 	session, err := integration.GetSession(s.HttpClient, s.BondsterGateway, token)
 	if err != nil {
@@ -348,7 +309,8 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 	}
 
 	if token.UpdateCurrencies(currencies) && !persistence.UpdateToken(s.Storage, &token) {
-		log.WithField("token", token.ID).Warnf("Update of token currencies has failed, currencies: %+v", currencies)
+		log.WithField("token", token.ID).Warnf("Update of token currencies has failed, currencies: %s", currencies)
+		return
 	}
 
 	for currency := range token.LastSyncedFrom {

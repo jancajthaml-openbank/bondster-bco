@@ -336,6 +336,7 @@ type Session struct {
 	JWT     string
 	Device  string
 	Channel string
+	SSID    string
 }
 
 // PotrfolioCurrencies hold currencies of account portfolio
