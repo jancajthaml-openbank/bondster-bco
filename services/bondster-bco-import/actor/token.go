@@ -183,7 +183,7 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 		return err
 	}
 
-	log.WithField("token", token).Debugf("found %d transactions", len(transactionIds))
+	log.WithField("token", token.ID).Debugf("found %d transactions", len(transactionIds))
 
 	if len(transactionIds) == 0 {
 		if interval.EndTime.After(token.LastSyncedFrom[currency]) {
