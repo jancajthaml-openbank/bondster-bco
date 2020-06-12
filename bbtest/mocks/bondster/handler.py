@@ -109,11 +109,11 @@ class RequestHandler(BaseHTTPRequestHandler):
 
   def do_POST(self):
     handler = {
-      '/router/api/public/authentication/getLoginScenario': self.__get_login_scenarion,
-      '/router/api/public/authentication/validateLoginStep': self.__validate_login_step,
-      '/clientusersetting/api/private/market/getContactInformation': self.__get_contain_information,
-      '/mktinvestor/api/private/transaction/search': self.__transaction_search,
-      '/mktinvestor/api/private/transaction/list': self.__transaction_list,
+      '/proxy/router/api/public/authentication/getLoginScenario': self.__get_login_scenarion,
+      '/proxy/router/api/public/authentication/validateLoginStep': self.__validate_login_step,
+      '/proxy/clientusersetting/api/private/market/getContactInformation': self.__get_contain_information,
+      '/proxy/mktinvestor/api/private/transaction/search': self.__transaction_search,
+      '/proxy/mktinvestor/api/private/transaction/list': self.__transaction_list,
     }.get(self.path, None)
 
     if handler:

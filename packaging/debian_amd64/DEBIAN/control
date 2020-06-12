@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.10+ssid
+Version: 1.2.10+authenticated-http-client
 Section: misc
 Priority: extra
 Architecture: amd64

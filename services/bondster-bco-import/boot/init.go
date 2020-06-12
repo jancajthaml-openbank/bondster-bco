@@ -67,7 +67,6 @@ func Initialize() Program {
 	)
 	bondsterDaemon := integration.NewBondsterImport(
 		ctx,
-		cfg.BondsterGateway,
 		cfg.SyncRate,
 		&storage,
 		func(token string) {

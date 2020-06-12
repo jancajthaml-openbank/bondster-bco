@@ -301,52 +301,6 @@ func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// WebToken encrypted json web token and ssid of bondster session
-type WebToken struct {
-	JWT string
-	SSID string
-}
-
-// UnmarshalJSON is json JWT unmarhalling companion
-func (entity *WebToken) UnmarshalJSON(data []byte) error {
-	if entity == nil {
-		return fmt.Errorf("cannot unmarshall to nil pointer")
-	}
-	all := struct {
-		Result string `json:"result"`
-		JWT    struct {
-			Value string `json:"value"`
-		} `json:"jwt"`
-		SSID    struct {
-			Value string `json:"value"`
-		} `json:"ssid"`
-	}{}
-	err := utils.JSON.Unmarshal(data, &all)
-	if err != nil {
-		return err
-	}
-	if all.Result != "FINISH" {
-		return fmt.Errorf("result %s has not finished, bailing out", all.Result)
-	}
-	if all.JWT.Value == "" {
-		return fmt.Errorf("missing \"jwt\" value field")
-	}
-	if all.SSID.Value == "" {
-		return fmt.Errorf("missing \"ssid\" value field")
-	}
-	entity.JWT = all.JWT.Value
-	entity.SSID = all.SSID.Value
-	return nil
-}
-
-// Session hold bondster session headers
-type Session struct {
-	JWT     string
-	Device  string
-	Channel string
-	SSID    string
-}
-
 // PotrfolioCurrencies hold currencies of account portfolio
 type PotrfolioCurrencies struct {
 	Value []string

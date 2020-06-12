@@ -18,49 +18,14 @@ import (
 	"fmt"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
+	"github.com/jancajthaml-openbank/bondster-bco-import/http"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
 
-func GetCurrencies(client Client, gateway string, session *model.Session) ([]string, error) {
+func GetTransactionIdsInInterval(client http.BondsterClient, session *http.Session, currency string, interval utils.TimeRange) ([]string, error) {
 	var (
 		err      error
-		uri      string
-	)
-
-	uri = gateway + "/clientusersetting/api/private/market/getContactInformation"
-
-	headers := map[string]string{
-		"device":            session.Device,
-		"channeluuid":       session.Channel,
-		"ssid":              session.SSID,
-		"x-active-language": "cs",
-		"authorization":     "Bearer " + session.JWT,
-		"host":              "ib.bondster.com",
-		"origin":            "https://ib.bondster.com",
-		"referer":           "https://ib.bondster.com/cs",
-	}
-
-	response, err := client.Post(uri, nil, headers)
-	if err != nil {
-		return nil, fmt.Errorf("bondster get contact information error %+v", err)
-	}
-	if response.Status != 200 {
-		return nil, fmt.Errorf("bondster get contact information error %s", response.String())
-	}
-
-	var currencies = new(model.PotrfolioCurrencies)
-	err = utils.JSON.Unmarshal(response.Data, currencies)
-	if err != nil {
-		return nil, err
-	}
-
-	return currencies.Value, nil
-}
-
-func GetTransactionIdsInInterval(client Client, gateway string, session *model.Session, currency string, interval utils.TimeRange) ([]string, error) {
-	var (
-		err      error
-		response Response
+		response http.Response
 		request  []byte
 		uri      string
 	)
@@ -73,7 +38,7 @@ func GetTransactionIdsInInterval(client Client, gateway string, session *model.S
 		return nil, err
 	}
 
-	uri = gateway + "/mktinvestor/api/private/transaction/search"
+	uri = "/proxy/mktinvestor/api/private/transaction/search"
 
 	headers := map[string]string{
 		"device":            session.Device,
@@ -104,12 +69,10 @@ func GetTransactionIdsInInterval(client Client, gateway string, session *model.S
 	return search.IDs, nil
 }
 
-
-
-func GetTransactionDetails(client Client, gateway string, session *model.Session, currency string, transactionIds []string) (*model.BondsterImportEnvelope, error) {
+func GetTransactionDetails(client http.BondsterClient, session *http.Session, currency string, transactionIds []string) (*model.BondsterImportEnvelope, error) {
 	var (
 		err      error
-		response Response
+		response http.Response
 		request  []byte
 		uri      string
 	)
@@ -121,7 +84,7 @@ func GetTransactionDetails(client Client, gateway string, session *model.Session
 		return nil, err
 	}
 
-	uri = gateway + "/mktinvestor/api/private/transaction/list"
+	uri = "/proxy/mktinvestor/api/private/transaction/list"
 
 	headers := map[string]string{
 		"device":            session.Device,
