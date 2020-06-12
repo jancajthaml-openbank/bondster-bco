@@ -114,7 +114,6 @@ func (client Client) Post(url string, body []byte, headers map[string]string) (r
 		return
 	}
 	for k, v := range resp.Header {
-    log.Debugf("Response Header POST %s, %s:%s", url, k, v)
     response.Header[k] = v[len(v)-1]
 	}
 	response.Status = resp.StatusCode
@@ -165,7 +164,6 @@ func (client Client) Get(url string, headers map[string]string) (response Respon
 		return
 	}
 	for k, v := range resp.Header {
-    log.Debugf("Response Header GET %s, %s:%s", url, k, v)
     response.Header[k] = v[len(v)-1]
 	}
 	response.Status = resp.StatusCode

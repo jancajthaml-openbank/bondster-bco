@@ -301,13 +301,14 @@ func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// JWT encrypted json web token of bondster session
-type JWT struct {
-	Value string
+// WebToken encrypted json web token and ssid of bondster session
+type WebToken struct {
+	JWT string
+	SSID string
 }
 
 // UnmarshalJSON is json JWT unmarhalling companion
-func (entity *JWT) UnmarshalJSON(data []byte) error {
+func (entity *WebToken) UnmarshalJSON(data []byte) error {
 	if entity == nil {
 		return fmt.Errorf("cannot unmarshall to nil pointer")
 	}
@@ -316,6 +317,9 @@ func (entity *JWT) UnmarshalJSON(data []byte) error {
 		JWT    struct {
 			Value string `json:"value"`
 		} `json:"jwt"`
+		SSID    struct {
+			Value string `json:"value"`
+		} `json:"ssid"`
 	}{}
 	err := utils.JSON.Unmarshal(data, &all)
 	if err != nil {
@@ -327,7 +331,11 @@ func (entity *JWT) UnmarshalJSON(data []byte) error {
 	if all.JWT.Value == "" {
 		return fmt.Errorf("missing \"jwt\" value field")
 	}
-	entity.Value = all.JWT.Value
+	if all.SSID.Value == "" {
+		return fmt.Errorf("missing \"ssid\" value field")
+	}
+	entity.JWT = all.JWT.Value
+	entity.SSID = all.SSID.Value
 	return nil
 }
 
