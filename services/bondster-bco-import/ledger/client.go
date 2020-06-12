@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package http
+package ledger
+
+import (
+  "github.com/jancajthaml-openbank/bondster-bco-import/http"
+)
 
 // LedgerClient represents fascade for http client
 type LedgerClient struct {
-  underlying HttpClient
+  underlying http.HttpClient
   gateway string
 }
 
@@ -24,16 +28,16 @@ type LedgerClient struct {
 func NewLedgerClient(gateway string) LedgerClient {
   return LedgerClient{
     gateway: gateway,
-    underlying: NewHttpClient(),
+    underlying: http.NewHttpClient(),
   }
 }
 
 // Post performs http POST request for given url with given body
-func (client LedgerClient) Post(url string, body []byte, headers map[string]string) (Response, error) {
-  return client.Post(client.gateway+url, body, headers)
+func (client LedgerClient) Post(url string, body []byte, headers map[string]string) (http.Response, error) {
+  return client.underlying.Post(client.gateway+url, body, headers)
 }
 
 // Get performs http GET request for given url
-func (client LedgerClient) Get(url string, headers map[string]string) (Response, error) {
-  return client.Get(client.gateway+url, headers)
+func (client LedgerClient) Get(url string, headers map[string]string) (http.Response, error) {
+  return client.underlying.Get(client.gateway+url, headers)
 }

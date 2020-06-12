@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package http
+package bondster
 
 import (
-  "fmt"
+  "github.com/jancajthaml-openbank/bondster-bco-import/logging"
 )
 
-type Response struct {
-  Status int
-  Data []byte
-  Header map[string]string
-}
-
-func (value *Response) String() string {
-  if value == nil {
-    return "<nil>"
-  }
-  return fmt.Sprintf("Response{ Status: %d, Data: %s, Header: %+v }", value.Status, string(value.Data), value.Header)
-}
+var log = logging.NewLogger("bondster")

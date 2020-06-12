@@ -17,8 +17,6 @@ package model
 import (
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
@@ -235,46 +233,14 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 	return result
 }
 
-// LoginStep satisfaction of login scenario
-type LoginStep struct {
-	Code   string           `json:"scenarioCode"`
-	Values []LoginStepValue `json:"authProcessStepValues"`
-}
-
-// LoginStepValue value of login step
-type LoginStepValue struct {
-	Type  string `json:"authDetailType"`
-	Value string `json:"value"`
-}
-
 // LoginScenario holds code representing how service should log in
 type LoginScenario struct {
 	Value string
 }
 
-// TransfersSearchRequest request for search transfed
-type TransfersSearchRequest struct {
-	From time.Time
-	To   time.Time
-}
-
 // TransfersSearchResult result of search transfers request
 type TransfersSearchResult struct {
 	IDs []string `json:"transferIdList"`
-}
-
-// MarshalJSON is json TransfersSearchResult marhalling companion
-func (entity TransfersSearchResult) MarshalJSON() ([]byte, error) {
-	ids := make([]string, len(entity.IDs))
-	for i, id := range entity.IDs {
-		ids[i] = "\"" + id + "\""
-	}
-	return []byte("{\"transactionIds\":[" + strings.Join(ids, ",") + "]}"), nil
-}
-
-// MarshalJSON is json TransfersSearchRequest marhalling companion
-func (entity TransfersSearchRequest) MarshalJSON() ([]byte, error) {
-	return []byte("{\"valueDateFrom\":{\"month\":\"" + strconv.FormatInt(int64(entity.From.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.From.Year()), 10) + "\"},\"valueDateTo\":{\"month\":\"" + strconv.FormatInt(int64(entity.To.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.To.Year()), 10) + "\"}}"), nil
 }
 
 // UnmarshalJSON is json LoginScenario unmarhalling companion
@@ -298,31 +264,5 @@ func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("missing \"code\" value field")
 	}
 	entity.Value = all.Scenarios[0].Code
-	return nil
-}
-
-// PotrfolioCurrencies hold currencies of account portfolio
-type PotrfolioCurrencies struct {
-	Value []string
-}
-
-// UnmarshalJSON is json PotrfolioCurrencies unmarhalling companion
-func (entity *PotrfolioCurrencies) UnmarshalJSON(data []byte) error {
-	if entity == nil {
-		return fmt.Errorf("cannot unmarshall to nil pointer")
-	}
-	all := struct {
-		MarketAccounts struct {
-			AccountsMap map[string]interface{} `json:"currencyToAccountMap"`
-		} `json:"marketVerifiedExternalAccount"`
-	}{}
-	err := utils.JSON.Unmarshal(data, &all)
-	if err != nil {
-		return err
-	}
-	entity.Value = make([]string, 0)
-	for currency := range all.MarketAccounts.AccountsMap {
-		entity.Value = append(entity.Value, currency)
-	}
 	return nil
 }

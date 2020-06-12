@@ -18,12 +18,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 	"github.com/jancajthaml-openbank/bondster-bco-import/http"
+	"github.com/jancajthaml-openbank/bondster-bco-import/vault"
+	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
+	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	system "github.com/jancajthaml-openbank/actor-system"
@@ -166,7 +168,7 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(tenant string, bondsterClient http.BondsterClient, vaultClient http.VaultClient, ledgerClient http.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *http.Session, interval utils.TimeRange) error {
+func importStatementsForInterval(tenant string, bondsterClient bondster.BondsterClient, vaultClient vault.VaultClient, ledgerClient ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *bondster.Session, interval utils.TimeRange) error {
 	log.Debugf("Importing bondster statements for interval %s", interval.String())
 
 	var (
@@ -178,7 +180,7 @@ func importStatementsForInterval(tenant string, bondsterClient http.BondsterClie
 	)
 
 	metrics.TimeTransactionSearchLatency(func() {
-		transactionIds, err = integration.GetTransactionIdsInInterval(bondsterClient, session, currency, interval)
+		transactionIds, err = bondsterClient.GetTransactionIdsInInterval(session, currency, interval)
 	})
 	if err != nil {
 		return err
@@ -195,7 +197,7 @@ func importStatementsForInterval(tenant string, bondsterClient http.BondsterClie
 	}
 
 	metrics.TimeTransactionListLatency(func() {
-		statements, err = integration.GetTransactionDetails(bondsterClient, session, currency, transactionIds)
+		statements, err = bondsterClient.GetTransactionDetails(session, currency, transactionIds)
 	})
 	if err != nil {
 		return err
@@ -282,7 +284,7 @@ func importStatementsForInterval(tenant string, bondsterClient http.BondsterClie
 	return nil
 }
 
-func importNewStatements(s *ActorSystem, token *model.Token, currency string, session *http.Session) {
+func importNewStatements(s *ActorSystem, token *model.Token, currency string, session *bondster.Session) {
 	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
 		err := importStatementsForInterval(s.Tenant, s.BondsterClient, s.VaultClient, s.LedgerClient, s.Storage, s.Metrics, token, currency, session, interval)
 		if err != nil {
