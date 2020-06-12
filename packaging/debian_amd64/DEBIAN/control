@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.10+jwt-expiry-during-import
+Version: 1.2.10+ssid
 Section: misc
 Priority: extra
 Architecture: amd64

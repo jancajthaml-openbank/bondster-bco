@@ -90,8 +90,8 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 		return nil, fmt.Errorf("bondster validate login step error %s", response.String())
 	}
 
-	var jwt = new(model.JWT)
-	err = utils.JSON.Unmarshal(response.Data, jwt)
+	var webToken = new(model.WebToken)
+	err = utils.JSON.Unmarshal(response.Data, webToken)
 	if err != nil {
 		return nil, err
 		return nil, fmt.Errorf("bondster validate login step invalid response %s", response.String())
@@ -100,10 +100,10 @@ func GetSession(client Client, gateway string, token model.Token) (*model.Sessio
 	log.Debugf("Logged in with token %s", token.ID)
 
 	session := &model.Session{
-		JWT:     jwt.Value,
+		JWT:     webToken.JWT,
 		Device:  device,
 		Channel: channel,
-		SSID:    response.Header["ssid"],
+		SSID:    webToken.SSID,
 	}
 
 	return session, nil
