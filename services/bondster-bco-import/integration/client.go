@@ -32,6 +32,19 @@ type Client struct {
 	underlying *http.Client
 }
 
+type Response struct {
+	Status int
+	Data []byte
+	Header map[string]string
+}
+
+func (value *Response) String() string {
+  if value == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("Response{ Status: %d, Data: %s, Header: %+v }", value.Status, string(value.Data), value.Header)
+}
+
 // NewClient returns new http client
 func NewClient() Client {
 	return Client{
@@ -60,17 +73,21 @@ func NewClient() Client {
 }
 
 // Post performs http POST request for given url with given body
-func (client Client) Post(url string, body []byte, headers map[string]string) (contents []byte, code int, err error) {
+func (client Client) Post(url string, body []byte, headers map[string]string) (response Response, err error) {
+	response = Response{
+		Status: 0,
+		Data: nil,
+		Header: make(map[string]string),
+	}
+
 	var (
 		req  *http.Request
 		resp *http.Response
 	)
-
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("runtime error %+v", r)
 		}
-
 		if err != nil && resp != nil {
 			_, err = io.Copy(ioutil.Discard, resp.Body)
 			resp.Body.Close()
@@ -78,37 +95,40 @@ func (client Client) Post(url string, body []byte, headers map[string]string) (c
 			err = fmt.Errorf("runtime error, no response")
 		}
 
-		if err != nil {
-			contents = nil
-		} else {
-			contents, err = ioutil.ReadAll(resp.Body)
+		if err == nil {
+			response.Data, err = ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
 		}
 	}()
-
 	req, err = http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
 		return
 	}
-
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set("accept", "application/json")
-
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-
 	resp, err = client.underlying.Do(req)
 	if err != nil {
 		return
 	}
-
-	code = resp.StatusCode
+	for k, v := range resp.Header {
+    log.Debugf("Response Header POST %s, %s:%s", url, k, v)
+    response.Header[k] = v[len(v)-1]
+	}
+	response.Status = resp.StatusCode
 	return
 }
 
 // Get performs http GET request for given url
-func (client Client) Get(url string, headers map[string]string) (contents []byte, code int, err error) {
+func (client Client) Get(url string, headers map[string]string) (response Response, err error) {
+	response = Response{
+		Status: 0,
+		Data: nil,
+		Header: make(map[string]string),
+	}
+
 	var (
 		req  *http.Request
 		resp *http.Response
@@ -126,10 +146,8 @@ func (client Client) Get(url string, headers map[string]string) (contents []byte
 			err = fmt.Errorf("runtime error, no response %+v", err)
 		}
 
-		if err != nil {
-			contents = nil
-		} else {
-			contents, err = ioutil.ReadAll(resp.Body)
+		if err == nil {
+			response.Data, err = ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
 		}
 	}()
@@ -138,18 +156,18 @@ func (client Client) Get(url string, headers map[string]string) (contents []byte
 	if err != nil {
 		return
 	}
-
 	req.Header.Set("accept", "application/json")
-
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-
 	resp, err = client.underlying.Do(req)
 	if err != nil {
 		return
 	}
-
-	code = resp.StatusCode
+	for k, v := range resp.Header {
+    log.Debugf("Response Header GET %s, %s:%s", url, k, v)
+    response.Header[k] = v[len(v)-1]
+	}
+	response.Status = resp.StatusCode
 	return
 }
