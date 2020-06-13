@@ -174,7 +174,7 @@ func importStatementsForInterval(tenant string, bondsterClient bondster.Bondster
 	var (
 		err      error
 		transactionIds []string
-		statements *model.BondsterImportEnvelope
+		statements *bondster.BondsterImportEnvelope
 		response http.Response
 		request  []byte
 	)

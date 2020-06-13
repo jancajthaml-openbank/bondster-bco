@@ -103,7 +103,7 @@ func (client BondsterClient) GetSession(token model.Token) (*Session, error) {
     return nil, fmt.Errorf("bondster get login scenario error %s", response.String())
   }
 
-  var scenario = new(model.LoginScenario)
+  var scenario = new(LoginScenario)
   err = utils.JSON.Unmarshal(response.Data, scenario)
   if err != nil {
     return nil, fmt.Errorf("bondster unsupported login scenario invalid response %s", response.String())
@@ -116,14 +116,14 @@ func (client BondsterClient) GetSession(token model.Token) (*Session, error) {
   request := whitespaceRegex.ReplaceAllString(fmt.Sprintf(`
     {
       "scenarioCode": "USR_PWD",
-      "values": [
+      "authProcessStepValues": [
         {
           "authDetailType": "USERNAME",
-          "value": %s
+          "value": "%s"
         },
         {
           "authDetailType": "PWD",
-          "value": %s
+          "value": "%s"
         }
       ]
     }
@@ -175,6 +175,7 @@ func (client BondsterClient) GetCurrencies(session *Session) ([]string, error) {
   if err != nil {
     return nil, err
   }
+
   currencies := make([]string, 0)
   for currency := range all.MarketAccounts.AccountsMap {
     currencies = append(currencies, currency)
@@ -205,19 +206,22 @@ func (client BondsterClient) GetTransactionIdsInInterval(session *Session, curre
     return nil, fmt.Errorf("bondster get contact information error %s", response.String())
   }
 
-  var search = new(model.TransfersSearchResult)
-  err = utils.JSON.Unmarshal(response.Data, search)
+  all := struct {
+    IDs []string `json:"transferIdList"`
+  }{}
+
+  err = utils.JSON.Unmarshal(response.Data, &all)
   if err != nil {
     return nil, err
   }
 
-  return search.IDs, nil
+  return all.IDs, nil
 }
 
-func (client BondsterClient) GetTransactionDetails(session *Session, currency string, transactionIds []string) (*model.BondsterImportEnvelope, error) {
-  ids := make([]string, len(transactionIds))
-  for i, id := range transactionIds {
-    ids[i] = "\"" + id + "\","
+func (client BondsterClient) GetTransactionDetails(session *Session, currency string, transactionIds []string) (*BondsterImportEnvelope, error) {
+  ids := ""
+  for _, id := range transactionIds {
+    ids += "\"" + id + "\","
   }
 
   request := whitespaceRegex.ReplaceAllString(fmt.Sprintf(`
@@ -236,7 +240,7 @@ func (client BondsterClient) GetTransactionDetails(session *Session, currency st
     return nil, fmt.Errorf("bondster get contact information error %s", response.String())
   }
 
-  var envelope = new(model.BondsterImportEnvelope)
+  var envelope = new(BondsterImportEnvelope)
   err = utils.JSON.Unmarshal(response.Data, &(envelope.Transactions))
   if err != nil {
     return nil, err

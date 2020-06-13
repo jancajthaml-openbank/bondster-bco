@@ -87,8 +87,7 @@ class BussinessLogic(object):
     return {
       "transferIdList": [
         "a",
-        "b",
-        "c"
+        "b"
       ],
       "summary": {
         "startingBalance": 0,

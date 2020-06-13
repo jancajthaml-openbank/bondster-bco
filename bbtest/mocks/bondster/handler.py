@@ -38,7 +38,8 @@ class RequestHandler(BaseHTTPRequestHandler):
     if not self.validate_channel():
       return self.__respond(500)
 
-    request = json.loads(self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8'))
+    req_data = self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8')
+    request = json.loads(req_data)
 
     response = self.server.logic.validate_login_step(request)
     if not response:
@@ -76,7 +77,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     # fixme validate currency
 
-    request = json.loads(self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8'))
+    req_data = self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8')
+    request = json.loads(req_data)
 
     valueDateFrom = request.get('valueDateFrom')
     valueDateTo = request.get('valueDateTo')
@@ -100,7 +102,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     # fixme validate currency
 
-    request = json.loads(self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8'))
+    req_data = self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8')
+    request = json.loads(req_data)
 
     transactions = request.get('transactionIds', [])
     response = self.server.logic.transaction_list(transactions)
