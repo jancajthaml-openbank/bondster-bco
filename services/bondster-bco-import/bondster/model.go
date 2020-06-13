@@ -31,18 +31,12 @@ type WebToken struct {
 
 type JWT struct {
   Value string
+  ExpiresAt time.Time
 }
 
 type SSID struct {
   Value string
-}
-
-// Session hold bondster session headers
-type Session struct {
-  JWT     *JWT
-  SSID    *SSID
-  Device  string
-  Channel string
+  ExpiresAt time.Time
 }
 
 // UnmarshalJSON is json JWT unmarhalling companion
@@ -52,8 +46,14 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
   }
   all := struct {
     Result string `json:"result"`
-    JWT    JWT    `json:"jwt"`
-    SSID   SSID   `json:"ssid"`
+    JWT    struct {
+      Value string `json:"value"`
+      ExpiresAt string `json:"expirationDate"`
+    } `json:"jwt"`
+    SSID    struct {
+      Value string `json:"value"`
+      ExpiresAt string `json:"expirationDate"`
+    } `json:"ssid"`
   }{}
   err := utils.JSON.Unmarshal(data, &all)
   if err != nil {
@@ -62,14 +62,26 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
   if all.Result != "FINISH" {
     return fmt.Errorf("result %s has not finished, bailing out", all.Result)
   }
-  if all.JWT.Value == "" {
+  if all.JWT.Value == "" || all.JWT.ExpiresAt == "" {
     return fmt.Errorf("missing \"jwt\" value field")
   }
-  if all.SSID.Value == "" {
+  if all.SSID.Value == "" || all.SSID.ExpiresAt == "" {
     return fmt.Errorf("missing \"ssid\" value field")
   }
-  entity.JWT = all.JWT
-  entity.SSID = all.SSID
+
+  jwtExpiration := time.Now()
+  ssidExpiration := time.Now()
+
+  entity.JWT = JWT{
+    Value: all.JWT.Value,
+    ExpiresAt: jwtExpiration,
+  }
+  entity.SSID = SSID{
+    Value: all.SSID.Value,
+    ExpiresAt: ssidExpiration,
+  }
+  // expirationDate: "2020-06-13T19:09:21.591Z"
+
   return nil
 }
 

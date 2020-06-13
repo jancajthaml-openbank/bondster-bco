@@ -15,7 +15,11 @@
 package ledger
 
 import (
+	"fmt"
+
   "github.com/jancajthaml-openbank/bondster-bco-import/http"
+  "github.com/jancajthaml-openbank/bondster-bco-import/utils"
+  "github.com/jancajthaml-openbank/bondster-bco-import/model"
 )
 
 // LedgerClient represents fascade for http client
@@ -40,4 +44,35 @@ func (client LedgerClient) Post(url string, body []byte, headers map[string]stri
 // Get performs http GET request for given url
 func (client LedgerClient) Get(url string, headers map[string]string) (http.Response, error) {
   return client.underlying.Get(client.gateway+url, headers)
+}
+
+
+func (client LedgerClient) CreateTransaction(tenant string, transaction model.Transaction) error {
+	for {
+		request, err := utils.JSON.Marshal(transaction)
+		if err != nil {
+			return err
+		}
+		uri := "/transaction/" + tenant
+		response, err := client.Post(uri, request, nil)
+		if err != nil {
+			return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
+		}
+		if response.Status == 409 {
+			// FIXME in future, follback original transaction and create new based on
+			// union of existing transaction and new (needs persistence)
+			transaction.IDTransaction = transaction.IDTransaction + "_"
+			continue
+		}
+		if response.Status == 400 {
+			return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
+		}
+		if response.Status == 504 {
+			return fmt.Errorf("ledger-rest create transaction timeout")
+		}
+		if response.Status != 200 && response.Status != 201 && response.Status != 202 {
+			return fmt.Errorf("ledger-rest create transaction %s error %s", uri, response.String())
+		}
+		return nil
+	}
 }

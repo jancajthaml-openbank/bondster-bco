@@ -29,34 +29,37 @@ var whitespaceRegex = regexp.MustCompile(`\s`)
 type BondsterClient struct {
   underlying http.HttpClient
   gateway string
+  token model.Token
+  session *Session
 }
 
 // NewBondsterClient returns new bondster http client
-func NewBondsterClient(gateway string) BondsterClient {
+func NewBondsterClient(gateway string, token model.Token) BondsterClient {
   return BondsterClient{
     gateway: gateway,
     underlying: http.NewHttpClient(),
+    token: token,
+    session: nil,
   }
 }
 
 // Post performs http POST request for given url with given body
-func (client BondsterClient) Post(url string, body []byte, session *Session) (http.Response, error) {
-
+func (client BondsterClient) Post(url string, body []byte) (http.Response, error) {
   headers := map[string]string{
-    "device":            session.Device,
-    "channeluuid":       session.Channel,
+    "device":            client.session.Device,
+    "channeluuid":       client.session.Channel,
     "x-active-language": "cs",
     "host":              "ib.bondster.com",
     "origin":            client.gateway,
     "referer":           client.gateway + "/cs",
   }
 
-  if session.JWT != nil {
-    headers["authorization"] = "Bearer " + session.JWT.Value
+  if client.session.JWT != nil {
+    headers["authorization"] = "Bearer " + client.session.JWT.Value
   }
 
-  if session.SSID != nil {
-    headers["ssid"] = session.SSID.Value
+  if client.session.SSID != nil {
+    headers["ssid"] = client.session.SSID.Value
   }
 
   return client.underlying.Post(client.gateway+url, body, headers)
@@ -65,52 +68,61 @@ func (client BondsterClient) Post(url string, body []byte, session *Session) (ht
 // Get performs http GET request for given url
 func (client BondsterClient) Get(url string, session *Session) (http.Response, error) {
   headers := map[string]string{
-    "device":            session.Device,
-    "channeluuid":       session.Channel,
+    "device":            client.session.Device,
+    "channeluuid":       client.session.Channel,
     "x-active-language": "cs",
     "host":              "ib.bondster.com",
     "origin":            client.gateway,
     "referer":           client.gateway + "/cs",
   }
 
-  if session.JWT != nil {
-    headers["authorization"] = "Bearer " + session.JWT.Value
+  if client.session.JWT != nil {
+    headers["authorization"] = "Bearer " + client.session.JWT.Value
   }
 
-  if session.SSID != nil {
-    headers["ssid"] = session.SSID.Value
+  if client.session.SSID != nil {
+    headers["ssid"] = client.session.SSID.Value
   }
 
   return client.underlying.Get(client.gateway+url, headers)
 }
 
 // GetSession returns session for bondster client
-func (client BondsterClient) GetSession(token model.Token) (*Session, error) {
-  session := new(Session)
-  session.Device = utils.RandDevice()
-  session.Channel = utils.UUID()
+func (client *BondsterClient) checkSession() error {
+  if client == nil {
+    return fmt.Errorf("nil defference")
+  }
+
+  // FIXME better check
+  // FIXME make session actual object with IsValid, Revoke etc.
+  if client.session != nil {
+    return nil
+  }
+
+  session := NewSession()
+  client.session = &session
 
   var (
     err      error
     response http.Response
   )
 
-  response, err = client.Post("/proxy/router/api/public/authentication/getLoginScenario", nil, session)
+  response, err = client.Post("/proxy/router/api/public/authentication/getLoginScenario", nil)
   if err != nil {
-    return nil, fmt.Errorf("bondster get login scenario Error %+v", err)
+    return fmt.Errorf("bondster get login scenario Error %+v", err)
   }
   if response.Status != 200 {
-    return nil, fmt.Errorf("bondster get login scenario error %s", response.String())
+    return fmt.Errorf("bondster get login scenario error %s", response.String())
   }
 
   var scenario = new(LoginScenario)
   err = utils.JSON.Unmarshal(response.Data, scenario)
   if err != nil {
-    return nil, fmt.Errorf("bondster unsupported login scenario invalid response %s", response.String())
+    return fmt.Errorf("bondster unsupported login scenario invalid response %s", response.String())
   }
 
   if scenario.Value != "USR_PWD" {
-    return nil, fmt.Errorf("bondster unsupported login scenario %s", response.String())
+    return fmt.Errorf("bondster unsupported login scenario %s", response.String())
   }
 
   request := whitespaceRegex.ReplaceAllString(fmt.Sprintf(`
@@ -127,37 +139,37 @@ func (client BondsterClient) GetSession(token model.Token) (*Session, error) {
         }
       ]
     }
-  `, token.Username, token.Password), "")
+  `, client.token.Username, client.token.Password), "")
 
-  response, err = client.Post("/proxy/router/api/public/authentication/validateLoginStep", []byte(request), session)
+  response, err = client.Post("/proxy/router/api/public/authentication/validateLoginStep", []byte(request))
   if err != nil {
-    return nil, err
+    return err
   }
   if response.Status != 200 {
-    return nil, fmt.Errorf("bondster validate login step error %s", response.String())
+    return fmt.Errorf("bondster validate login step error %s", response.String())
   }
 
   var webToken = new(WebToken)
   err = utils.JSON.Unmarshal(response.Data, webToken)
   if err != nil {
-    return nil, err
-    return nil, fmt.Errorf("bondster validate login step invalid response %s", response.String())
+    return fmt.Errorf("bondster validate login step invalid response %s", response.String())
   }
 
-  log.Debugf("Logged in with token %s", token.ID)
+  log.Debugf("Logged in with token %s", client.token.ID)
 
-  session.JWT = &(webToken.JWT)
-  session.SSID = &(webToken.SSID)
+  client.session.JWT = &(webToken.JWT)
+  client.session.SSID = &(webToken.SSID)
 
-  return session, nil
+  return nil
 }
 
-func (client BondsterClient) GetCurrencies(session *Session) ([]string, error) {
-  var (
-    err      error
-  )
+func (client BondsterClient) GetCurrencies() ([]string, error) {
+  err := client.checkSession()
+  if err != nil {
+    return nil, err
+  }
 
-  response, err := client.Post("/proxy/clientusersetting/api/private/market/getContactInformation", nil, session)
+  response, err := client.Post("/proxy/clientusersetting/api/private/market/getContactInformation", nil)
   if err != nil {
     return nil, fmt.Errorf("bondster get contact information error %+v", err)
   }
@@ -184,7 +196,11 @@ func (client BondsterClient) GetCurrencies(session *Session) ([]string, error) {
   return currencies, nil
 }
 
-func (client BondsterClient) GetTransactionIdsInInterval(session *Session, currency string, interval utils.TimeRange) ([]string, error) {
+func (client BondsterClient) GetTransactionIdsInInterval(currency string, interval utils.TimeRange) ([]string, error) {
+  err := client.checkSession()
+  if err != nil {
+    return nil, err
+  }
   request := whitespaceRegex.ReplaceAllString(fmt.Sprintf(`
     {
       "valueDateFrom": {
@@ -198,7 +214,7 @@ func (client BondsterClient) GetTransactionIdsInInterval(session *Session, curre
     }
   `, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year()), "")
 
-  response, err := client.Post("/proxy/mktinvestor/api/private/transaction/search", []byte(request), session)
+  response, err := client.Post("/proxy/mktinvestor/api/private/transaction/search", []byte(request))
   if err != nil {
     return nil, fmt.Errorf("bondster get contact information error %+v", err)
   }
@@ -218,7 +234,11 @@ func (client BondsterClient) GetTransactionIdsInInterval(session *Session, curre
   return all.IDs, nil
 }
 
-func (client BondsterClient) GetTransactionDetails(session *Session, currency string, transactionIds []string) (*BondsterImportEnvelope, error) {
+func (client BondsterClient) GetTransactionDetails(currency string, transactionIds []string) (*BondsterImportEnvelope, error) {
+  err := client.checkSession()
+  if err != nil {
+    return nil, err
+  }
   ids := ""
   for _, id := range transactionIds {
     ids += "\"" + id + "\","
@@ -232,7 +252,7 @@ func (client BondsterClient) GetTransactionDetails(session *Session, currency st
     }
   `, ids[0:len(ids)-1]), "")
 
-  response, err := client.Post("/proxy/mktinvestor/api/private/transaction/list", []byte(request), session)
+  response, err := client.Post("/proxy/mktinvestor/api/private/transaction/list", []byte(request))
   if err != nil {
     return nil, fmt.Errorf("bondster get contact information error %+v", err)
   }
