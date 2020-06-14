@@ -69,8 +69,15 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
     return fmt.Errorf("missing \"ssid\" value field")
   }
 
-  jwtExpiration := time.Now()
-  ssidExpiration := time.Now()
+  jwtExpiration, err := time.Parse("2006-01-02T15:04:05.000Z", all.JWT.ExpiresAt)
+  if err != nil {
+    return err
+  }
+
+  ssidExpiration, err := time.Parse("2006-01-02T15:04:05.000Z", all.SSID.ExpiresAt)
+  if err != nil {
+    return err
+  }
 
   entity.JWT = JWT{
     Value: all.JWT.Value,
@@ -80,7 +87,6 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
     Value: all.SSID.Value,
     ExpiresAt: ssidExpiration,
   }
-  // expirationDate: "2020-06-13T19:09:21.591Z"
 
   return nil
 }

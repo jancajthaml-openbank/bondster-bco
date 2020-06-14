@@ -7,6 +7,11 @@ class RequestHandler(BaseHTTPRequestHandler):
   def log_message(self, format, *args):
     pass
 
+  def __prolong_token(self):
+    response = self.server.logic.prolong_token()
+
+    self.__respond(200, response)
+
   def __get_login_scenarion(self):
     device = self.headers.get('device')
     channel = self.headers.get('channeluuid')
@@ -112,6 +117,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
   def do_POST(self):
     handler = {
+      '/proxy/router/api/private/token/prolong': self.__prolong_token,
       '/proxy/router/api/public/authentication/getLoginScenario': self.__get_login_scenarion,
       '/proxy/router/api/public/authentication/validateLoginStep': self.__validate_login_step,
       '/proxy/clientusersetting/api/private/market/getContactInformation': self.__get_contain_information,

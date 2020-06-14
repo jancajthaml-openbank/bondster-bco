@@ -16,6 +16,7 @@ package bondster
 
 import (
   "fmt"
+  "time"
   "regexp"
 
   "github.com/jancajthaml-openbank/bondster-bco-import/model"
@@ -87,16 +88,28 @@ func (client BondsterClient) Get(url string, session *Session) (http.Response, e
   return client.underlying.Get(client.gateway+url, headers)
 }
 
+
 // GetSession returns session for bondster client
 func (client *BondsterClient) checkSession() error {
   if client == nil {
     return fmt.Errorf("nil defference")
   }
-
-  // FIXME better check
-  // FIXME make session actual object with IsValid, Revoke etc.
   if client.session != nil {
     return nil
+  }
+  if client.session == nil || client.session.IsSSIDExpired() {
+    return client.login()
+  }
+  if client.session.IsJWTExpired() {
+    return client.prolong()
+  }
+  return nil
+}
+
+// FIXME tied to session
+func (client *BondsterClient) login() error {
+  if client == nil {
+    return fmt.Errorf("nil defference")
   }
 
   session := NewSession()
@@ -152,13 +165,65 @@ func (client *BondsterClient) checkSession() error {
   var webToken = new(WebToken)
   err = utils.JSON.Unmarshal(response.Data, webToken)
   if err != nil {
-    return fmt.Errorf("bondster validate login step invalid response %s", response.String())
+    return fmt.Errorf("bondster validate login step invalid response %s with error %+v", response.String(), err)
   }
 
   log.Debugf("Logged in with token %s", client.token.ID)
 
   client.session.JWT = &(webToken.JWT)
   client.session.SSID = &(webToken.SSID)
+
+  return nil
+}
+
+// FIXME tied to session
+func (client *BondsterClient) prolong() error {
+  // Request URL: https://ib.bondster.com/proxy/router/api/private/token/prolong
+  // {"jwtToken":{"value":"xxx","expirationDate":"2020-06-14T08:57:15.911Z"}}
+
+  if client == nil {
+    return fmt.Errorf("nil defference")
+  }
+
+  session := NewSession()
+  client.session = &session
+
+  var (
+    err      error
+    response http.Response
+  )
+
+  response, err = client.Post("/proxy/router/api/private/token/prolong", nil)
+  if err != nil {
+    return fmt.Errorf("bondster get prolong token Error %+v", err)
+  }
+  if response.Status != 200 {
+    return fmt.Errorf("bondster get prolong token error %s", response.String())
+  }
+
+  all := struct {
+    JWT struct {
+      Value string `json:"value"`
+      ExpiresAt string `json:"expirationDate"`
+    } `json:"jwtToken"`
+  }{}
+
+  err = utils.JSON.Unmarshal(response.Data, &all)
+  if err != nil {
+    return err
+  }
+
+  if all.JWT.Value == "" {
+    return fmt.Errorf("missing \"jwtToken\" value field")
+  }
+
+  jwtExpiration, err := time.Parse("2006-01-02T15:04:05.000Z", all.JWT.ExpiresAt)
+  if err != nil {
+    return err
+  }
+
+  client.session.JWT.Value = all.JWT.Value
+  client.session.JWT.ExpiresAt = jwtExpiration
 
   return nil
 }

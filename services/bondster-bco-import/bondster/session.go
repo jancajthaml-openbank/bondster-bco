@@ -15,6 +15,8 @@
 package bondster
 
 import (
+  "time"
+
   "github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
 
@@ -33,4 +35,23 @@ func NewSession() Session {
     Device: utils.RandDevice(),
     Channel: utils.UUID(),
   }
+}
+
+func (session Session) IsSSIDExpired() bool {
+  if (session.JWT == nil || session.SSID == nil) {
+    return true
+  }
+  log.Debugf("Session check SSID Expiration %+v", session)
+  if session.SSID.ExpiresAt.Add(time.Second * time.Duration(-10)).After(time.Now()) {
+    return true
+  }
+  return false
+}
+
+func (session Session) IsJWTExpired() bool {
+  log.Debugf("Session check JWT Expiration %+v", session)
+  if session.JWT.ExpiresAt.Add(time.Second * time.Duration(-10)).After(time.Now()) {
+    return true
+  }
+  return false
 }
