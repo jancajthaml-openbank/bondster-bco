@@ -56,11 +56,11 @@ class BussinessLogic(object):
       "nextSMSAfter": 0,
       "jwt": {
         "value": "jwt",
-        "expirationDate": (now + datetime.timedelta(seconds=30)).strftime("%Y-%m-%dT%H:%M%S.%.3fZ")
+        "expirationDate": (now + datetime.timedelta(seconds=30)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
       },
       "ssid": {
         "value": "ssid",
-        "expirationDate": (now + datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M%S.%.3fZ")
+        "expirationDate": (now + datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
       }
     }
 

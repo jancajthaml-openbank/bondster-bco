@@ -167,15 +167,13 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(tenant string, bondsterClient bondster.BondsterClient, vaultClient vault.VaultClient, ledgerClient ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) error {
+func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) error {
 	log.Debugf("Importing bondster statements for interval %s", interval.String())
 
 	var (
 		err      error
 		transactionIds []string
 		statements *bondster.BondsterImportEnvelope
-		//response http.Response
-		//request  []byte
 	)
 
 	metrics.TimeTransactionSearchLatency(func() {
@@ -245,7 +243,7 @@ func importStatementsForInterval(tenant string, bondsterClient bondster.Bondster
 	return nil
 }
 
-func importNewStatements(tenant string, bondsterClient bondster.BondsterClient, vaultClient vault.VaultClient, ledgerClient ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) {
+func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) {
 	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
 		err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
 		if err != nil {
@@ -276,7 +274,7 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 
 	for currency := range token.LastSyncedFrom {
 		log.WithField("token", token.ID).Debugf("Import for currency %s Begin", currency)
-		importNewStatements(s.Tenant, bondsterClient, vaultClient, ledgerClient, s.Storage, s.Metrics, &token, currency)
+		importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
 		log.WithField("token", token.ID).Debugf("Import for currency %s End", currency)
 		callback()
 	}

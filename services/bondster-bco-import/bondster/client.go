@@ -45,7 +45,7 @@ func NewBondsterClient(gateway string, token model.Token) BondsterClient {
 }
 
 // Post performs http POST request for given url with given body
-func (client BondsterClient) Post(url string, body []byte) (http.Response, error) {
+func (client *BondsterClient) Post(url string, body []byte) (http.Response, error) {
   headers := map[string]string{
     "device":            client.session.Device,
     "channeluuid":       client.session.Channel,
@@ -67,7 +67,7 @@ func (client BondsterClient) Post(url string, body []byte) (http.Response, error
 }
 
 // Get performs http GET request for given url
-func (client BondsterClient) Get(url string, session *Session) (http.Response, error) {
+func (client *BondsterClient) Get(url string, session *Session) (http.Response, error) {
   headers := map[string]string{
     "device":            client.session.Device,
     "channeluuid":       client.session.Channel,
@@ -88,26 +88,31 @@ func (client BondsterClient) Get(url string, session *Session) (http.Response, e
   return client.underlying.Get(client.gateway+url, headers)
 }
 
-
-// GetSession returns session for bondster client
+// FIXME tied to session
 func (client *BondsterClient) checkSession() error {
   if client == nil {
-    return fmt.Errorf("nil defference")
-  }
-  if client.session != nil {
-    return nil
+    return fmt.Errorf("nil deference")
   }
   if client.session == nil || client.session.IsSSIDExpired() {
+    log.Debugf("SSID is expired %+v", client.session)
     return client.login()
   }
   if client.session.IsJWTExpired() {
+    log.Debugf("JWT is expired %+v", client.session)
     return client.prolong()
   }
+  log.Debugf("Everything is ok %+v", client.session)
   return nil
 }
 
 // FIXME tied to session
 func (client *BondsterClient) login() error {
+  if client == nil {
+    return fmt.Errorf("nil deference")
+  }
+
+  log.Debugf("Logging in with token %s", client.token.ID)
+
   if client == nil {
     return fmt.Errorf("nil defference")
   }
@@ -173,20 +178,16 @@ func (client *BondsterClient) login() error {
   client.session.JWT = &(webToken.JWT)
   client.session.SSID = &(webToken.SSID)
 
+  log.Debugf("Logged in with token %s", client.token.ID)
+
   return nil
 }
 
 // FIXME tied to session
 func (client *BondsterClient) prolong() error {
-  // Request URL: https://ib.bondster.com/proxy/router/api/private/token/prolong
-  // {"jwtToken":{"value":"xxx","expirationDate":"2020-06-14T08:57:15.911Z"}}
-
   if client == nil {
     return fmt.Errorf("nil defference")
   }
-
-  session := NewSession()
-  client.session = &session
 
   var (
     err      error
@@ -228,7 +229,11 @@ func (client *BondsterClient) prolong() error {
   return nil
 }
 
-func (client BondsterClient) GetCurrencies() ([]string, error) {
+func (client *BondsterClient) GetCurrencies() ([]string, error) {
+  if client == nil {
+    return nil, fmt.Errorf("nil deference")
+  }
+
   err := client.checkSession()
   if err != nil {
     return nil, err
@@ -261,7 +266,10 @@ func (client BondsterClient) GetCurrencies() ([]string, error) {
   return currencies, nil
 }
 
-func (client BondsterClient) GetTransactionIdsInInterval(currency string, interval utils.TimeRange) ([]string, error) {
+func (client *BondsterClient) GetTransactionIdsInInterval(currency string, interval utils.TimeRange) ([]string, error) {
+  if client == nil {
+    return nil, fmt.Errorf("nil deference")
+  }
   err := client.checkSession()
   if err != nil {
     return nil, err
@@ -299,7 +307,10 @@ func (client BondsterClient) GetTransactionIdsInInterval(currency string, interv
   return all.IDs, nil
 }
 
-func (client BondsterClient) GetTransactionDetails(currency string, transactionIds []string) (*BondsterImportEnvelope, error) {
+func (client *BondsterClient) GetTransactionDetails(currency string, transactionIds []string) (*BondsterImportEnvelope, error) {
+  if client == nil {
+    return nil, fmt.Errorf("nil deference")
+  }
   err := client.checkSession()
   if err != nil {
     return nil, err

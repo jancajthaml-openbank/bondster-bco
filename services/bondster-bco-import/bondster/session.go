@@ -49,6 +49,9 @@ func (session Session) IsSSIDExpired() bool {
 }
 
 func (session Session) IsJWTExpired() bool {
+  if (session.JWT == nil) {
+    return true
+  }
   log.Debugf("Session check JWT Expiration %+v", session)
   if session.JWT.ExpiresAt.Add(time.Second * time.Duration(-10)).After(time.Now()) {
     return true
