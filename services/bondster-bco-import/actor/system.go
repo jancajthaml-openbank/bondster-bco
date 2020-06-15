@@ -18,8 +18,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
+	//"github.com/jancajthaml-openbank/bondster-bco-import/vault"
+	//"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
+	//"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -28,13 +30,13 @@ import (
 // ActorSystem represents actor system subroutine
 type ActorSystem struct {
 	system.System
-	Tenant        string
-	Storage       *localfs.EncryptedStorage
-	Metrics       *metrics.Metrics
-	BondsterGateway    string
-	LedgerGateway string
-	VaultGateway  string
-	HttpClient    integration.Client
+	Tenant  string
+	Storage *localfs.EncryptedStorage
+	Metrics *metrics.Metrics
+
+	BondsterGateway string
+	VaultGateway    string
+	LedgerGateway   string
 }
 
 // NewActorSystem returns actor system fascade
@@ -45,9 +47,8 @@ func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bon
 		Metrics:         metrics,
 		Tenant:          tenant,
 		BondsterGateway: bondsterEndpoint,
-		LedgerGateway:   ledgerEndpoint,
 		VaultGateway:    vaultEndpoint,
-		HttpClient:      integration.NewClient(),
+		LedgerGateway:   ledgerEndpoint,
 	}
 
 	result.System.RegisterOnMessage(ProcessMessage(&result))

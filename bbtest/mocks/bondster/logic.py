@@ -1,4 +1,5 @@
 import json
+import datetime
 
 
 class BussinessLogic(object):
@@ -27,6 +28,16 @@ class BussinessLogic(object):
       ]
     }
 
+  def prolong_token(self):
+    now = datetime.datetime.now()
+
+    return {
+      "jwtToken": {
+        "value": "jwt",
+        "expirationDate": (now + datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M%S.%.3fZ")
+      }
+    }
+
   def validate_login_step(self, data):
     code = data['scenarioCode']
 
@@ -39,17 +50,19 @@ class BussinessLogic(object):
     if not (username == 'X' and password == 'Y'):
       return False
 
+    now = datetime.datetime.now()
+
     return {
       "result": "FINISH",
-      "idAuthProcess": "rIw5_8ARbFY2YrL8TG_UQ7vIPof3KuoiRt6YT27S75Y_fPx-iWXEwl36vHTerr8JSqnlGkMpkfMvLPWhFAlskw==", # fixme generate
-      "nextSMSAfter": 0, # fixme generate
+      "idAuthProcess": "id",
+      "nextSMSAfter": 0,
       "jwt": {
-        "value": "rM9aAc3ccNFg8A37gE3TN24rPb34zViEyg5YnmUB1ygj5YxSWZ86zAIMt9O2ONQIZ2XclAqaxp9CC2YSGTggumzv+i5cWj+ntJWqHC4/cuxvM70NOES+50JhVBitJC92dBeSjRo7Xg9M+5kcCHeeU5eP7JiMmzlEKptdHQW2sY3G+m2acfiG4BR1VV6hLkoL00Zl5nZixtGEm+Sx/E4yz6wqhq0O9ykB8Wg18w/ZuJAT4ZvYjDbuJisKaTgk5rIB7/V3GdRLjJzHwRjeG9dnltWyVcE6wdOB3nWc9pX6x+0azpQTcAar9GVfb0aM1V/NGK4goqNXALljg5DQBj6FWAUW11DfN+a3K9rr0G2RkR8dY2jVRXAylVv9KW7d6y5TYYTYNekxjGzTafrDAxwslKYWPJh9VCjUfUZJCee/ip1uijmJw5EoxbojApQB/FzZAVu6+qdx5cta/LCrxmPuTI0GyxcJEWSOxilxMtf5fyOPePmm00ZAU8Iu+qKQdwPgo0XVAnNZS6gQm6VO+jSfzJjKv/vrr54GX9HXbIbsqeloDDoo8WbJAZlK3CEwmMix4BB6pne2FXe9RRv7ltBr1r3WXOBf3zQcmF8DPbYbLF36BpLHFT5YQBbvTD0jRag4BY0tJoqyFXJhIq1ybGmut/xYVKE5/X3kP7nyY0UwvZOgwInDLVG9yot37rEUbf6GDFnqWmKdk7iFegtoKYMr+2Yx8uIRqYRn80hTzGIYMcE=",  # fixme generate
-        "expirationDate": "2019-01-17T18:32:23.173Z" # fixme generate
+        "value": "jwt",
+        "expirationDate": (now + datetime.timedelta(seconds=30)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
       },
       "ssid": {
-        "value": "vWfbuAdFXdzpPK6JtKAy4QI7qVU=", # fixme generate
-        "expirationDate": "2019-01-18T00:22:23.152Z" # fixme generate
+        "value": "ssid",
+        "expirationDate": (now + datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
       }
     }
 
@@ -87,8 +100,7 @@ class BussinessLogic(object):
     return {
       "transferIdList": [
         "a",
-        "b",
-        "c"
+        "b"
       ],
       "summary": {
         "startingBalance": 0,

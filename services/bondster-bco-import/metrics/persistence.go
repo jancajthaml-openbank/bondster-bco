@@ -100,11 +100,11 @@ func (metrics *Metrics) Persist() error {
 	if err != nil {
 		return err
 	}
-	err = metrics.storage.WriteFile("metrics." + metrics.tenant + ".json", data)
+	err = metrics.storage.WriteFile("metrics."+metrics.tenant+".json", data)
 	if err != nil {
 		return err
 	}
-	err = os.Chmod(metrics.storage.Root+"/metrics." + metrics.tenant + ".json", 0644)
+	err = os.Chmod(metrics.storage.Root+"/metrics."+metrics.tenant+".json", 0644)
 	if err != nil {
 		return err
 	}

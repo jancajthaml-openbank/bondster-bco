@@ -50,12 +50,12 @@ func CreateToken(sys *ActorSystem, tenant string, token Token) (result interface
 		sys.SendMessage(
 			CreateTokenMessage(token),
 			system.Coordinates{
-				Region: "BondsterImport/"+tenant,
-				Name: token.ID,
+				Region: "BondsterImport/" + tenant,
+				Name:   token.ID,
 			},
 			system.Coordinates{
 				Region: "BondsterRest",
-				Name: envelope.Name,
+				Name:   envelope.Name,
 			},
 		)
 
@@ -102,12 +102,12 @@ func DeleteToken(sys *ActorSystem, tenant string, tokenId string) (result interf
 		sys.SendMessage(
 			DeleteTokenMessage(),
 			system.Coordinates{
-				Region: "BondsterImport/"+tenant,
-				Name: tokenId,
+				Region: "BondsterImport/" + tenant,
+				Name:   tokenId,
 			},
 			system.Coordinates{
 				Region: "BondsterRest",
-				Name: envelope.Name,
+				Name:   envelope.Name,
 			},
 		)
 

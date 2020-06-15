@@ -15,7 +15,7 @@
 package boot
 
 import (
-  "github.com/jancajthaml-openbank/bondster-bco-rest/logging"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/logging"
 )
 
 var log = logging.NewLogger("boot")

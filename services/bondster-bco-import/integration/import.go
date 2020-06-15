@@ -27,20 +27,18 @@ import (
 // BondsterImport represents bondster gateway to ledger import subroutine
 type BondsterImport struct {
 	utils.DaemonSupport
-	callback        func(token string)
-	bondsterGateway string
-	syncRate        time.Duration
-	storage         *localfs.EncryptedStorage
+	callback func(token string)
+	syncRate time.Duration
+	storage  *localfs.EncryptedStorage
 }
 
 // NewBondsterImport returns bondster import fascade
-func NewBondsterImport(ctx context.Context, bondsterEndpoint string, syncRate time.Duration, storage *localfs.EncryptedStorage, callback func(token string)) BondsterImport {
+func NewBondsterImport(ctx context.Context, syncRate time.Duration, storage *localfs.EncryptedStorage, callback func(token string)) BondsterImport {
 	return BondsterImport{
-		DaemonSupport:   utils.NewDaemonSupport(ctx, "bondster"),
-		callback:        callback,
-		bondsterGateway: bondsterEndpoint,
-		syncRate:        syncRate,
-		storage:         storage,
+		DaemonSupport: utils.NewDaemonSupport(ctx, "bondster"),
+		callback:      callback,
+		syncRate:      syncRate,
+		storage:       storage,
 	}
 }
 
@@ -85,7 +83,7 @@ func (bondster BondsterImport) Start() {
 		return
 	}
 
-	log.Infof("Start bondster-import daemon, sync %v now and then each %v", bondster.bondsterGateway, bondster.syncRate)
+	log.Infof("Start bondster-import daemon, sync %v now and then each %v", bondster.syncRate)
 
 	bondster.importRoundtrip()
 

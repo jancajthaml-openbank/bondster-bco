@@ -12,17 +12,84 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+package bondster
 
 import (
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
+	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
+
+// WebToken encrypted json web token and ssid of bondster session
+type WebToken struct {
+	JWT  JWT
+	SSID SSID
+}
+
+type JWT struct {
+	Value     string
+	ExpiresAt time.Time
+}
+
+type SSID struct {
+	Value     string
+	ExpiresAt time.Time
+}
+
+// UnmarshalJSON is json JWT unmarhalling companion
+func (entity *WebToken) UnmarshalJSON(data []byte) error {
+	if entity == nil {
+		return fmt.Errorf("cannot unmarshall to nil pointer")
+	}
+	all := struct {
+		Result string `json:"result"`
+		JWT    struct {
+			Value     string `json:"value"`
+			ExpiresAt string `json:"expirationDate"`
+		} `json:"jwt"`
+		SSID struct {
+			Value     string `json:"value"`
+			ExpiresAt string `json:"expirationDate"`
+		} `json:"ssid"`
+	}{}
+	err := utils.JSON.Unmarshal(data, &all)
+	if err != nil {
+		return err
+	}
+	if all.Result != "FINISH" {
+		return fmt.Errorf("result %s has not finished, bailing out", all.Result)
+	}
+	if all.JWT.Value == "" || all.JWT.ExpiresAt == "" {
+		return fmt.Errorf("missing \"jwt\" value field")
+	}
+	if all.SSID.Value == "" || all.SSID.ExpiresAt == "" {
+		return fmt.Errorf("missing \"ssid\" value field")
+	}
+
+	jwtExpiration, err := time.Parse("2006-01-02T15:04:05.000Z", all.JWT.ExpiresAt)
+	if err != nil {
+		return err
+	}
+
+	ssidExpiration, err := time.Parse("2006-01-02T15:04:05.000Z", all.SSID.ExpiresAt)
+	if err != nil {
+		return err
+	}
+
+	entity.JWT = JWT{
+		Value:     all.JWT.Value,
+		ExpiresAt: jwtExpiration,
+	}
+	entity.SSID = SSID{
+		Value:     all.SSID.Value,
+		ExpiresAt: ssidExpiration,
+	}
+
+	return nil
+}
 
 // BondsterImportEnvelope represents bondster marketplace import statement entity
 type BondsterImportEnvelope struct {
@@ -58,12 +125,12 @@ type bondsterAmount struct {
 }
 
 // GetTransactions return list of bondster transactions
-func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transaction {
+func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []model.Transaction {
 	if envelope == nil {
 		return nil
 	}
 
-	var set = make(map[string][]Transfer)
+	var set = make(map[string][]model.Transfer)
 
 	sort.SliceStable(envelope.Transactions, func(i, j int) bool {
 		return envelope.Transactions[i].ValueDate.Before(envelope.Transactions[j].ValueDate)
@@ -76,13 +143,13 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 
 		if transfer.Direction == "DEBIT" {
 			if transfer.Originator != nil {
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
 					IDTransfer: transfer.IDTransfer,
-					Credit: AccountPair{
+					Credit: model.AccountPair{
 						Tenant: tenant,
 						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 					},
-					Debit: AccountPair{
+					Debit: model.AccountPair{
 						Tenant: tenant,
 						Name:   nostro,
 					},
@@ -91,13 +158,13 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					Amount:       transfer.Amount.Value,
 					Currency:     transfer.Amount.Currency,
 				})
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
 					IDTransfer: transfer.IDTransfer + "_FWD",
-					Credit: AccountPair{
+					Credit: model.AccountPair{
 						Tenant: tenant,
 						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
 					},
-					Debit: AccountPair{
+					Debit: model.AccountPair{
 						Tenant: tenant,
 						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 					},
@@ -107,13 +174,13 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					Currency:     transfer.Amount.Currency,
 				})
 			} else {
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
 					IDTransfer: transfer.IDTransfer,
-					Credit: AccountPair{
+					Credit: model.AccountPair{
 						Tenant: tenant,
 						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
 					},
-					Debit: AccountPair{
+					Debit: model.AccountPair{
 						Tenant: tenant,
 						Name:   nostro,
 					},
@@ -125,13 +192,13 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 			}
 		} else {
 			if transfer.Originator != nil {
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
 					IDTransfer: transfer.IDTransfer,
-					Credit: AccountPair{
+					Credit: model.AccountPair{
 						Tenant: tenant,
 						Name:   nostro,
 					},
-					Debit: AccountPair{
+					Debit: model.AccountPair{
 						Tenant: tenant,
 						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 					},
@@ -140,13 +207,13 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					Amount:       transfer.Amount.Value,
 					Currency:     transfer.Amount.Currency,
 				})
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
 					IDTransfer: transfer.IDTransfer + "_FWD",
-					Credit: AccountPair{
+					Credit: model.AccountPair{
 						Tenant: tenant,
 						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 					},
-					Debit: AccountPair{
+					Debit: model.AccountPair{
 						Tenant: tenant,
 						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
 					},
@@ -156,13 +223,13 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 					Currency:     transfer.Amount.Currency,
 				})
 			} else {
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], Transfer{
+				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
 					IDTransfer: transfer.IDTransfer,
-					Credit: AccountPair{
+					Credit: model.AccountPair{
 						Tenant: tenant,
 						Name:   nostro,
 					},
-					Debit: AccountPair{
+					Debit: model.AccountPair{
 						Tenant: tenant,
 						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
 					},
@@ -175,9 +242,9 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 		}
 	}
 
-	result := make([]Transaction, 0)
+	result := make([]model.Transaction, 0)
 	for transaction, transfers := range set {
-		result = append(result, Transaction{
+		result = append(result, model.Transaction{
 			IDTransaction: transaction,
 			Transfers:     transfers,
 		})
@@ -186,15 +253,15 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []Transac
 }
 
 // GetAccounts return list of bondster accounts
-func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
+func (envelope *BondsterImportEnvelope) GetAccounts() []model.Account {
 	if envelope == nil {
 		return nil
 	}
 
 	var normalizedAccount string
-	var deduplicated = make(map[string]Account)
+	var deduplicated = make(map[string]model.Account)
 
-	deduplicated[envelope.Currency+"_TYPE_NOSTRO"] = Account{
+	deduplicated[envelope.Currency+"_TYPE_NOSTRO"] = model.Account{
 		Name:           envelope.Currency + "_TYPE_NOSTRO",
 		Format:         "BONDSTER_TECHNICAL",
 		Currency:       envelope.Currency,
@@ -203,22 +270,22 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 
 	for _, transfer := range envelope.Transactions {
 		if transfer.Originator != nil {
-			deduplicated[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = Account{
+			deduplicated[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = model.Account{
 				Name:           envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 				Format:         "BONDSTER_ORIGINATOR",
 				Currency:       envelope.Currency,
 				IsBalanceCheck: false,
 			}
 		}
-		deduplicated[envelope.Currency+"_TYPE_"+transfer.Type] = Account{
+		deduplicated[envelope.Currency+"_TYPE_"+transfer.Type] = model.Account{
 			Name:           envelope.Currency + "_TYPE_" + transfer.Type,
 			Format:         "BONDSTER_TECHNICAL",
 			Currency:       envelope.Currency,
 			IsBalanceCheck: false,
 		}
 		if transfer.External != nil {
-			normalizedAccount = NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)
-			deduplicated[normalizedAccount] = Account{
+			normalizedAccount = model.NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)
+			deduplicated[normalizedAccount] = model.Account{
 				Name:           normalizedAccount,
 				Format:         "IBAN",
 				Currency:       envelope.Currency,
@@ -227,7 +294,7 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 		}
 	}
 
-	result := make([]Account, 0)
+	result := make([]model.Account, 0)
 	for _, item := range deduplicated {
 		result = append(result, item)
 	}
@@ -235,46 +302,9 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []Account {
 	return result
 }
 
-// LoginStep satisfaction of login scenario
-type LoginStep struct {
-	Code   string           `json:"scenarioCode"`
-	Values []LoginStepValue `json:"authProcessStepValues"`
-}
-
-// LoginStepValue value of login step
-type LoginStepValue struct {
-	Type  string `json:"authDetailType"`
-	Value string `json:"value"`
-}
-
 // LoginScenario holds code representing how service should log in
 type LoginScenario struct {
 	Value string
-}
-
-// TransfersSearchRequest request for search transfed
-type TransfersSearchRequest struct {
-	From time.Time
-	To   time.Time
-}
-
-// TransfersSearchResult result of search transfers request
-type TransfersSearchResult struct {
-	IDs []string `json:"transferIdList"`
-}
-
-// MarshalJSON is json TransfersSearchResult marhalling companion
-func (entity TransfersSearchResult) MarshalJSON() ([]byte, error) {
-	ids := make([]string, len(entity.IDs))
-	for i, id := range entity.IDs {
-		ids[i] = "\"" + id + "\""
-	}
-	return []byte("{\"transactionIds\":[" + strings.Join(ids, ",") + "]}"), nil
-}
-
-// MarshalJSON is json TransfersSearchRequest marhalling companion
-func (entity TransfersSearchRequest) MarshalJSON() ([]byte, error) {
-	return []byte("{\"valueDateFrom\":{\"month\":\"" + strconv.FormatInt(int64(entity.From.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.From.Year()), 10) + "\"},\"valueDateTo\":{\"month\":\"" + strconv.FormatInt(int64(entity.To.Month()), 10) + "\",\"year\":\"" + strconv.FormatInt(int64(entity.To.Year()), 10) + "\"}}"), nil
 }
 
 // UnmarshalJSON is json LoginScenario unmarhalling companion
@@ -298,77 +328,5 @@ func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("missing \"code\" value field")
 	}
 	entity.Value = all.Scenarios[0].Code
-	return nil
-}
-
-// WebToken encrypted json web token and ssid of bondster session
-type WebToken struct {
-	JWT string
-	SSID string
-}
-
-// UnmarshalJSON is json JWT unmarhalling companion
-func (entity *WebToken) UnmarshalJSON(data []byte) error {
-	if entity == nil {
-		return fmt.Errorf("cannot unmarshall to nil pointer")
-	}
-	all := struct {
-		Result string `json:"result"`
-		JWT    struct {
-			Value string `json:"value"`
-		} `json:"jwt"`
-		SSID    struct {
-			Value string `json:"value"`
-		} `json:"ssid"`
-	}{}
-	err := utils.JSON.Unmarshal(data, &all)
-	if err != nil {
-		return err
-	}
-	if all.Result != "FINISH" {
-		return fmt.Errorf("result %s has not finished, bailing out", all.Result)
-	}
-	if all.JWT.Value == "" {
-		return fmt.Errorf("missing \"jwt\" value field")
-	}
-	if all.SSID.Value == "" {
-		return fmt.Errorf("missing \"ssid\" value field")
-	}
-	entity.JWT = all.JWT.Value
-	entity.SSID = all.SSID.Value
-	return nil
-}
-
-// Session hold bondster session headers
-type Session struct {
-	JWT     string
-	Device  string
-	Channel string
-	SSID    string
-}
-
-// PotrfolioCurrencies hold currencies of account portfolio
-type PotrfolioCurrencies struct {
-	Value []string
-}
-
-// UnmarshalJSON is json PotrfolioCurrencies unmarhalling companion
-func (entity *PotrfolioCurrencies) UnmarshalJSON(data []byte) error {
-	if entity == nil {
-		return fmt.Errorf("cannot unmarshall to nil pointer")
-	}
-	all := struct {
-		MarketAccounts struct {
-			AccountsMap map[string]interface{} `json:"currencyToAccountMap"`
-		} `json:"marketVerifiedExternalAccount"`
-	}{}
-	err := utils.JSON.Unmarshal(data, &all)
-	if err != nil {
-		return err
-	}
-	entity.Value = make([]string, 0)
-	for currency := range all.MarketAccounts.AccountsMap {
-		entity.Value = append(entity.Value, currency)
-	}
 	return nil
 }

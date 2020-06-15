@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package integration
+package http
 
 import (
 	"bytes"
@@ -27,27 +27,14 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
 
-// Client represents fascade for http client
-type Client struct {
+// HttpClient represents fascade for http client
+type HttpClient struct {
 	underlying *http.Client
 }
 
-type Response struct {
-	Status int
-	Data []byte
-	Header map[string]string
-}
-
-func (value *Response) String() string {
-  if value == nil {
-    return "<nil>"
-  }
-  return fmt.Sprintf("Response{ Status: %d, Data: %s, Header: %+v }", value.Status, string(value.Data), value.Header)
-}
-
-// NewClient returns new http client
-func NewClient() Client {
-	return Client{
+// NewHttpClient returns new bondster http client
+func NewHttpClient() HttpClient {
+	return HttpClient{
 		underlying: &http.Client{
 			Timeout: 120 * time.Second,
 			Transport: &http.Transport{
@@ -73,11 +60,15 @@ func NewClient() Client {
 }
 
 // Post performs http POST request for given url with given body
-func (client Client) Post(url string, body []byte, headers map[string]string) (response Response, err error) {
+func (client *HttpClient) Post(url string, body []byte, headers map[string]string) (response Response, err error) {
 	response = Response{
 		Status: 0,
-		Data: nil,
+		Data:   nil,
 		Header: make(map[string]string),
+	}
+
+	if client == nil {
+		return response, fmt.Errorf("cannot call methods on nil reference")
 	}
 
 	var (
@@ -114,18 +105,22 @@ func (client Client) Post(url string, body []byte, headers map[string]string) (r
 		return
 	}
 	for k, v := range resp.Header {
-    response.Header[k] = v[len(v)-1]
+		response.Header[k] = v[len(v)-1]
 	}
 	response.Status = resp.StatusCode
 	return
 }
 
 // Get performs http GET request for given url
-func (client Client) Get(url string, headers map[string]string) (response Response, err error) {
+func (client *HttpClient) Get(url string, headers map[string]string) (response Response, err error) {
 	response = Response{
 		Status: 0,
-		Data: nil,
+		Data:   nil,
 		Header: make(map[string]string),
+	}
+
+	if client == nil {
+		return response, fmt.Errorf("cannot call methods on nil reference")
 	}
 
 	var (
@@ -164,7 +159,7 @@ func (client Client) Get(url string, headers map[string]string) (response Respon
 		return
 	}
 	for k, v := range resp.Header {
-    response.Header[k] = v[len(v)-1]
+		response.Header[k] = v[len(v)-1]
 	}
 	response.Status = resp.StatusCode
 	return

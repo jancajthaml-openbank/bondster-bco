@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package boot
+package bondster
 
 import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/logging"
 )
 
-var log = logging.NewLogger("boot")
+var log = logging.NewLogger("bondster")

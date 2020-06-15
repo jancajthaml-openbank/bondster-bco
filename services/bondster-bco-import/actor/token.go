@@ -15,17 +15,19 @@
 package actor
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
-	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
+	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
+	//"github.com/jancajthaml-openbank/bondster-bco-import/http"
+	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
+	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
+	"github.com/jancajthaml-openbank/bondster-bco-import/vault"
 
-	localfs "github.com/jancajthaml-openbank/local-fs"
 	system "github.com/jancajthaml-openbank/actor-system"
+	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // NilToken represents token that is neither existing neither non existing
@@ -165,19 +167,17 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(bondsterGateway string, vaultGateway string, ledgerGateway string, tenant string, httpClient integration.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, session *model.Session, interval utils.TimeRange) error {
+func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) error {
 	log.Debugf("Importing bondster statements for interval %s", interval.String())
 
 	var (
-		err      error
+		err            error
 		transactionIds []string
-		statements *model.BondsterImportEnvelope
-		response integration.Response
-		request  []byte
+		statements     *bondster.BondsterImportEnvelope
 	)
 
 	metrics.TimeTransactionSearchLatency(func() {
-		transactionIds, err = integration.GetTransactionIdsInInterval(httpClient, bondsterGateway, session, currency, interval)
+		transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)
 	})
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 	}
 
 	metrics.TimeTransactionListLatency(func() {
-		statements, err = integration.GetTransactionDetails(httpClient, bondsterGateway, session, currency, transactionIds)
+		statements, err = bondsterClient.GetTransactionDetails(currency, transactionIds)
 	})
 	if err != nil {
 		return err
@@ -206,24 +206,9 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 	log.WithField("token", token.ID).Debugf("importing %d accounts", len(accounts))
 
 	for _, account := range accounts {
-		request, err = utils.JSON.Marshal(account)
+		err = vaultClient.CreateAccount(tenant, account)
 		if err != nil {
 			return err
-		}
-
-		uri := vaultGateway + "/account/" + tenant
-		response, err = httpClient.Post(uri, request, nil)
-		if err != nil {
-			return fmt.Errorf("vault-rest create account %s error %+v", uri, err)
-		}
-		if response.Status == 400 {
-			return fmt.Errorf("vault-rest account malformed request %+v", string(request))
-		}
-		if response.Status == 504 {
-			return fmt.Errorf("vault-rest create account timeout")
-		}
-		if response.Status != 200 && response.Status != 409 {
-			return fmt.Errorf("vault-rest create account %s error %+v", uri, response)
 		}
 	}
 
@@ -233,32 +218,9 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 	log.WithField("token", token.ID).Debugf("importing %d transactions", len(transactions))
 
 	for _, transaction := range transactions {
-		for {
-			request, err = utils.JSON.Marshal(transaction)
-			if err != nil {
-				return err
-			}
-			uri := ledgerGateway + "/transaction/" + tenant
-			response, err = httpClient.Post(uri, request, nil)
-			if err != nil {
-				return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
-			}
-			if response.Status == 409 {
-				// FIXME in future, follback original transaction and create new based on
-				// union of existing transaction and new (needs persistence)
-				transaction.IDTransaction = transaction.IDTransaction + "_"
-				continue
-			}
-			if response.Status == 400 {
-				return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
-			}
-			if response.Status == 504 {
-				return fmt.Errorf("ledger-rest create transaction timeout")
-			}
-			if response.Status != 200 && response.Status != 201 && response.Status != 202 {
-				return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, response)
-			}
-			break
+		err = ledgerClient.CreateTransaction(tenant, transaction)
+		if err != nil {
+			return err
 		}
 
 		metrics.TransactionImported()
@@ -281,9 +243,9 @@ func importStatementsForInterval(bondsterGateway string, vaultGateway string, le
 	return nil
 }
 
-func importNewStatements(s *ActorSystem, token *model.Token, currency string, session *model.Session) {
+func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) {
 	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
-		err := importStatementsForInterval(s.BondsterGateway, s.VaultGateway, s.LedgerGateway, s.Tenant, s.HttpClient, s.Storage, s.Metrics, token, currency, session, interval)
+		err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
 		if err != nil {
 			log.WithField("token", token.ID).Errorf("Import statements failed with %+v", err)
 			return
@@ -294,13 +256,12 @@ func importNewStatements(s *ActorSystem, token *model.Token, currency string, se
 func importStatements(s *ActorSystem, token model.Token, callback func()) {
 	log.WithField("token", token.ID).Debugf("Importing statements")
 
-	session, err := integration.GetSession(s.HttpClient, s.BondsterGateway, token)
-	if err != nil {
-		log.WithField("token", token.ID).Warnf("Unable to get session because %+v", err)
-		return
-	}
+	bondsterClient := bondster.NewBondsterClient(s.BondsterGateway, token)
+	vaultClient := vault.NewVaultClient(s.VaultGateway)
+	ledgerClient := ledger.NewLedgerClient(s.LedgerGateway)
 
-	currencies, err := integration.GetCurrencies(s.HttpClient, s.BondsterGateway, session)
+	// FIXME lines get + update correncies should be a bondster method
+	currencies, err := bondsterClient.GetCurrencies()
 	if err != nil {
 		log.WithField("token", token.ID).Warnf("Unable to get currencies because %+v", err)
 		return
@@ -313,7 +274,7 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 
 	for currency := range token.LastSyncedFrom {
 		log.WithField("token", token.ID).Debugf("Import for currency %s Begin", currency)
-		importNewStatements(s, &token, currency, session)
+		importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
 		log.WithField("token", token.ID).Debugf("Import for currency %s End", currency)
 		callback()
 	}
