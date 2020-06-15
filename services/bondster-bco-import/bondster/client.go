@@ -44,50 +44,6 @@ func NewBondsterClient(gateway string, token model.Token) BondsterClient {
 	}
 }
 
-// Post performs http POST request for given url with given body
-func (client *BondsterClient) Post(url string, body []byte) (http.Response, error) {
-	headers := map[string]string{
-		"device":            client.session.Device,
-		"channeluuid":       client.session.Channel,
-		"x-active-language": "cs",
-		"host":              "ib.bondster.com",
-		"origin":            client.gateway,
-		"referer":           client.gateway + "/cs",
-	}
-
-	if client.session.JWT != nil {
-		headers["authorization"] = "Bearer " + client.session.JWT.Value
-	}
-
-	if client.session.SSID != nil {
-		headers["ssid"] = client.session.SSID.Value
-	}
-
-	return client.underlying.Post(client.gateway+url, body, headers)
-}
-
-// Get performs http GET request for given url
-func (client *BondsterClient) Get(url string, session *Session) (http.Response, error) {
-	headers := map[string]string{
-		"device":            client.session.Device,
-		"channeluuid":       client.session.Channel,
-		"x-active-language": "cs",
-		"host":              "ib.bondster.com",
-		"origin":            client.gateway,
-		"referer":           client.gateway + "/cs",
-	}
-
-	if client.session.JWT != nil {
-		headers["authorization"] = "Bearer " + client.session.JWT.Value
-	}
-
-	if client.session.SSID != nil {
-		headers["ssid"] = client.session.SSID.Value
-	}
-
-	return client.underlying.Get(client.gateway+url, headers)
-}
-
 // FIXME tied to session
 func (client *BondsterClient) checkSession() error {
 	if client == nil {
@@ -111,12 +67,16 @@ func (client *BondsterClient) login() error {
 	session := NewSession()
 	client.session = &session
 
-	var (
-		err      error
-		response http.Response
-	)
+	headers := map[string]string{
+		"device":            client.session.Device,
+		"channeluuid":       client.session.Channel,
+		"x-active-language": "cs",
+		"host":              "ib.bondster.com",
+		"origin":            client.gateway,
+		"referer":           client.gateway + "/cs",
+	}
 
-	response, err = client.Post("/proxy/router/api/public/authentication/getLoginScenario", nil)
+	response, err := client.underlying.Post(client.gateway+"/proxy/router/api/public/authentication/getLoginScenario", nil, headers)
 	if err != nil {
 		return fmt.Errorf("bondster get login scenario Error %+v", err)
 	}
@@ -150,7 +110,7 @@ func (client *BondsterClient) login() error {
     }
   `, client.token.Username, client.token.Password), "")
 
-	response, err = client.Post("/proxy/router/api/public/authentication/validateLoginStep", []byte(request))
+  response, err = client.underlying.Post(client.gateway+"/proxy/router/api/public/authentication/validateLoginStep", []byte(request), headers)
 	if err != nil {
 		return err
 	}
@@ -178,12 +138,24 @@ func (client *BondsterClient) prolong() error {
 		return fmt.Errorf("nil defference")
 	}
 
-	var (
-		err      error
-		response http.Response
-	)
+	headers := map[string]string{
+		"device":            client.session.Device,
+		"channeluuid":       client.session.Channel,
+		"x-active-language": "cs",
+		"host":              "ib.bondster.com",
+		"origin":            client.gateway,
+		"referer":           client.gateway + "/cs",
+	}
 
-	response, err = client.Post("/proxy/router/api/private/token/prolong", nil)
+	if client.session.JWT != nil {
+		headers["authorization"] = "Bearer " + client.session.JWT.Value
+	}
+
+	if client.session.SSID != nil {
+		headers["ssid"] = client.session.SSID.Value
+	}
+
+	response, err := client.underlying.Post(client.gateway+"/proxy/router/api/private/token/prolong", nil, headers)
 	if err != nil {
 		return fmt.Errorf("bondster get prolong token Error %+v", err)
 	}
@@ -231,7 +203,24 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 		return nil, err
 	}
 
-	response, err := client.Post("/proxy/clientusersetting/api/private/market/getContactInformation", nil)
+	headers := map[string]string{
+		"device":            client.session.Device,
+		"channeluuid":       client.session.Channel,
+		"x-active-language": "cs",
+		"host":              "ib.bondster.com",
+		"origin":            client.gateway,
+		"referer":           client.gateway + "/cs",
+	}
+
+	if client.session.JWT != nil {
+		headers["authorization"] = "Bearer " + client.session.JWT.Value
+	}
+
+	if client.session.SSID != nil {
+		headers["ssid"] = client.session.SSID.Value
+	}
+
+	response, err := client.underlying.Post(client.gateway+"/proxy/clientusersetting/api/private/market/getContactInformation", nil, headers)
 	if err != nil {
 		return nil, fmt.Errorf("bondster get contact information error %+v", err)
 	}
@@ -267,6 +256,25 @@ func (client *BondsterClient) GetTransactionIdsInInterval(currency string, inter
 	if err != nil {
 		return nil, err
 	}
+
+	headers := map[string]string{
+		"device":            client.session.Device,
+		"channeluuid":       client.session.Channel,
+		"x-active-language": "cs",
+		"x-account-context": currency,
+		"host":              "ib.bondster.com",
+		"origin":            client.gateway,
+		"referer":           client.gateway + "/cs",
+	}
+
+	if client.session.JWT != nil {
+		headers["authorization"] = "Bearer " + client.session.JWT.Value
+	}
+
+	if client.session.SSID != nil {
+		headers["ssid"] = client.session.SSID.Value
+	}
+
 	request := whitespaceRegex.ReplaceAllString(fmt.Sprintf(`
     {
       "valueDateFrom": {
@@ -280,7 +288,7 @@ func (client *BondsterClient) GetTransactionIdsInInterval(currency string, inter
     }
   `, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year()), "")
 
-	response, err := client.Post("/proxy/mktinvestor/api/private/transaction/search", []byte(request))
+  response, err := client.underlying.Post(client.gateway+"/proxy/mktinvestor/api/private/transaction/search", []byte(request), headers)
 	if err != nil {
 		return nil, fmt.Errorf("bondster get contact information error %+v", err)
 	}
@@ -313,6 +321,24 @@ func (client *BondsterClient) GetTransactionDetails(currency string, transaction
 		ids += "\"" + id + "\","
 	}
 
+	headers := map[string]string{
+		"device":            client.session.Device,
+		"channeluuid":       client.session.Channel,
+		"x-active-language": "cs",
+		"x-account-context": currency,
+		"host":              "ib.bondster.com",
+		"origin":            client.gateway,
+		"referer":           client.gateway + "/cs",
+	}
+
+	if client.session.JWT != nil {
+		headers["authorization"] = "Bearer " + client.session.JWT.Value
+	}
+
+	if client.session.SSID != nil {
+		headers["ssid"] = client.session.SSID.Value
+	}
+
 	request := whitespaceRegex.ReplaceAllString(fmt.Sprintf(`
     {
       "transactionIds": [
@@ -321,7 +347,7 @@ func (client *BondsterClient) GetTransactionDetails(currency string, transaction
     }
   `, ids[0:len(ids)-1]), "")
 
-	response, err := client.Post("/proxy/mktinvestor/api/private/transaction/list", []byte(request))
+  response, err := client.underlying.Post(client.gateway+"/proxy/mktinvestor/api/private/transaction/list", []byte(request), headers)
 	if err != nil {
 		return nil, fmt.Errorf("bondster get contact information error %+v", err)
 	}
