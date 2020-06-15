@@ -70,7 +70,7 @@ func (entity *Token) UpdateCurrencies(currencies []string) bool {
 	var updated = false
 	for _, currency := range currencies {
 		if _, ok := entity.LastSyncedFrom[currency]; !ok {
-			entity.LastSyncedFrom[currency] = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+			entity.LastSyncedFrom[currency] = time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
 			updated = true
 		}
 	}
