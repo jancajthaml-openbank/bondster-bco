@@ -60,8 +60,8 @@ func (client LedgerClient) CreateTransaction(tenant string, transaction model.Tr
 		}
 		if response.Status == 409 {
 			bounce += 1
-			if bounce > 3 {
-				return fmt.Errorf("ledger-rest create transaction %s duplicate", uri)
+			if bounce > 2 {
+				return fmt.Errorf("ledger-rest create transaction %s duplicate %s", uri, string(request))
 			}
 			continue
 		}
