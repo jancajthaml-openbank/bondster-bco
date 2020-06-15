@@ -47,6 +47,7 @@ func (client LedgerClient) Get(url string, headers map[string]string) (http.Resp
 }
 
 func (client LedgerClient) CreateTransaction(tenant string, transaction model.Transaction) error {
+	bounce := 0
 	for {
 		request, err := utils.JSON.Marshal(transaction)
 		if err != nil {
@@ -58,9 +59,10 @@ func (client LedgerClient) CreateTransaction(tenant string, transaction model.Tr
 			return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
 		}
 		if response.Status == 409 {
-			// FIXME in future, follback original transaction and create new based on
-			// union of existing transaction and new (needs persistence)
-			transaction.IDTransaction = transaction.IDTransaction + "_"
+			bounce += 1
+			if bounce > 3 {
+				return fmt.Errorf("ledger-rest create transaction %s duplicate", uri)
+			}
 			continue
 		}
 		if response.Status == 400 {
