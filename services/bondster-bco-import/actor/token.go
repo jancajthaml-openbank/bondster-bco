@@ -17,17 +17,17 @@ package actor
 import (
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
+	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 	//"github.com/jancajthaml-openbank/bondster-bco-import/http"
-	"github.com/jancajthaml-openbank/bondster-bco-import/vault"
-	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
 	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
+	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
+	"github.com/jancajthaml-openbank/bondster-bco-import/vault"
 
-	localfs "github.com/jancajthaml-openbank/local-fs"
 	system "github.com/jancajthaml-openbank/actor-system"
+	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // NilToken represents token that is neither existing neither non existing
@@ -171,9 +171,9 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 	log.Debugf("Importing bondster statements for interval %s", interval.String())
 
 	var (
-		err      error
+		err            error
 		transactionIds []string
-		statements *bondster.BondsterImportEnvelope
+		statements     *bondster.BondsterImportEnvelope
 	)
 
 	metrics.TimeTransactionSearchLatency(func() {
@@ -256,9 +256,9 @@ func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient,
 func importStatements(s *ActorSystem, token model.Token, callback func()) {
 	log.WithField("token", token.ID).Debugf("Importing statements")
 
-	bondsterClient :=  bondster.NewBondsterClient(s.BondsterGateway, token)
-	vaultClient :=      vault.NewVaultClient(s.VaultGateway)
-	ledgerClient :=     ledger.NewLedgerClient(s.LedgerGateway)
+	bondsterClient := bondster.NewBondsterClient(s.BondsterGateway, token)
+	vaultClient := vault.NewVaultClient(s.VaultGateway)
+	ledgerClient := ledger.NewLedgerClient(s.LedgerGateway)
 
 	// FIXME lines get + update correncies should be a bondster method
 	currencies, err := bondsterClient.GetCurrencies()

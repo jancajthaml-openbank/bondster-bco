@@ -30,13 +30,13 @@ import (
 // ActorSystem represents actor system subroutine
 type ActorSystem struct {
 	system.System
-	Tenant         string
-	Storage        *localfs.EncryptedStorage
-	Metrics        *metrics.Metrics
+	Tenant  string
+	Storage *localfs.EncryptedStorage
+	Metrics *metrics.Metrics
 
 	BondsterGateway string
-	VaultGateway string
-	LedgerGateway string
+	VaultGateway    string
+	LedgerGateway   string
 }
 
 // NewActorSystem returns actor system fascade

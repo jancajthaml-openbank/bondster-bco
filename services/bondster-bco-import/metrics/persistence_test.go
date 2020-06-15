@@ -159,7 +159,6 @@ func TestHydrate(t *testing.T) {
 		assert.EqualError(t, entity.Hydrate(), "cannot hydrate nil reference")
 	}
 
-
 	t.Log("happy path")
 	{
 		defer os.Remove("/tmp/metrics.1.json")

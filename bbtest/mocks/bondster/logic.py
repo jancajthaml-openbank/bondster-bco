@@ -29,6 +29,8 @@ class BussinessLogic(object):
     }
 
   def prolong_token(self):
+    now = datetime.datetime.now()
+
     return {
       "jwtToken": {
         "value": "jwt",

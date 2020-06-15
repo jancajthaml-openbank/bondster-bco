@@ -15,46 +15,44 @@
 package bondster
 
 import (
-  "time"
+	"time"
 
-  "github.com/jancajthaml-openbank/bondster-bco-import/utils"
+	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
 
 // Session hold bondster session headers
 type Session struct {
-  JWT     *JWT
-  SSID    *SSID
-  Device  string
-  Channel string
+	JWT     *JWT
+	SSID    *SSID
+	Device  string
+	Channel string
 }
 
 func NewSession() Session {
-  return Session{
-    JWT: nil,
-    SSID: nil,
-    Device: utils.RandDevice(),
-    Channel: utils.UUID(),
-  }
+	return Session{
+		JWT:     nil,
+		SSID:    nil,
+		Device:  utils.RandDevice(),
+		Channel: utils.UUID(),
+	}
 }
 
 func (session Session) IsSSIDExpired() bool {
-  if (session.JWT == nil || session.SSID == nil) {
-    return true
-  }
-  log.Debugf("Session check SSID Expiration %+v", session)
-  if session.SSID.ExpiresAt.Add(time.Second * time.Duration(-10)).After(time.Now()) {
-    return true
-  }
-  return false
+	if session.JWT == nil || session.SSID == nil {
+		return true
+	}
+	if time.Now().After(session.SSID.ExpiresAt.Add(time.Second * time.Duration(-10))) {
+		return true
+	}
+	return false
 }
 
 func (session Session) IsJWTExpired() bool {
-  if (session.JWT == nil) {
-    return true
-  }
-  log.Debugf("Session check JWT Expiration %+v", session)
-  if session.JWT.ExpiresAt.Add(time.Second * time.Duration(-10)).After(time.Now()) {
-    return true
-  }
-  return false
+	if session.JWT == nil {
+		return true
+	}
+	if time.Now().After(session.JWT.ExpiresAt.Add(time.Second * time.Duration(-10))) {
+		return true
+	}
+	return false
 }

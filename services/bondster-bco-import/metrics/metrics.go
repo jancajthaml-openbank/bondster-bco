@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
+	localfs "github.com/jancajthaml-openbank/local-fs"
 	metrics "github.com/rcrowley/go-metrics"
 )
 
@@ -27,7 +27,7 @@ import (
 type Metrics struct {
 	utils.DaemonSupport
 	storage                  localfs.PlaintextStorage
-  tenant                   string
+	tenant                   string
 	refreshRate              time.Duration
 	createdTokens            metrics.Counter
 	deletedTokens            metrics.Counter

@@ -15,7 +15,7 @@
 package http
 
 import (
-  "github.com/jancajthaml-openbank/bondster-bco-import/logging"
+	"github.com/jancajthaml-openbank/bondster-bco-import/logging"
 )
 
 var log = logging.NewLogger("http")
