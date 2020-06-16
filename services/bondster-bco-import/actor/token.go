@@ -21,7 +21,6 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
-	//"github.com/jancajthaml-openbank/bondster-bco-import/http"
 	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
 	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
 	"github.com/jancajthaml-openbank/bondster-bco-import/vault"

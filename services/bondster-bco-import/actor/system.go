@@ -19,10 +19,6 @@ import (
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
-	//"github.com/jancajthaml-openbank/bondster-bco-import/vault"
-	//"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
-	//"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
-
 	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )

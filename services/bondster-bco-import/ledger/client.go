@@ -36,44 +36,26 @@ func NewLedgerClient(gateway string) LedgerClient {
 	}
 }
 
-// Post performs http POST request for given url with given body
-func (client LedgerClient) Post(url string, body []byte, headers map[string]string) (http.Response, error) {
-	return client.underlying.Post(client.gateway+url, body, headers)
-}
-
-// Get performs http GET request for given url
-func (client LedgerClient) Get(url string, headers map[string]string) (http.Response, error) {
-	return client.underlying.Get(client.gateway+url, headers)
-}
-
 func (client LedgerClient) CreateTransaction(tenant string, transaction model.Transaction) error {
-	bounce := 0
-	for {
-		request, err := utils.JSON.Marshal(transaction)
-		if err != nil {
-			return err
-		}
-		uri := "/transaction/" + tenant
-		response, err := client.Post(uri, request, nil)
-		if err != nil {
-			return fmt.Errorf("ledger-rest create transaction %s error %+v", uri, err)
-		}
-		if response.Status == 409 {
-			bounce += 1
-			if bounce > 2 {
-				return fmt.Errorf("ledger-rest create transaction %s duplicate %s", uri, string(request))
-			}
-			continue
-		}
-		if response.Status == 400 {
-			return fmt.Errorf("ledger-rest transaction malformed request %+v", string(request))
-		}
-		if response.Status == 504 {
-			return fmt.Errorf("ledger-rest create transaction timeout")
-		}
-		if response.Status != 200 && response.Status != 201 && response.Status != 202 {
-			return fmt.Errorf("ledger-rest create transaction %s error %s", uri, response.String())
-		}
-		return nil
+	request, err := utils.JSON.Marshal(transaction)
+	if err != nil {
+		return err
 	}
+	response, err := client.underlying.Post(client.gateway+"/transaction/" + tenant, request, nil)
+	if err != nil {
+		return fmt.Errorf("create transaction error %+v", err)
+	}
+	if response.Status == 409 {
+		return fmt.Errorf("create transaction duplicate %+v", transaction)
+	}
+	if response.Status == 400 {
+		return fmt.Errorf("create transaction malformed request %+v", transaction)
+	}
+	if response.Status == 504 {
+		return fmt.Errorf("create transaction timeout")
+	}
+	if response.Status != 200 && response.Status != 201 && response.Status != 202 {
+		return fmt.Errorf("create transaction error %s", response.String())
+	}
+	return nil
 }
