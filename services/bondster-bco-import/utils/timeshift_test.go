@@ -36,28 +36,6 @@ func TestSliceByMonths(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestSliceByWeeks(t *testing.T) {
-	start := time.Date(2000, time.January, 1, 2, 3, 4, 5, time.UTC)
-	end := time.Date(2000, time.February, 1, 2, 3, 4, 5, time.UTC)
-
-	timeRanges := SliceByWeeks(start, end)
-
-	actual := make([]string, 0)
-	for _, timeRange := range timeRanges {
-		actual = append(actual, timeRange.String())
-	}
-
-	expected := []string{
-		"2000-01-01T02:03:04Z - 2000-01-03T00:00:00Z",
-		"2000-01-03T00:00:00Z - 2000-01-10T00:00:00Z",
-		"2000-01-11T00:00:00Z - 2000-01-18T00:00:00Z",
-		"2000-01-19T00:00:00Z - 2000-01-26T00:00:00Z",
-		"2000-01-27T00:00:00Z - 2000-02-01T02:03:04Z",
-	}
-
-	assert.Equal(t, expected, actual)
-}
-
 func TestPartitionInterval(t *testing.T) {
 	start := time.Date(2000, time.January, 1, 2, 3, 4, 5, time.UTC)
 	end := time.Date(2000, time.March, 5, 2, 3, 4, 5, time.UTC)
@@ -70,15 +48,8 @@ func TestPartitionInterval(t *testing.T) {
 	}
 
 	expected := []string{
-		"2000-01-01T02:03:04Z - 2000-01-03T00:00:00Z",
-		"2000-01-03T00:00:00Z - 2000-01-10T00:00:00Z",
-		"2000-01-11T00:00:00Z - 2000-01-18T00:00:00Z",
-		"2000-01-19T00:00:00Z - 2000-01-26T00:00:00Z",
-		"2000-01-27T00:00:00Z - 2000-01-31T00:00:00Z",
-		"2000-02-01T00:00:00Z - 2000-02-07T00:00:00Z",
-		"2000-02-07T00:00:00Z - 2000-02-14T00:00:00Z",
-		"2000-02-15T00:00:00Z - 2000-02-22T00:00:00Z",
-		"2000-02-23T00:00:00Z - 2000-02-29T00:00:00Z",
+		"2000-01-01T02:03:04Z - 2000-01-31T00:00:00Z",
+		"2000-02-01T00:00:00Z - 2000-02-29T00:00:00Z",
 		"2000-03-01T00:00:00Z - 2000-03-05T02:03:04Z",
 	}
 

@@ -36,34 +36,23 @@ func NewVaultClient(gateway string) VaultClient {
 	}
 }
 
-// Post performs http POST request for given url with given body
-func (client VaultClient) Post(url string, body []byte, headers map[string]string) (http.Response, error) {
-	return client.underlying.Post(client.gateway+url, body, headers)
-}
-
-// Get performs http GET request for given url
-func (client VaultClient) Get(url string, headers map[string]string) (http.Response, error) {
-	return client.underlying.Get(client.gateway+url, headers)
-}
-
 func (client VaultClient) CreateAccount(tenant string, account model.Account) error {
 	request, err := utils.JSON.Marshal(account)
 	if err != nil {
 		return err
 	}
-	uri := "/account/" + tenant
-	response, err := client.Post(uri, request, nil)
+	response, err := client.underlying.Post(client.gateway+"/account/" + tenant, request, nil)
 	if err != nil {
-		return fmt.Errorf("vault-rest create account %s error %+v", uri, err)
+		return fmt.Errorf("create account error %+v", err)
 	}
 	if response.Status == 400 {
-		return fmt.Errorf("vault-rest account malformed request %+v", string(request))
+		return fmt.Errorf("create account malformed request %+v", account)
 	}
 	if response.Status == 504 {
-		return fmt.Errorf("vault-rest create account timeout")
+		return fmt.Errorf("create account timeout")
 	}
 	if response.Status != 200 && response.Status != 409 {
-		return fmt.Errorf("vault-rest create account %s error %s", uri, response.String())
+		return fmt.Errorf("create account error %s", response.String())
 	}
 	return nil
 }

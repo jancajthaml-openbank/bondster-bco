@@ -51,40 +51,6 @@ func SliceByMonths(startDate time.Time, endDate time.Time) []TimeRange {
 	return dates
 }
 
-func SliceByWeeks(startDate time.Time, endDate time.Time) []TimeRange {
-	dates := make([]TimeRange, 0)
-	current := time.Date(startDate.Year(), startDate.Month(), 1, 0, 0, 0, 0, time.UTC)
-
-	if current.Weekday() != 1 {
-		for current.Weekday() != 1 {
-			current = current.AddDate(0, 0, 1)
-		}
-		dates = append(dates, TimeRange{
-			StartTime: time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.UTC),
-			EndTime:   time.Date(current.Year(), current.Month(), current.Day(), 0, 0, 0, 0, time.UTC),
-		})
-	}
-	for current.Before(endDate) {
-		date := current.AddDate(0, 0, 7)
-		dates = append(dates, TimeRange{
-			StartTime: time.Date(current.Year(), current.Month(), current.Day(), 0, 0, 0, 0, time.UTC),
-			EndTime:   time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC),
-		})
-		current = date.AddDate(0, 0, 1)
-	}
-	if dates[len(dates)-1].EndTime.After(endDate) {
-		dates[len(dates)-1].EndTime = endDate
-	}
-	if dates[0].StartTime.Before(startDate) {
-		dates[0].StartTime = startDate
-	}
-	return dates
-}
-
 func PartitionInterval(startDate time.Time, endDate time.Time) []TimeRange {
-	dates := make([]TimeRange, 0)
-	for _, interval := range SliceByMonths(startDate, endDate) {
-		dates = append(dates, SliceByWeeks(interval.StartTime, interval.EndTime)...)
-	}
-	return dates
+	return SliceByMonths(startDate, endDate)
 }

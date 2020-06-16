@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.10+account-context
+Version: 1.2.10+master
 Section: misc
 Priority: extra
 Architecture: amd64
