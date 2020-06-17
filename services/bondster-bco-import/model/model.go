@@ -70,7 +70,7 @@ func (entity *Token) UpdateCurrencies(currencies []string) bool {
 	var updated = false
 	for _, currency := range currencies {
 		if _, ok := entity.LastSyncedFrom[currency]; !ok {
-			entity.LastSyncedFrom[currency] = time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+			entity.LastSyncedFrom[currency] = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
 			updated = true
 		}
 	}
@@ -92,7 +92,7 @@ func (entity *Token) Serialise() ([]byte, error) {
 		buffer.WriteString("\n")
 		buffer.WriteString(currency)
 		buffer.WriteString(" ")
-		buffer.WriteString(syncTime.Format("01/2006"))
+		buffer.WriteString(syncTime.Format("02/01/2006"))
 	}
 	return buffer.Bytes(), nil
 }
@@ -120,10 +120,10 @@ func (entity *Token) Deserialise(data []byte) error {
 		if len(syncTime) < 7 {
 			continue
 		}
-		if from, err := time.Parse("01/2006", syncTime[4:]); err == nil {
+		if from, err := time.Parse("02/01/2006", syncTime[4:]); err == nil {
 			entity.LastSyncedFrom[syncTime[:3]] = from
 		} else {
-			entity.LastSyncedFrom[syncTime[:3]] = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+			entity.LastSyncedFrom[syncTime[:3]] = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
 		}
 	}
 

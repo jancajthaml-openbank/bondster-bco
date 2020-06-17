@@ -202,42 +202,50 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 	// FIXME getStatements end here
 
 	accounts := statements.GetAccounts()
-	log.WithField("token", token.ID).Debugf("importing %d accounts", len(accounts))
 
-	for _, account := range accounts {
-		err = vaultClient.CreateAccount(tenant, account)
-		if err != nil {
-			return err
+	for chunk := range utils.Partition(len(accounts), 10) {
+		work := accounts[chunk.Low:chunk.High]
+		log.WithField("token", token.ID).Debugf("importing %d/%d accounts", len(work), len(accounts))
+
+		for _, account := range work {
+			err = vaultClient.CreateAccount(tenant, account)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
 	transactions := statements.GetTransactions(tenant)
-	log.WithField("token", token.ID).Debugf("importing %d transactions", len(transactions))
 
-	for _, transaction := range transactions {
-		err = ledgerClient.CreateTransaction(tenant, transaction)
-		if err != nil {
-			return err
-		}
+  for chunk := range utils.Partition(len(transactions), 10) {
+  	work := transactions[chunk.Low:chunk.High]
+  	log.WithField("token", token.ID).Debugf("importing %d/%d transactions", len(work), len(transactions))
 
-		metrics.TransactionImported()
-		metrics.TransfersImported(int64(len(transaction.Transfers)))
+    for _, transaction := range work {
+			err = ledgerClient.CreateTransaction(tenant, transaction)
+			if err != nil {
+				return err
+			}
 
-		for _, transfer := range transaction.Transfers {
-			if transfer.ValueDateRaw.After(lastSynced) {
-				lastSynced = transfer.ValueDateRaw
+			metrics.TransactionImported()
+			metrics.TransfersImported(int64(len(transaction.Transfers)))
+
+			for _, transfer := range transaction.Transfers {
+				if transfer.ValueDateRaw.After(lastSynced) {
+					lastSynced = transfer.ValueDateRaw
+				}
+			}
+
+			if lastSynced.After(token.LastSyncedFrom[currency]) {
+				token.LastSyncedFrom[currency] = lastSynced
+				if !persistence.UpdateToken(storage, token) {
+					log.WithField("token", token.ID).Warn("Unable to update token")
+				}
 			}
 		}
-
-		if lastSynced.After(token.LastSyncedFrom[currency]) {
-			token.LastSyncedFrom[currency] = lastSynced
-			if !persistence.UpdateToken(storage, token) {
-				log.WithField("token", token.ID).Warn("Unable to update token")
-			}
-		}
-	}
+  }
 
 	return nil
 }

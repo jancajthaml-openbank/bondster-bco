@@ -47,7 +47,6 @@ scan:
 func RandDevice() string {
 	r := make([]byte, 16)
 	rand.Read(r)
-
 	device := string([]byte{
 		numbers[int(r[0]&0x0F)],
 		numbers[int(r[1]&0x0F)],

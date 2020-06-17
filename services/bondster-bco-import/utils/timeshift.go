@@ -33,7 +33,6 @@ func (value *TimeRange) String() string {
 func SliceByMonths(startDate time.Time, endDate time.Time) []TimeRange {
 	dates := make([]TimeRange, 0)
 	current := time.Date(startDate.Year(), startDate.Month(), 1, 0, 0, 0, 0, time.UTC)
-
 	for current.Before(endDate) {
 		date := current.AddDate(0, 1, 0).AddDate(0, 0, -1)
 		dates = append(dates, TimeRange{
@@ -42,15 +41,12 @@ func SliceByMonths(startDate time.Time, endDate time.Time) []TimeRange {
 		})
 		current = date.AddDate(0, 0, 1)
 	}
-	if dates[len(dates)-1].EndTime.After(endDate) {
-		dates[len(dates)-1].EndTime = endDate
-	}
-	if dates[0].StartTime.Before(startDate) {
-		dates[0].StartTime = startDate
-	}
 	return dates
 }
 
 func PartitionInterval(startDate time.Time, endDate time.Time) []TimeRange {
-	return SliceByMonths(startDate, endDate)
+	timeline := SliceByMonths(startDate, endDate)
+	timeline[len(timeline)-1].EndTime = endDate
+	timeline[0].StartTime = startDate
+	return timeline
 }
