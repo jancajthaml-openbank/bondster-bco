@@ -261,6 +261,8 @@ func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient,
 }
 
 func importStatements(s *ActorSystem, token model.Token, callback func()) {
+	defer callback()
+
 	log.WithField("token", token.ID).Debugf("Importing statements")
 
 	bondsterClient := bondster.NewBondsterClient(s.BondsterGateway, token)
@@ -283,6 +285,5 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 		log.WithField("token", token.ID).Debugf("Import for currency %s Begin", currency)
 		importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
 		log.WithField("token", token.ID).Debugf("Import for currency %s End", currency)
-		callback()
 	}
 }
