@@ -19,7 +19,7 @@ func TestSliceByMonths(t *testing.T) {
 	}
 
 	expected := []string{
-		"2000-01-01T02:03:04Z - 2000-01-31T00:00:00Z",
+		"2000-01-01T00:00:00Z - 2000-01-31T00:00:00Z",
 		"2000-02-01T00:00:00Z - 2000-02-29T00:00:00Z",
 		"2000-03-01T00:00:00Z - 2000-03-31T00:00:00Z",
 		"2000-04-01T00:00:00Z - 2000-04-30T00:00:00Z",
@@ -30,28 +30,50 @@ func TestSliceByMonths(t *testing.T) {
 		"2000-09-01T00:00:00Z - 2000-09-30T00:00:00Z",
 		"2000-10-01T00:00:00Z - 2000-10-31T00:00:00Z",
 		"2000-11-01T00:00:00Z - 2000-11-30T00:00:00Z",
-		"2000-12-01T00:00:00Z - 2000-12-10T02:03:04Z",
+		"2000-12-01T00:00:00Z - 2000-12-31T00:00:00Z",
 	}
 
 	assert.Equal(t, expected, actual)
 }
 
 func TestPartitionInterval(t *testing.T) {
-	start := time.Date(2000, time.January, 1, 2, 3, 4, 5, time.UTC)
-	end := time.Date(2000, time.March, 5, 2, 3, 4, 5, time.UTC)
+	t.Log("span across month")
+	{
+		start := time.Date(2000, time.January, 1, 2, 3, 4, 5, time.UTC)
+		end := time.Date(2000, time.March, 5, 2, 3, 4, 5, time.UTC)
 
-	timeRanges := PartitionInterval(start, end)
+		timeRanges := PartitionInterval(start, end)
 
-	actual := make([]string, 0)
-	for _, timeRange := range timeRanges {
-		actual = append(actual, timeRange.String())
+		actual := make([]string, 0)
+		for _, timeRange := range timeRanges {
+			actual = append(actual, timeRange.String())
+		}
+
+		expected := []string{
+			"2000-01-01T02:03:04Z - 2000-01-31T00:00:00Z",
+			"2000-02-01T00:00:00Z - 2000-02-29T00:00:00Z",
+			"2000-03-01T00:00:00Z - 2000-03-05T02:03:04Z",
+		}
+
+		assert.Equal(t, expected, actual)
 	}
 
-	expected := []string{
-		"2000-01-01T02:03:04Z - 2000-01-31T00:00:00Z",
-		"2000-02-01T00:00:00Z - 2000-02-29T00:00:00Z",
-		"2000-03-01T00:00:00Z - 2000-03-05T02:03:04Z",
-	}
+	t.Log("end of month - start of next month")
+	{
+		start := time.Date(2000, time.January, 31, 2, 3, 4, 5, time.UTC)
+		end := time.Date(2000, time.February, 1, 0, 0, 0, 0, time.UTC)
 
-	assert.Equal(t, expected, actual)
+		timeRanges := PartitionInterval(start, end)
+
+		actual := make([]string, 0)
+		for _, timeRange := range timeRanges {
+			actual = append(actual, timeRange.String())
+		}
+
+		expected := []string{
+			"2000-01-31T02:03:04Z - 2000-02-01T00:00:00Z",
+		}
+
+		assert.Equal(t, expected, actual)
+	}
 }

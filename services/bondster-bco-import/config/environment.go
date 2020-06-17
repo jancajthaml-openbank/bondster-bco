@@ -53,7 +53,7 @@ func loadConfFromEnv() Configuration {
 
 	return Configuration{
 		Tenant:             tenant,
-		RootStorage:        rootStorage + "/" + tenant + "/import/bondster",
+		RootStorage:        rootStorage + "/t_" + tenant + "/import/bondster",
 		EncryptionKey:      []byte(key),
 		BondsterGateway:    bondsterGateway,
 		SyncRate:           syncRate,

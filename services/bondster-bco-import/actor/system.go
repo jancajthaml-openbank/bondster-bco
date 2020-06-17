@@ -29,7 +29,6 @@ type ActorSystem struct {
 	Tenant  string
 	Storage *localfs.EncryptedStorage
 	Metrics *metrics.Metrics
-
 	BondsterGateway string
 	VaultGateway    string
 	LedgerGateway   string

@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.10+master
+Version: 1.2.10+smarter-interval
 Section: misc
 Priority: extra
 Architecture: amd64
