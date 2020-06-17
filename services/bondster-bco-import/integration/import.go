@@ -83,7 +83,7 @@ func (bondster BondsterImport) Start() {
 		return
 	}
 
-	log.Infof("Start bondster-import daemon, sync %v now and then each %v", bondster.syncRate)
+	log.Infof("Start bondster-import daemon, sync now and then each %v", bondster.syncRate)
 
 	bondster.importRoundtrip()
 
