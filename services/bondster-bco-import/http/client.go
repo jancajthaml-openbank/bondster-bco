@@ -32,7 +32,7 @@ type HttpClient struct {
 	underlying *http.Client
 }
 
-// NewHttpClient returns new bondster http client
+// NewHttpClient returns new http client
 func NewHttpClient() HttpClient {
 	return HttpClient{
 		underlying: &http.Client{

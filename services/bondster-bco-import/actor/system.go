@@ -18,17 +18,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	system "github.com/jancajthaml-openbank/actor-system"
+	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // ActorSystem represents actor system subroutine
 type ActorSystem struct {
 	system.System
-	Tenant  string
-	Storage *localfs.EncryptedStorage
-	Metrics *metrics.Metrics
+	Tenant          string
+	Storage         *localfs.EncryptedStorage
+	Metrics         *metrics.Metrics
 	BondsterGateway string
 	VaultGateway    string
 	LedgerGateway   string
