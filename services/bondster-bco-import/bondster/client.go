@@ -110,7 +110,7 @@ func (client *BondsterClient) login() error {
     }
   `, client.token.Username, client.token.Password), "")
 
-  response, err = client.underlying.Post(client.gateway+"/proxy/router/api/public/authentication/validateLoginStep", []byte(request), headers)
+	response, err = client.underlying.Post(client.gateway+"/proxy/router/api/public/authentication/validateLoginStep", []byte(request), headers)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func (client *BondsterClient) GetTransactionIdsInInterval(currency string, inter
     }
   `, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year()), "")
 
-  response, err := client.underlying.Post(client.gateway+"/proxy/mktinvestor/api/private/transaction/search", []byte(request), headers)
+	response, err := client.underlying.Post(client.gateway+"/proxy/mktinvestor/api/private/transaction/search", []byte(request), headers)
 	if err != nil {
 		return nil, fmt.Errorf("bondster get contact information error %+v", err)
 	}
@@ -347,7 +347,7 @@ func (client *BondsterClient) GetTransactionDetails(currency string, transaction
     }
   `, ids[0:len(ids)-1]), "")
 
-  response, err := client.underlying.Post(client.gateway+"/proxy/mktinvestor/api/private/transaction/list", []byte(request), headers)
+	response, err := client.underlying.Post(client.gateway+"/proxy/mktinvestor/api/private/transaction/list", []byte(request), headers)
 	if err != nil {
 		return nil, fmt.Errorf("bondster get contact information error %+v", err)
 	}

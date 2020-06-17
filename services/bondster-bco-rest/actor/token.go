@@ -74,7 +74,7 @@ func CreateToken(sys *ActorSystem, tenant string, token Token) (result interface
 }
 
 // DeleteToken deletes existing token for target tenant
-func DeleteToken(sys *ActorSystem, tenant string, tokenId string) (result interface{}) {
+func DeleteToken(sys *ActorSystem, tenant string, tokenID string) (result interface{}) {
 	sys.Metrics.TimeDeleteToken(func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -92,7 +92,7 @@ func DeleteToken(sys *ActorSystem, tenant string, tokenId string) (result interf
 		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
 			switch msg := context.Data.(type) {
 			case *TokenDeleted:
-				log.WithField("tenant", tenant).WithField("token", tokenId).Info("Token Deleted")
+				log.WithField("tenant", tenant).WithField("token", tokenID).Info("Token Deleted")
 				ch <- msg
 			default:
 				ch <- nil
@@ -103,7 +103,7 @@ func DeleteToken(sys *ActorSystem, tenant string, tokenId string) (result interf
 			DeleteTokenMessage(),
 			system.Coordinates{
 				Region: "BondsterImport/" + tenant,
-				Name:   tokenId,
+				Name:   tokenID,
 			},
 			system.Coordinates{
 				Region: "BondsterRest",

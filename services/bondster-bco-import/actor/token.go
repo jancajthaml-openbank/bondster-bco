@@ -17,12 +17,12 @@ package actor
 import (
 	"time"
 
+	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
+	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
-	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
-	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
 	"github.com/jancajthaml-openbank/bondster-bco-import/vault"
 
 	system "github.com/jancajthaml-openbank/actor-system"
@@ -38,10 +38,10 @@ func NilToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		if tokenHydration == nil {
 			context.Self.Become(state, NonExistToken(s))
-			log.WithField("token", state.ID).Debugf("Nil -> NonExist")
+			log.WithField("token", state.ID).Debug("Nil -> NonExist")
 		} else {
 			context.Self.Become(*tokenHydration, ExistToken(s))
-			log.WithField("token", state.ID).Debugf("Nil -> Exist")
+			log.WithField("token", state.ID).Debug("Nil -> Exist")
 		}
 
 		context.Self.Receive(context)
@@ -63,13 +63,13 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 			if tokenResult == nil {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.WithField("token", state.ID).Debugf("(NonExist CreateToken) Error")
+				log.WithField("token", state.ID).Debug("(NonExist CreateToken) Error")
 				return
 			}
 
 			s.SendMessage(RespCreateToken, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Infof("New Token Created")
-			log.WithField("token", state.ID).Debugf("(NonExist CreateToken) OK")
+			log.WithField("token", state.ID).Info("New Token Created")
+			log.WithField("token", state.ID).Debug("(NonExist CreateToken) OK")
 			s.Metrics.TokenCreated()
 
 			context.Self.Become(*tokenResult, ExistToken(s))
@@ -84,7 +84,7 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Debugf("(NonExist Unknown Message) Error")
+			log.WithField("token", state.ID).Debug("(NonExist Unknown Message) Error")
 		}
 
 		return
@@ -219,11 +219,11 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 
 	transactions := statements.GetTransactions(tenant)
 
-  for chunk := range utils.Partition(len(transactions), 10) {
-  	work := transactions[chunk.Low:chunk.High]
-  	log.WithField("token", token.ID).Debugf("importing %d/%d transactions", len(work), len(transactions))
+	for chunk := range utils.Partition(len(transactions), 10) {
+		work := transactions[chunk.Low:chunk.High]
+		log.WithField("token", token.ID).Debugf("importing %d/%d transactions", len(work), len(transactions))
 
-    for _, transaction := range work {
+		for _, transaction := range work {
 			err = ledgerClient.CreateTransaction(tenant, transaction)
 			if err != nil {
 				return err
@@ -245,7 +245,7 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 				}
 			}
 		}
-  }
+	}
 
 	return nil
 }

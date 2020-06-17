@@ -41,7 +41,7 @@ func (client VaultClient) CreateAccount(tenant string, account model.Account) er
 	if err != nil {
 		return err
 	}
-	response, err := client.underlying.Post(client.gateway+"/account/" + tenant, request, nil)
+	response, err := client.underlying.Post(client.gateway+"/account/"+tenant, request, nil)
 	if err != nil {
 		return fmt.Errorf("create account error %+v", err)
 	}

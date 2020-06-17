@@ -41,7 +41,7 @@ func (client LedgerClient) CreateTransaction(tenant string, transaction model.Tr
 	if err != nil {
 		return err
 	}
-	response, err := client.underlying.Post(client.gateway+"/transaction/" + tenant, request, nil)
+	response, err := client.underlying.Post(client.gateway+"/transaction/"+tenant, request, nil)
 	if err != nil {
 		return fmt.Errorf("create transaction error %+v", err)
 	}
