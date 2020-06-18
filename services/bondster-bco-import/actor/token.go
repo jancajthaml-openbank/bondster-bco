@@ -166,37 +166,32 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) error {
+func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
 	log.Debugf("Importing bondster statements for interval %s", interval.String())
 
 	var (
 		err            error
 		transactionIds []string
 		statements     *bondster.BondsterImportEnvelope
+		lastSynced     time.Time = token.LastSyncedFrom[currency]
 	)
 
 	metrics.TimeTransactionSearchLatency(func() {
 		transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)
 	})
 	if err != nil {
-		return err
+		return lastSynced, err
 	}
 
 	if len(transactionIds) == 0 {
-		if interval.EndTime.After(token.LastSyncedFrom[currency]) {
-			token.LastSyncedFrom[currency] = interval.EndTime
-			if !persistence.UpdateToken(storage, token) {
-				log.WithField("token", token.ID).Warn("Unable to update token last synced")
-			}
-		}
-		return nil
+		return interval.EndTime, nil
 	}
 
 	metrics.TimeTransactionListLatency(func() {
 		statements, err = bondsterClient.GetTransactionDetails(currency, transactionIds)
 	})
 	if err != nil {
-		return err
+		return lastSynced, err
 	}
 
 	// FIXME getStatements end here
@@ -205,28 +200,26 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 
 	for chunk := range utils.Partition(len(accounts), 10) {
 		work := accounts[chunk.Low:chunk.High]
-		log.WithField("token", token.ID).Debugf("importing %d/%d accounts", len(work), len(accounts))
+		log.WithField("token", token.ID).Debugf("importing %d/%d accounts", chunk.High, len(accounts))
 
 		for _, account := range work {
 			err = vaultClient.CreateAccount(tenant, account)
 			if err != nil {
-				return err
+				return lastSynced, err
 			}
 		}
 	}
-
-	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
 	transactions := statements.GetTransactions(tenant)
 
 	for chunk := range utils.Partition(len(transactions), 10) {
 		work := transactions[chunk.Low:chunk.High]
-		log.WithField("token", token.ID).Debugf("importing %d/%d transactions", len(work), len(transactions))
+		log.WithField("token", token.ID).Debugf("importing %d/%d transactions", chunk.High, len(transactions))
 
 		for _, transaction := range work {
 			err = ledgerClient.CreateTransaction(tenant, transaction)
 			if err != nil {
-				return err
+				return lastSynced, err
 			}
 
 			metrics.TransactionImported()
@@ -237,27 +230,26 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 					lastSynced = transfer.ValueDateRaw
 				}
 			}
-
-			if lastSynced.After(token.LastSyncedFrom[currency]) {
-				token.LastSyncedFrom[currency] = lastSynced
-				if !persistence.UpdateToken(storage, token) {
-					log.WithField("token", token.ID).Warn("Unable to update token")
-				}
-			}
 		}
 	}
 
-	return nil
+	return lastSynced, nil
 }
 
-func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) {
+func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) error {
 	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
-		err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
+		lastSynced, err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
+		if lastSynced.After(token.LastSyncedFrom[currency]) {
+			token.LastSyncedFrom[currency] = lastSynced
+			if !persistence.UpdateToken(storage, token) {
+				log.WithField("token", token.ID).Warn("Unable to update token")
+			}
+		}
 		if err != nil {
-			log.WithField("token", token.ID).Errorf("Import statements failed with %+v", err)
-			return
+			return err
 		}
 	}
+	return nil
 }
 
 func importStatements(s *ActorSystem, token model.Token, callback func()) {
@@ -283,7 +275,10 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 
 	for currency := range token.LastSyncedFrom {
 		log.WithField("token", token.ID).Debugf("Import for currency %s Begin", currency)
-		importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
+		err := importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
+		if err != nil {
+			log.WithField("token", token.ID).Errorf("Import statements failed with %+v", err)
+		}
 		log.WithField("token", token.ID).Debugf("Import for currency %s End", currency)
 	}
 }
