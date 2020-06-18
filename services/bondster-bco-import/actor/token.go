@@ -173,7 +173,7 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 		err            error
 		transactionIds []string
 		statements     *bondster.BondsterImportEnvelope
-		lastSynced time.Time = token.LastSyncedFrom[currency]
+		lastSynced     time.Time = token.LastSyncedFrom[currency]
 	)
 
 	metrics.TimeTransactionSearchLatency(func() {
