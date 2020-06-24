@@ -1,5 +1,5 @@
 Package: bondster-bco
-Version: 1.2.10+progress-logging
+Version: 1.2.10+stay-inside-bondster-world
 Section: misc
 Priority: extra
 Architecture: amd64
