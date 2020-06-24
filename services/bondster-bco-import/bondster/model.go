@@ -258,7 +258,6 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []model.Account {
 		return nil
 	}
 
-	var normalizedAccount string
 	var deduplicated = make(map[string]model.Account)
 
 	deduplicated[envelope.Currency+"_TYPE_NOSTRO"] = model.Account{
@@ -282,15 +281,6 @@ func (envelope *BondsterImportEnvelope) GetAccounts() []model.Account {
 			Format:         "BONDSTER_TECHNICAL",
 			Currency:       envelope.Currency,
 			IsBalanceCheck: false,
-		}
-		if transfer.External != nil {
-			normalizedAccount = model.NormalizeAccountNumber(transfer.External.Number, transfer.External.BankCode)
-			deduplicated[normalizedAccount] = model.Account{
-				Name:           normalizedAccount,
-				Format:         "IBAN",
-				Currency:       envelope.Currency,
-				IsBalanceCheck: false,
-			}
 		}
 	}
 

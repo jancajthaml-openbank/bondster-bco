@@ -16,8 +16,6 @@ package model
 
 import (
 	"time"
-
-	"github.com/jancajthaml-openbank/bondster-bco-import/iban"
 )
 
 // Transaction entity in ledger-rest format
@@ -49,19 +47,4 @@ type Account struct {
 	Format         string `json:"format"`
 	Currency       string `json:"currency"`
 	IsBalanceCheck bool   `json:"isBalanceCheck"`
-}
-
-// NormalizeAccountNumber return account number in IBAN form
-func NormalizeAccountNumber(number string, bankCode string) string {
-	if len(number) > 2 && (number[0] >= 'A' && number[0] <= 'Z') && (number[1] >= 'A' && number[1] <= 'Z') {
-		return number
-	}
-	if bankCode == "" {
-		return number
-	}
-	calculatedIBAN := iban.Calculate(number, bankCode)
-	if calculatedIBAN == "" {
-		return number
-	}
-	return calculatedIBAN
 }
