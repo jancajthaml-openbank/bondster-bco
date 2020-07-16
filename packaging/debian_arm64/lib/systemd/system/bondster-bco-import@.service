@@ -21,4 +21,4 @@ TimeoutSec=infinity
 KillMode=process
 
 [Install]
-WantedBy=bondster-bco.service
+WantedBy=multi-user.target

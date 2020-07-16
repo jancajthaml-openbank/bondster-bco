@@ -1,7 +1,7 @@
 Package: bondster-bco
 Version: 1.2.4+more-robust-debian-packaging
 Section: misc
-Priority: extra
+Priority: optional
 Architecture: armhf
 Vcs-Git: https://github.com/jancajthaml-openbank/bondster-bco.git
 Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
