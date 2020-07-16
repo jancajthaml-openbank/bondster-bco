@@ -1,7 +1,7 @@
 Package: bondster-bco
-Version: 1.2.10+stay-inside-bondster-world
+Version: 1.2.10+postinst-check
 Section: misc
-Priority: extra
+Priority: optional
 Architecture: amd64
 Vcs-Git: https://github.com/jancajthaml-openbank/bondster-bco.git
 Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
