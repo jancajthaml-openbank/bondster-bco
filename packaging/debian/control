@@ -1,0 +1,13 @@
+Source: bondster-bco
+Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
+Section: misc
+Priority: optional
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.4
+
+Package: bondster-bco
+Architecture: any
+Description: bondster marketplace connector for openbank
+ Service managing Bondster Marketplace tokens and synchronizing its transactions.
+Depends: libzmq5 (>= 4.2.1~), openssl (>= 1.1~), ${shlibs:Depends}
+

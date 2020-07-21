@@ -1,0 +1,23 @@
+[Unit]
+Description=openbank Bondster Marketplace Connection REST service
+PartOf=bondster-bco.service
+After=bondster-bco.service
+ConditionPathExists=/etc/bondster-bco/conf.d/init.conf
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/bondster-bco/conf.d/init.conf
+StartLimitBurst=0
+ExecStart=/usr/bin/bondster-bco-rest
+StandardInput=null
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+Restart=always
+RestartSec=0
+TimeoutStartSec=0
+TimeoutSec=infinity
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

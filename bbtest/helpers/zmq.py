@@ -35,10 +35,8 @@ class ZMQHelper(threading.Thread):
       try:
         data = self.__pull.recv(zmq.NOBLOCK)
         self.__pub.send(data)
-        if data[-1] != 93:
-          self.__mutex.acquire()
+        if len(data) and data[-1] != 93:
           self.backlog.append(data)
-          self.__mutex.release()
       except Exception as ex:
         if ex.errno != 11:
           return
