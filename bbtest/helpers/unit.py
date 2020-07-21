@@ -128,7 +128,7 @@ class UnitHelper(object):
 
     for unit in result:
       (code, result, error) = execute([
-        'journalctl', '-o', 'cat', '-u', unit, '--no-pager'
+        'journalctl', '-o', 'cat', '-u', '{}.service'.format(unit), '--no-pager'
       ])
       if code != 0 or not result:
         continue
