@@ -39,7 +39,7 @@ Feature: Metrics test
       | transactionListLatency   |     0 |
       | transactionSearchLatency |     0 |
 
-    When token M1/A is created
+    When token M2/A is created
     Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M2.json reports:
       | key                      | value |
       | createdTokens            |     1 |

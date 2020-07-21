@@ -1,0 +1,3 @@
+bin/bondster-bco-rest-linux-amd64 usr/bin
+bin/bondster-bco-import-linux-amd64 usr/bin
+init.conf etc/bondster-bco/conf.d
