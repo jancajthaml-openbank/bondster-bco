@@ -1,7 +1,6 @@
 #!/bin/sh
 set -e
 
-#DEBHELPER#
 if [ "$1" = install -o "$1" = upgrade ] && [ -f /etc/bondster-bco/conf.d/init.conf ] ; then
   secrets=$(sed -n -e 's/^.*BONDSTER_BCO_SECRETS=//p' /etc/bondster-bco/conf.d/init.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
 
@@ -37,3 +36,5 @@ if [ "$1" = install -o "$1" = upgrade ] && [ -f /etc/bondster-bco/conf.d/init.co
     echo "generated 32B encryption key at ${encryptionKey}"
   fi
 fi
+
+#DEBHELPER#
