@@ -16,7 +16,7 @@ class UnitHelper(object):
   @staticmethod
   def default_config():
     return {
-      "STORAGE": "/data",
+      "STORAGE": "/tmp/reports/blackbox-tests/data",
       "LOG_LEVEL": "DEBUG",
       "BONDSTER_GATEWAY": "https://127.0.0.1:4000",
       "SYNC_RATE": "1h",
@@ -27,8 +27,8 @@ class UnitHelper(object):
       "METRICS_REFRESHRATE": "1h",
       #"METRICS_CONTINUOUS": "true",  # fixme implement
       "HTTP_PORT": "443",
-      "SECRETS": "/opt/bondster-bco/secrets",
-      "ENCRYPTION_KEY": "/opt/bondster-bco/secrets/fs_encryption.key"
+      "SECRETS": "/etc/bondster-bco/secrets",
+      "ENCRYPTION_KEY": "/etc/bondster-bco/secrets/fs_encryption.key"
     }
 
   def get_arch(self):
@@ -105,6 +105,11 @@ class UnitHelper(object):
         with open('/tmp/reports/blackbox-tests/meta/debian.bondster-bco.txt', 'w') as fd:
           fd.write(result)
 
+        result = [item for item in result.split(os.linesep)]
+        result = [item.rsplit('/', 1)[-1].strip() for item in result if "/lib/systemd/system/bondster-bco" in item]
+
+        self.units = result
+
       self.docker.remove_container(scratch['Id'])
     finally:
       temp.close()
@@ -120,8 +125,8 @@ class UnitHelper(object):
     with open('/etc/bondster-bco/conf.d/init.conf', 'w') as fd:
       fd.write(str(os.linesep).join("BONDSTER_BCO_{!s}={!s}".format(k, v) for (k, v) in options.items()))
 
-  def cleanup(self):
-    for unit in self.__get_systemd_units():
+  def collect_logs(self):
+    for unit in set(self.__get_systemd_units() + self.units):
       (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
       if code != 0 or not result:
         continue
@@ -129,9 +134,10 @@ class UnitHelper(object):
         fd.write(result)
 
   def teardown(self):
+    self.collect_logs()
     for unit in self.__get_systemd_units():
       execute(['systemctl', 'stop', unit])
-    self.cleanup()
+    self.collect_logs()
 
   def __get_systemd_units(self):
     (code, result, error) = execute(['systemctl', 'list-units', '--no-legend'])
