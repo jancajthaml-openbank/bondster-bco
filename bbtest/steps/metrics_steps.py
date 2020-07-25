@@ -1,5 +1,7 @@
-from behave import *
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+from behave import *
 import os
 import stat
 import json
