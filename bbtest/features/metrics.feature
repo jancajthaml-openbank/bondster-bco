@@ -6,7 +6,7 @@ Feature: Metrics test
       | property            | value |
       | METRICS_REFRESHRATE |    1s |
 
-    Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M1.json should have following keys:
+    Then metrics file reports/blackbox-tests/metrics/metrics.M1.json should have following keys:
       | key                      |
       | createdTokens            |
       | deletedTokens            |
@@ -14,15 +14,15 @@ Feature: Metrics test
       | importedTransfers        |
       | transactionListLatency   |
       | transactionSearchLatency |
-    And metrics file /tmp/reports/blackbox-tests/metrics/metrics.M1.json has permissions -rw-r--r--
+    And metrics file reports/blackbox-tests/metrics/metrics.M1.json has permissions -rw-r--r--
 
-    And metrics file /tmp/reports/blackbox-tests/metrics/metrics.json should have following keys:
+    And metrics file reports/blackbox-tests/metrics/metrics.json should have following keys:
       | key                      |
       | createTokenLatency       |
       | deleteTokenLatency       |
       | getTokenLatency          |
       | memoryAllocated          |
-    And metrics file /tmp/reports/blackbox-tests/metrics/metrics.json has permissions -rw-r--r--
+    And metrics file reports/blackbox-tests/metrics/metrics.json has permissions -rw-r--r--
 
   Scenario: metrics can remembers previous values after reboot
     Given tenant M2 is onboarded
@@ -30,7 +30,7 @@ Feature: Metrics test
       | property            | value |
       | METRICS_REFRESHRATE |    1s |
 
-    Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M2.json reports:
+    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
       | key                      | value |
       | createdTokens            |     0 |
       | deletedTokens            |     0 |
@@ -40,7 +40,7 @@ Feature: Metrics test
       | transactionSearchLatency |     0 |
 
     When token M2/A is created
-    Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M2.json reports:
+    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
       | key                      | value |
       | createdTokens            |     1 |
       | deletedTokens            |     0 |
@@ -50,7 +50,7 @@ Feature: Metrics test
       | transactionSearchLatency |     0 |
 
     When restart unit "bondster-bco-import@M2.service"
-    Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M2.json reports:
+    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
       | key                      | value |
       | createdTokens            |     1 |
       | deletedTokens            |     0 |
