@@ -9,5 +9,4 @@ Package: bondster-bco
 Architecture: any
 Description: bondster marketplace connector for openbank
  Service managing Bondster Marketplace tokens and synchronizing its transactions.
-Depends: libzmq5 (>= 4.2.1~), openssl (>= 1.1~), ${shlibs:Depends}
-
+Depends: libzmq5 (>= 4.3.1~), libzmq5 (<< 4.3.2~), openssl (>= 1.1~), ${shlibs:Depends}
