@@ -22,7 +22,7 @@ type Configuration struct {
 	Tenant string
 	// BondsterGateway represent bondster gateway uri
 	BondsterGateway string
-	// SyncRate represents interval in which new statements are synchronised
+	// SyncRate represents interval in which new statements are synchronized
 	SyncRate time.Duration
 	// LedgerGateway represent ledger-rest gateway uri
 	LedgerGateway string
