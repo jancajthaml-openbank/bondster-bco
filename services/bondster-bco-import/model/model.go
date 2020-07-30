@@ -77,8 +77,8 @@ func (entity *Token) UpdateCurrencies(currencies []string) bool {
 	return updated
 }
 
-// Serialise Token entity to persistable data
-func (entity *Token) Serialise() ([]byte, error) {
+// Serialize Token entity to persistable data
+func (entity *Token) Serialize() ([]byte, error) {
 	if entity == nil {
 		return nil, fmt.Errorf("called Token.Serialise over nil")
 	}
