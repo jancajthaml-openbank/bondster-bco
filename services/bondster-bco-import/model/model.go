@@ -80,7 +80,7 @@ func (entity *Token) UpdateCurrencies(currencies []string) bool {
 // Serialize Token entity to persistable data
 func (entity *Token) Serialize() ([]byte, error) {
 	if entity == nil {
-		return nil, fmt.Errorf("called Token.Serialise over nil")
+		return nil, fmt.Errorf("called Token.Serialize over nil")
 	}
 	var buffer bytes.Buffer
 	buffer.WriteString(entity.CreatedAt.Format(time.RFC3339))
@@ -97,10 +97,10 @@ func (entity *Token) Serialize() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// Deserialise Token entity from persistent data
-func (entity *Token) Deserialise(data []byte) error {
+// Deserialize Token entity from persistent data
+func (entity *Token) Deserialize(data []byte) error {
 	if entity == nil {
-		return fmt.Errorf("called Token.Deserialise over nil")
+		return fmt.Errorf("called Token.Deserialize over nil")
 	}
 	entity.LastSyncedFrom = make(map[string]time.Time)
 
