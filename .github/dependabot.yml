@@ -1,0 +1,13 @@
+version: 2
+
+updates:
+
+  - package-ecosystem: "gomod"
+    directory: "/services/bondster-bco-rest"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gomod"
+    directory: "/services/bondster-bco-import"
+    schedule:
+      interval: "daily"
