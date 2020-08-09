@@ -188,6 +188,16 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 			}
 
 		}
+		
+		if len(buffer) > 0 {
+			transfers := make([]model.Transfer, len(buffer))
+			copy(transfers, buffer)
+			buffer = make([]model.Transfer, 0)
+			chnl <- model.Transaction{
+				IDTransaction: previousIdTransaction,
+				Transfers:     transfers,
+			}
+		}
 
 		close(chnl)
 	}()
