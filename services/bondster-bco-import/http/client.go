@@ -83,7 +83,7 @@ func (client *HttpClient) Post(url string, body []byte, headers map[string]strin
 			_, err = io.Copy(ioutil.Discard, resp.Body)
 			resp.Body.Close()
 		} else if resp == nil && err != nil {
-			err = fmt.Errorf("runtime error, no response")
+			err = fmt.Errorf("runtime error, no response %+v", err)
 		}
 
 		if err == nil {

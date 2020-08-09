@@ -15,6 +15,7 @@
 package actor
 
 import (
+	"sort"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
@@ -193,42 +194,41 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 	if err != nil {
 		return lastSynced, err
 	}
+	if len(statements.Transactions) == 0 {
+		return lastSynced, nil
+	}
 
 	// FIXME getStatements end here
 
-	accounts := statements.GetAccounts()
+	log.WithField("token", token.ID).Debugf("sorting statements")
 
-	for chunk := range utils.Partition(len(accounts), 10) {
-		work := accounts[chunk.Low:chunk.High]
-		log.WithField("token", token.ID).Debugf("importing %d/%d accounts", chunk.High, len(accounts))
+	sort.SliceStable(statements.Transactions, func(i, j int) bool {
+		return statements.Transactions[i].IDTransaction == statements.Transactions[j].IDTransaction
+	})
 
-		for _, account := range work {
-			err = vaultClient.CreateAccount(tenant, account)
-			if err != nil {
-				return lastSynced, err
-			}
+	log.WithField("token", token.ID).Debugf("importing accounts")
+
+	for account := range statements.GetAccounts() {
+		err = vaultClient.CreateAccount(tenant, account)
+		if err != nil {
+			return lastSynced, err
 		}
 	}
 
-	transactions := statements.GetTransactions(tenant)
+	log.WithField("token", token.ID).Debugf("importing transactions")
 
-	for chunk := range utils.Partition(len(transactions), 10) {
-		work := transactions[chunk.Low:chunk.High]
-		log.WithField("token", token.ID).Debugf("importing %d/%d transactions", chunk.High, len(transactions))
+	for transaction := range statements.GetTransactions(tenant) {
+		err = ledgerClient.CreateTransaction(tenant, transaction)
+		if err != nil {
+			return lastSynced, err
+		}
 
-		for _, transaction := range work {
-			err = ledgerClient.CreateTransaction(tenant, transaction)
-			if err != nil {
-				return lastSynced, err
-			}
+		metrics.TransactionImported()
+		metrics.TransfersImported(int64(len(transaction.Transfers)))
 
-			metrics.TransactionImported()
-			metrics.TransfersImported(int64(len(transaction.Transfers)))
-
-			for _, transfer := range transaction.Transfers {
-				if transfer.ValueDateRaw.After(lastSynced) {
-					lastSynced = transfer.ValueDateRaw
-				}
+		for _, transfer := range transaction.Transfers {
+			if transfer.ValueDateRaw.After(lastSynced) {
+				lastSynced = transfer.ValueDateRaw
 			}
 		}
 	}

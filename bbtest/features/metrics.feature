@@ -36,8 +36,6 @@ Feature: Metrics test
       | deletedTokens            |     0 |
       | importedTransactions     |     0 |
       | importedTransfers        |     0 |
-      | transactionListLatency   |     0 |
-      | transactionSearchLatency |     0 |
 
     When token M2/A is created
     Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
@@ -46,8 +44,6 @@ Feature: Metrics test
       | deletedTokens            |     0 |
       | importedTransactions     |     0 |
       | importedTransfers        |     0 |
-      | transactionListLatency   |     0 |
-      | transactionSearchLatency |     0 |
 
     When restart unit "bondster-bco-import@M2.service"
     Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
@@ -56,5 +52,3 @@ Feature: Metrics test
       | deletedTokens            |     0 |
       | importedTransactions     |     0 |
       | importedTransfers        |     0 |
-      | transactionListLatency   |     0 |
-      | transactionSearchLatency |     0 |

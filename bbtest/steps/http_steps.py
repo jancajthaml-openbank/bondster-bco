@@ -49,8 +49,8 @@ def token_not_exists(context, tenant, token):
 @when('token {tenant}/{token} is created')
 def create_token(context, tenant, token):
   payload = {
-    'username': 'user-{}@example'.format(token),
-    'password': 'pwd-{}'.format(token),
+    'username': 'X-user-{}@example'.format(token),
+    'password': 'Y-pwd-{}'.format(token),
   }
 
   uri = "https://127.0.0.1/token/{}".format(tenant)
