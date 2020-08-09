@@ -16,7 +16,6 @@ package bondster
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
@@ -124,172 +123,127 @@ type bondsterAmount struct {
 	Currency string  `json:"currencyCode"`
 }
 
-// GetTransactions return list of bondster transactions
-func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) []model.Transaction {
+// GetTransactions return generator of bondster transactions over given envelope
+func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan model.Transaction {
+	chnl := make(chan model.Transaction)
 	if envelope == nil {
-		return nil
+		close(chnl)
+		return chnl
 	}
 
-	var set = make(map[string][]model.Transfer)
+	var previousIdTransaction = ""
+	var buffer = make([]model.Transfer, 0)
 
-	sort.SliceStable(envelope.Transactions, func(i, j int) bool {
-		return envelope.Transactions[i].ValueDate.Before(envelope.Transactions[j].ValueDate)
-	})
+	go func() {
 
-	var nostro = envelope.Currency + "_TYPE_NOSTRO"
+		for _, transfer := range envelope.Transactions {
+			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
 
-	for _, transfer := range envelope.Transactions {
-		valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
-
-		if transfer.Direction == "DEBIT" {
-			if transfer.Originator != nil {
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
-					IDTransfer: transfer.IDTransfer,
-					Credit: model.AccountPair{
-						Tenant: tenant,
-						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
-					},
-					Debit: model.AccountPair{
-						Tenant: tenant,
-						Name:   nostro,
-					},
-					ValueDate:    valueDate,
-					ValueDateRaw: transfer.ValueDate,
-					Amount:       transfer.Amount.Value,
-					Currency:     transfer.Amount.Currency,
-				})
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
-					IDTransfer: transfer.IDTransfer + "_FWD",
-					Credit: model.AccountPair{
-						Tenant: tenant,
-						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
-					},
-					Debit: model.AccountPair{
-						Tenant: tenant,
-						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
-					},
-					ValueDate:    valueDate,
-					ValueDateRaw: transfer.ValueDate,
-					Amount:       transfer.Amount.Value,
-					Currency:     transfer.Amount.Currency,
-				})
-			} else {
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
-					IDTransfer: transfer.IDTransfer,
-					Credit: model.AccountPair{
-						Tenant: tenant,
-						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
-					},
-					Debit: model.AccountPair{
-						Tenant: tenant,
-						Name:   nostro,
-					},
-					ValueDate:    valueDate,
-					ValueDateRaw: transfer.ValueDate,
-					Amount:       transfer.Amount.Value,
-					Currency:     transfer.Amount.Currency,
-				})
+			credit := model.AccountPair{
+				Tenant: tenant,
 			}
-		} else {
-			if transfer.Originator != nil {
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
-					IDTransfer: transfer.IDTransfer,
-					Credit: model.AccountPair{
-						Tenant: tenant,
-						Name:   nostro,
-					},
-					Debit: model.AccountPair{
-						Tenant: tenant,
-						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
-					},
-					ValueDate:    valueDate,
-					ValueDateRaw: transfer.ValueDate,
-					Amount:       transfer.Amount.Value,
-					Currency:     transfer.Amount.Currency,
-				})
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
-					IDTransfer: transfer.IDTransfer + "_FWD",
-					Credit: model.AccountPair{
-						Tenant: tenant,
-						Name:   envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
-					},
-					Debit: model.AccountPair{
-						Tenant: tenant,
-						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
-					},
-					ValueDate:    valueDate,
-					ValueDateRaw: transfer.ValueDate,
-					Amount:       transfer.Amount.Value,
-					Currency:     transfer.Amount.Currency,
-				})
-			} else {
-				set[transfer.IDTransaction] = append(set[transfer.IDTransaction], model.Transfer{
-					IDTransfer: transfer.IDTransfer,
-					Credit: model.AccountPair{
-						Tenant: tenant,
-						Name:   nostro,
-					},
-					Debit: model.AccountPair{
-						Tenant: tenant,
-						Name:   envelope.Currency + "_TYPE_" + transfer.Type,
-					},
-					ValueDate:    valueDate,
-					ValueDateRaw: transfer.ValueDate,
-					Amount:       transfer.Amount.Value,
-					Currency:     transfer.Amount.Currency,
-				})
+			debit := model.AccountPair{
+				Tenant: tenant,
 			}
+
+			if transfer.Direction == "CREDIT" {
+				credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
+
+				if transfer.Originator != nil {
+					debit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
+				} else {
+					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
+				}
+			} else {
+				debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
+
+				if transfer.Originator != nil {
+					credit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
+				} else {
+					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
+				}
+			}
+
+			buffer = append(buffer, model.Transfer{
+				IDTransfer:   transfer.IDTransfer,
+				Credit:       credit,
+				Debit:        debit,
+				ValueDate:    valueDate,
+				ValueDateRaw: transfer.ValueDate,
+				Amount:       transfer.Amount.Value,
+				Currency:     transfer.Amount.Currency,
+			})
+
+			if previousIdTransaction == "" {
+				previousIdTransaction = transfer.IDTransaction
+			} else if previousIdTransaction != transfer.IDTransaction {
+				previousIdTransaction = transfer.IDTransaction
+				transfers := make([]model.Transfer, len(buffer))
+				copy(transfers, buffer)
+				buffer = make([]model.Transfer, 0)
+				chnl <- model.Transaction{
+					IDTransaction: transfer.IDTransaction,
+					Transfers:     transfers,
+				}
+			}
+
 		}
-	}
 
-	result := make([]model.Transaction, 0)
-	for transaction, transfers := range set {
-		result = append(result, model.Transaction{
-			IDTransaction: transaction,
-			Transfers:     transfers,
-		})
-	}
-	return result
+		close(chnl)
+	}()
+
+	return chnl
 }
 
-// GetAccounts return list of bondster accounts
-func (envelope *BondsterImportEnvelope) GetAccounts() []model.Account {
+// GetAccounts return generator of bondster accounts over given envelope
+func (envelope *BondsterImportEnvelope) GetAccounts() <-chan model.Account {
+	chnl := make(chan model.Account)
 	if envelope == nil {
-		return nil
+		close(chnl)
+		return chnl
 	}
 
-	var deduplicated = make(map[string]model.Account)
+	var visited = make(map[string]interface{})
 
-	deduplicated[envelope.Currency+"_TYPE_NOSTRO"] = model.Account{
-		Name:           envelope.Currency + "_TYPE_NOSTRO",
-		Format:         "BONDSTER_TECHNICAL",
-		Currency:       envelope.Currency,
-		IsBalanceCheck: false,
-	}
-
-	for _, transfer := range envelope.Transactions {
-		if transfer.Originator != nil {
-			deduplicated[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = model.Account{
-				Name:           envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
-				Format:         "BONDSTER_ORIGINATOR",
+	go func() {
+		if _, ok := visited[envelope.Currency+"_TYPE_NOSTRO"]; !ok {
+			chnl <- model.Account{
+				Name:           envelope.Currency + "_TYPE_NOSTRO",
+				Format:         "BONDSTER_TECHNICAL",
 				Currency:       envelope.Currency,
 				IsBalanceCheck: false,
 			}
+			visited[envelope.Currency+"_TYPE_NOSTRO"] = nil
 		}
-		deduplicated[envelope.Currency+"_TYPE_"+transfer.Type] = model.Account{
-			Name:           envelope.Currency + "_TYPE_" + transfer.Type,
-			Format:         "BONDSTER_TECHNICAL",
-			Currency:       envelope.Currency,
-			IsBalanceCheck: false,
+
+		for _, transfer := range envelope.Transactions {
+			if transfer.Originator != nil {
+				if _, ok := visited[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name]; !ok {
+					chnl <- model.Account{
+						Name:           envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
+						Format:         "BONDSTER_ORIGINATOR",
+						Currency:       envelope.Currency,
+						IsBalanceCheck: false,
+					}
+					visited[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = nil
+				}
+			}
+
+			if _, ok := visited[envelope.Currency+"_TYPE_"+transfer.Type]; !ok {
+				chnl <- model.Account{
+					Name:           envelope.Currency + "_TYPE_" + transfer.Type,
+					Format:         "BONDSTER_TECHNICAL",
+					Currency:       envelope.Currency,
+					IsBalanceCheck: false,
+				}
+				visited[envelope.Currency+"_TYPE_"+transfer.Type] = nil
+			}
 		}
-	}
 
-	result := make([]model.Account, 0)
-	for _, item := range deduplicated {
-		result = append(result, item)
-	}
+		close(chnl)
+	}()
 
-	return result
+	return chnl
 }
 
 // LoginScenario holds code representing how service should log in

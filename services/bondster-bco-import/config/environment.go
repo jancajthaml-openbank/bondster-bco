@@ -77,6 +77,7 @@ func getEnvFilename(key string, fallback string) string {
 	}
 	return value
 }
+
 func getEnvString(key string, fallback string) string {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
