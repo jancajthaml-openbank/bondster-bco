@@ -194,14 +194,17 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 	if err != nil {
 		return lastSynced, err
 	}
+	if len(statements.Transactions) == 0 {
+		return lastSynced, nil
+	}
+
+	// FIXME getStatements end here
 
 	log.WithField("token", token.ID).Debugf("sorting statements")
 
 	sort.SliceStable(statements.Transactions, func(i, j int) bool {
 		return statements.Transactions[i].IDTransaction == statements.Transactions[j].IDTransaction
 	})
-
-	// FIXME getStatements end here
 
 	log.WithField("token", token.ID).Debugf("importing accounts")
 

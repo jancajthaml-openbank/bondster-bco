@@ -45,12 +45,14 @@ class BussinessLogic(object):
     code = data['scenarioCode']
 
     if code != 'USR_PWD':
+      print('unsupported scenario')
       return False
 
     username = [item['value'] for item in data['authProcessStepValues'] if item['authDetailType'] == 'USERNAME'][0]
     password = [item['value'] for item in data['authProcessStepValues'] if item['authDetailType'] == 'PWD'][0]
 
-    if not (username == 'X' and password == 'Y'):
+    if not (username.startswith('X') and password.startswith('Y')):
+      print('username and password missmatch ({} / {})'.format(username, password))
       return False
 
     now = datetime.datetime.now()
