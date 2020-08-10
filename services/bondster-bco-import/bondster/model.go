@@ -165,6 +165,22 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 				}
 			}
 
+			idTransaction := transfer.IDTransaction
+
+			if previousIdTransaction == "" {
+				previousIdTransaction = idTransaction
+			} else if previousIdTransaction != idTransaction {
+				transfers := make([]model.Transfer, len(buffer))
+				copy(transfers, buffer)
+				buffer = make([]model.Transfer, 0)
+				chnl <- model.Transaction{
+					Tenant:        tenant,
+					IDTransaction: previousIdTransaction,
+					Transfers:     transfers,
+				}
+				previousIdTransaction = idTransaction
+			}
+
 			buffer = append(buffer, model.Transfer{
 				IDTransfer:   transfer.IDTransfer,
 				Credit:       credit,
@@ -174,20 +190,6 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 				Amount:       transfer.Amount.Value,
 				Currency:     transfer.Amount.Currency,
 			})
-
-			if previousIdTransaction == "" {
-				previousIdTransaction = transfer.IDTransaction
-			} else if previousIdTransaction != transfer.IDTransaction {
-				previousIdTransaction = transfer.IDTransaction
-				transfers := make([]model.Transfer, len(buffer))
-				copy(transfers, buffer)
-				buffer = make([]model.Transfer, 0)
-				chnl <- model.Transaction{
-					Tenant:        tenant,
-					IDTransaction: transfer.IDTransaction,
-					Transfers:     transfers,
-				}
-			}
 
 		}
 
