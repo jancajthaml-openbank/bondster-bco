@@ -284,11 +284,11 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 			}
 			if finished {
 				for i, n := range currencies {
-	        if currency == n {
-	          currencies = append(currencies[:i], currencies[i+1:]...)
-	          break
-	        }
-	    	}
+					if currency == n {
+						currencies = append(currencies[:i], currencies[i+1:]...)
+						break
+					}
+				}
 			}
 		}
 	}
