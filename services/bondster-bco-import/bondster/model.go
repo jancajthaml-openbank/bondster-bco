@@ -17,6 +17,7 @@ package bondster
 import (
 	"fmt"
 	"time"
+	"strings"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
@@ -147,6 +148,11 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 				Tenant: tenant,
 			}
 
+			amount := strings.TrimRight(fmt.Sprintf("%.150f", transfer.Amount.Value), "0")
+			if amount == "0." {
+				amount = "0"
+			}
+
 			if transfer.Direction == "CREDIT" {
 				credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 
@@ -187,7 +193,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 				Debit:        debit,
 				ValueDate:    valueDate,
 				ValueDateRaw: transfer.ValueDate,
-				Amount:       transfer.Amount.Value,
+				Amount:       amount,
 				Currency:     transfer.Amount.Currency,
 			})
 
