@@ -135,6 +135,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 	var buffer = make([]model.Transfer, 0)
 
 	go func() {
+		defer close(chnl)
 
 		for _, transfer := range envelope.Transactions {
 			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
@@ -182,31 +183,33 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 				copy(transfers, buffer)
 				buffer = make([]model.Transfer, 0)
 				chnl <- model.Transaction{
+					Tenant:        tenant,
 					IDTransaction: transfer.IDTransaction,
 					Transfers:     transfers,
 				}
 			}
 
 		}
-		
-		if len(buffer) > 0 {
-			transfers := make([]model.Transfer, len(buffer))
-			copy(transfers, buffer)
-			buffer = make([]model.Transfer, 0)
-			chnl <- model.Transaction{
-				IDTransaction: previousIdTransaction,
-				Transfers:     transfers,
-			}
+
+		if len(buffer) == 0 {
+			return
 		}
 
-		close(chnl)
+		transfers := make([]model.Transfer, len(buffer))
+		copy(transfers, buffer)
+		buffer = make([]model.Transfer, 0)
+		chnl <- model.Transaction{
+			Tenant:        tenant,
+			IDTransaction: previousIdTransaction,
+			Transfers:     transfers,
+		}
 	}()
 
 	return chnl
 }
 
 // GetAccounts return generator of bondster accounts over given envelope
-func (envelope *BondsterImportEnvelope) GetAccounts() <-chan model.Account {
+func (envelope *BondsterImportEnvelope) GetAccounts(tenant string) <-chan model.Account {
 	chnl := make(chan model.Account)
 	if envelope == nil {
 		close(chnl)
@@ -216,8 +219,11 @@ func (envelope *BondsterImportEnvelope) GetAccounts() <-chan model.Account {
 	var visited = make(map[string]interface{})
 
 	go func() {
+		defer close(chnl)
+
 		if _, ok := visited[envelope.Currency+"_TYPE_NOSTRO"]; !ok {
 			chnl <- model.Account{
+				Tenant:         tenant,
 				Name:           envelope.Currency + "_TYPE_NOSTRO",
 				Format:         "BONDSTER_TECHNICAL",
 				Currency:       envelope.Currency,
@@ -230,6 +236,7 @@ func (envelope *BondsterImportEnvelope) GetAccounts() <-chan model.Account {
 			if transfer.Originator != nil {
 				if _, ok := visited[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name]; !ok {
 					chnl <- model.Account{
+						Tenant:         tenant,
 						Name:           envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
 						Format:         "BONDSTER_ORIGINATOR",
 						Currency:       envelope.Currency,
@@ -241,6 +248,7 @@ func (envelope *BondsterImportEnvelope) GetAccounts() <-chan model.Account {
 
 			if _, ok := visited[envelope.Currency+"_TYPE_"+transfer.Type]; !ok {
 				chnl <- model.Account{
+					Tenant:         tenant,
 					Name:           envelope.Currency + "_TYPE_" + transfer.Type,
 					Format:         "BONDSTER_TECHNICAL",
 					Currency:       envelope.Currency,
@@ -249,8 +257,6 @@ func (envelope *BondsterImportEnvelope) GetAccounts() <-chan model.Account {
 				visited[envelope.Currency+"_TYPE_"+transfer.Type] = nil
 			}
 		}
-
-		close(chnl)
 	}()
 
 	return chnl
