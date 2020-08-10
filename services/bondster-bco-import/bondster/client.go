@@ -128,7 +128,7 @@ func (client *BondsterClient) login() error {
 	client.session.JWT = &(webToken.JWT)
 	client.session.SSID = &(webToken.SSID)
 
-	log.Debugf("Logged in with token %s available until %s", client.token.ID, webToken.JWT.ExpiresAt.Format(time.RFC3339))
+	log.Infof("logged in with token %s, valid until %s", client.token.ID, webToken.JWT.ExpiresAt.Format(time.RFC3339))
 
 	return nil
 }
@@ -191,7 +191,7 @@ func (client *BondsterClient) prolong() error {
 	client.session.JWT.Value = all.JWT.Value
 	client.session.JWT.ExpiresAt = jwtExpiration
 
-	log.Debugf("Token prolonged to %s", jwtExpiration.Format(time.RFC3339))
+	log.Infof("session for %s prolonged, valid until %s", client.token.ID, jwtExpiration.Format(time.RFC3339))
 
 	return nil
 }
@@ -248,7 +248,7 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 		currencies = append(currencies, currency)
 	}
 
-	sort.Strings(currencies) 
+	sort.Strings(currencies)
 
 	return currencies, nil
 }
