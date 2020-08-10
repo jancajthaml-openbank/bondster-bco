@@ -17,6 +17,7 @@ package actor
 import (
 	"sort"
 	"time"
+	"fmt"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
 	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
@@ -168,7 +169,7 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 }
 
 func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
-	log.Debugf("Importing bondster statements for interval %s", interval.String())
+	log.Debugf("Importing bondster statements for currency %s and interval %s", currency, interval.String())
 
 	var (
 		err            error
@@ -236,20 +237,20 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 	return lastSynced, nil
 }
 
-func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) error {
+func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
 	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
 		lastSynced, err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
-				log.WithField("token", token.ID).Warn("Unable to update token")
+				err = fmt.Errorf("Unable to update token")
 			}
-		}
-		if err != nil {
-			return err
+			return false, err
+		} else if err != nil {
+			return false, err
 		}
 	}
-	return nil
+	return true, nil
 }
 
 func importStatements(s *ActorSystem, token model.Token, callback func()) {
@@ -273,12 +274,22 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 		return
 	}
 
-	for currency := range token.LastSyncedFrom {
-		log.WithField("token", token.ID).Debugf("Import for currency %s Begin", currency)
-		err := importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
-		if err != nil {
-			log.WithField("token", token.ID).Errorf("Import statements failed with %+v", err)
+	for len(currencies) > 0 {
+		clone := make([]string, len(currencies))
+		copy(clone, currencies)
+		for _, currency := range clone {
+			finished, err := importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
+			if err != nil {
+				log.WithField("token", token.ID).Errorf("Import statements failed with %+v", err)
+			}
+			if finished {
+				for i, n := range currencies {
+	        if currency == n {
+	          currencies = append(currencies[:i], currencies[i+1:]...)
+	          break
+	        }
+	    	}
+			}
 		}
-		log.WithField("token", token.ID).Debugf("Import for currency %s End", currency)
 	}
 }
