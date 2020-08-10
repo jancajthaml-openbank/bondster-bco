@@ -16,6 +16,7 @@ package bondster
 
 import (
 	"fmt"
+	"sort"
 	"regexp"
 	"time"
 
@@ -246,6 +247,8 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 	for currency := range all.MarketAccounts.AccountsMap {
 		currencies = append(currencies, currency)
 	}
+
+	sort.Strings(currencies) 
 
 	return currencies, nil
 }
