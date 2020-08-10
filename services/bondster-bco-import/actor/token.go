@@ -208,8 +208,8 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 
 	log.WithField("token", token.ID).Debugf("importing accounts")
 
-	for account := range statements.GetAccounts() {
-		err = vaultClient.CreateAccount(tenant, account)
+	for account := range statements.GetAccounts(tenant) {
+		err = vaultClient.CreateAccount(account)
 		if err != nil {
 			return lastSynced, err
 		}
@@ -218,7 +218,7 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 	log.WithField("token", token.ID).Debugf("importing transactions")
 
 	for transaction := range statements.GetTransactions(tenant) {
-		err = ledgerClient.CreateTransaction(tenant, transaction)
+		err = ledgerClient.CreateTransaction(transaction)
 		if err != nil {
 			return lastSynced, err
 		}
