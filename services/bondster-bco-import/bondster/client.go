@@ -159,6 +159,9 @@ func (client *BondsterClient) prolong() error {
 	if err != nil {
 		return fmt.Errorf("bondster get prolong token Error %+v", err)
 	}
+	if response.Status == 401 {
+		return client.login()
+	}
 	if response.Status != 200 {
 		return fmt.Errorf("bondster get prolong token error %s", response.String())
 	}
