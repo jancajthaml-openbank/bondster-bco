@@ -16,8 +16,8 @@ package bondster
 
 import (
 	"fmt"
-	"sort"
 	"regexp"
+	"sort"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/http"

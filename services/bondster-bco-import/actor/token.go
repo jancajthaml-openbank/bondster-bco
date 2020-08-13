@@ -15,9 +15,9 @@
 package actor
 
 import (
+	"fmt"
 	"sort"
 	"time"
-	"fmt"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
 	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
@@ -169,7 +169,7 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 }
 
 func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
-	log.Debugf("Importing bondster statements for currency %s and interval %s", currency, interval.String())
+	log.Debugf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
 	var (
 		err            error
@@ -200,8 +200,6 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 	}
 
 	// FIXME getStatements end here
-
-	log.WithField("token", token.ID).Debugf("sorting statements")
 
 	sort.SliceStable(statements.Transactions, func(i, j int) bool {
 		return statements.Transactions[i].IDTransaction == statements.Transactions[j].IDTransaction

@@ -16,8 +16,8 @@ package bondster
 
 import (
 	"fmt"
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
@@ -107,6 +107,7 @@ type bondsterTransaction struct {
 	Originator    *bondsterOriginator      `json:"originator"`
 	External      *bondsterExternalAccount `json:"externalAccount"`
 	Amount        bondsterAmount           `json:"amount"`
+	IsStorno      bool                     `json:"storno"`
 }
 
 type bondsterExternalAccount struct {
@@ -139,6 +140,10 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 		defer close(chnl)
 
 		for _, transfer := range envelope.Transactions {
+			if transfer.IsStorno {
+				log.Warnf("storno transfer %+v", transfer)
+			}
+
 			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
 
 			credit := model.AccountPair{
@@ -149,20 +154,20 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 			}
 
 			if transfer.Direction == "CREDIT" {
-				credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-
 				if transfer.Originator != nil {
-					debit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
+					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
+					debit.Name = envelope.Currency + "_ORIGINATOR_NOSTRO_" + transfer.Originator.Name
 				} else {
+					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
 				}
 			} else {
-				debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-
 				if transfer.Originator != nil {
-					credit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
+					credit.Name = envelope.Currency + "_ORIGINATOR_NOSTRO_" + transfer.Originator.Name
+					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 				} else {
 					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
+					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 				}
 			}
 
@@ -191,7 +196,6 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 				Amount:       strconv.FormatFloat(transfer.Amount.Value, 'f', -1, 64),
 				Currency:     transfer.Amount.Currency,
 			})
-
 		}
 
 		if len(buffer) == 0 {
@@ -206,6 +210,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 			IDTransaction: previousIdTransaction,
 			Transfers:     transfers,
 		}
+
 	}()
 
 	return chnl
@@ -224,15 +229,20 @@ func (envelope *BondsterImportEnvelope) GetAccounts(tenant string) <-chan model.
 	go func() {
 		defer close(chnl)
 
-		if _, ok := visited[envelope.Currency+"_TYPE_NOSTRO"]; !ok {
-			chnl <- model.Account{
-				Tenant:         tenant,
-				Name:           envelope.Currency + "_TYPE_NOSTRO",
-				Format:         "BONDSTER_TECHNICAL",
-				Currency:       envelope.Currency,
-				IsBalanceCheck: false,
-			}
-			visited[envelope.Currency+"_TYPE_NOSTRO"] = nil
+		chnl <- model.Account{
+			Tenant:         tenant,
+			Name:           envelope.Currency + "_TYPE_NOSTRO",
+			Format:         "BONDSTER_TECHNICAL",
+			Currency:       envelope.Currency,
+			IsBalanceCheck: false,
+		}
+
+		chnl <- model.Account{
+			Tenant:         tenant,
+			Name:           envelope.Currency + "_TYPE_ORIGINATOR_NOSTRO",
+			Format:         "BONDSTER_TECHNICAL",
+			Currency:       envelope.Currency,
+			IsBalanceCheck: false,
 		}
 
 		for _, transfer := range envelope.Transactions {
