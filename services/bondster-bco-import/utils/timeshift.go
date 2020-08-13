@@ -48,5 +48,8 @@ func PartitionInterval(startDate time.Time, endDate time.Time) []TimeRange {
 	timeline := SliceByMonths(startDate, endDate)
 	timeline[len(timeline)-1].EndTime = endDate
 	timeline[0].StartTime = startDate
+	if len(timeline) == 0 && timeline[0].StartTime == timeline[0].EndTime {
+		return make([]TimeRange, 0)
+	}
 	return timeline
 }
