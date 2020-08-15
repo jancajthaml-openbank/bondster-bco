@@ -158,16 +158,16 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 					debit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
 				} else {
-					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
+					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
+					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 				}
 			} else {
 				if transfer.Originator != nil {
 					credit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
 					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 				} else {
-					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
-					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
+					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
+					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
 				}
 			}
 
