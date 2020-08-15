@@ -156,14 +156,14 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 			if transfer.Direction == "CREDIT" {
 				if transfer.Originator != nil {
 					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-					debit.Name = envelope.Currency + "_ORIGINATOR_NOSTRO_" + transfer.Originator.Name
+					debit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
 				} else {
 					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
 				}
 			} else {
 				if transfer.Originator != nil {
-					credit.Name = envelope.Currency + "_ORIGINATOR_NOSTRO_" + transfer.Originator.Name
+					credit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
 					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 				} else {
 					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
@@ -232,14 +232,6 @@ func (envelope *BondsterImportEnvelope) GetAccounts(tenant string) <-chan model.
 		chnl <- model.Account{
 			Tenant:         tenant,
 			Name:           envelope.Currency + "_TYPE_NOSTRO",
-			Format:         "BONDSTER_TECHNICAL",
-			Currency:       envelope.Currency,
-			IsBalanceCheck: false,
-		}
-
-		chnl <- model.Account{
-			Tenant:         tenant,
-			Name:           envelope.Currency + "_TYPE_ORIGINATOR_NOSTRO",
 			Format:         "BONDSTER_TECHNICAL",
 			Currency:       envelope.Currency,
 			IsBalanceCheck: false,
