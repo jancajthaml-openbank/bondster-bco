@@ -18,6 +18,10 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"math/rand"
+	"encoding/hex"
+
+	"github.com/rs/xid"
 
 	"github.com/jancajthaml-openbank/bondster-bco-rest/utils"
 )
@@ -66,6 +70,11 @@ func (entity *Token) UnmarshalJSON(data []byte) error {
 	}
 	entity.Username = all.Username
 	entity.Password = all.Password
+
+	noise := make([]byte, 10)
+	rand.Read(noise)
+	entity.ID = hex.EncodeToString(noise) + xid.New().String()
+
 	return nil
 }
 
