@@ -30,51 +30,12 @@ type Token struct {
 	LastSyncedFrom map[string]time.Time
 }
 
-// ListTokens is inbound request for listing of existing tokens
-type ListTokens struct {
-}
-
-// CreateToken is inbound request for creation of new token
-type CreateToken struct {
-	ID       string
-	Username string
-	Password string
-}
-
-// DeleteToken is inbound request for deletion of token
-type DeleteToken struct {
-	ID string
-}
-
-// SynchronizeToken is inbound request to perform synchronization
-type SynchronizeToken struct {
-}
-
-// ProbeMessage is internal noop message
-type ProbeMessage struct {
-}
-
 // NewToken returns new Token
 func NewToken(id string) Token {
 	return Token{
 		ID:             id,
 		LastSyncedFrom: make(map[string]time.Time),
 	}
-}
-
-// UpdateCurrencies updates known currencies to Token
-func (entity *Token) UpdateCurrencies(currencies []string) bool {
-	if entity == nil {
-		return false
-	}
-	var updated = false
-	for _, currency := range currencies {
-		if _, ok := entity.LastSyncedFrom[currency]; !ok {
-			entity.LastSyncedFrom[currency] = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
-			updated = true
-		}
-	}
-	return updated
 }
 
 // Serialize Token entity to persistable data
