@@ -44,11 +44,11 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 		switch parts[0] {
 
 		case SynchronizeTokens:
-			message = model.SynchronizeToken{}
+			message = SynchronizeToken{}
 
 		case ReqCreateToken:
 			if len(parts) == 3 {
-				message = model.CreateToken{
+				message = CreateToken{
 					ID:       to.Name,
 					Username: parts[1],
 					Password: parts[2],
@@ -58,7 +58,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 			}
 
 		case ReqDeleteToken:
-			message = model.DeleteToken{
+			message = DeleteToken{
 				ID: to.Name,
 			}
 

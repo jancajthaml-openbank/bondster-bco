@@ -57,10 +57,10 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		switch msg := context.Data.(type) {
 
-		case model.ProbeMessage:
+		case ProbeMessage:
 			break
 
-		case model.CreateToken:
+		case CreateToken:
 			tokenResult := persistence.CreateToken(s.Storage, state.ID, msg.Username, msg.Password)
 
 			if tokenResult == nil {
@@ -75,13 +75,13 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 			s.Metrics.TokenCreated()
 
 			context.Self.Become(*tokenResult, ExistToken(s))
-			context.Self.Tell(model.SynchronizeToken{}, context.Receiver, context.Sender)
+			context.Self.Tell(SynchronizeToken{}, context.Receiver, context.Sender)
 
-		case model.DeleteToken:
+		case DeleteToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.WithField("token", state.ID).Debug("(NonExist DeleteToken) Error")
 
-		case model.SynchronizeToken:
+		case SynchronizeToken:
 			break
 
 		default:
@@ -100,22 +100,22 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		switch context.Data.(type) {
 
-		case model.ProbeMessage:
+		case ProbeMessage:
 			break
 
-		case model.CreateToken:
+		case CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.WithField("token", state.ID).Debug("(Exist CreateToken) Error")
 
-		case model.SynchronizeToken:
+		case SynchronizeToken:
 			log.WithField("token", state.ID).Debug("(Exist SynchronizeToken)")
 			context.Self.Become(t_state, SynchronizingToken(s))
 			go importStatements(s, state, func() {
 				context.Self.Become(t_state, NilToken(s))
-				context.Self.Tell(model.ProbeMessage{}, context.Receiver, context.Receiver)
+				context.Self.Tell(ProbeMessage{}, context.Receiver, context.Receiver)
 			})
 
-		case model.DeleteToken:
+		case DeleteToken:
 			if !persistence.DeleteToken(s.Storage, state.ID) {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
 				log.WithField("token", state.ID).Debug("(Exist DeleteToken) Error")
@@ -144,19 +144,28 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		switch context.Data.(type) {
 
-		case model.ProbeMessage:
+		case ProbeMessage:
 			break
 
-		case model.CreateToken:
+		case CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
 			log.WithField("token", state.ID).Debug("(Synchronizing CreateToken) Error")
 
-		case model.SynchronizeToken:
+		case SynchronizeToken:
 			log.WithField("token", state.ID).Debug("(Synchronizing SynchronizeToken)")
 
-		case model.DeleteToken:
-			s.SendMessage(FatalError, context.Sender, context.Receiver)
+		case DeleteToken:
 			log.WithField("token", state.ID).Debug("(Synchronizing DeleteToken) Error")
+			if !persistence.DeleteToken(s.Storage, state.ID) {
+				s.SendMessage(FatalError, context.Sender, context.Receiver)
+				log.WithField("token", state.ID).Debug("(Synchronizing DeleteToken) Error")
+				return
+			}
+			log.WithField("token", state.ID).Info("Token Deleted")
+			log.WithField("token", state.ID).Debug("(Synchronizing DeleteToken) OK")
+			s.Metrics.TokenDeleted()
+			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
+			context.Self.Become(state, NonExistToken(s))
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
@@ -171,12 +180,10 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
 	log.Debugf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
-	var (
-		err            error
-		transactionIds []string
-		statements     *bondster.BondsterImportEnvelope
-		lastSynced     time.Time = token.LastSyncedFrom[currency]
-	)
+	var err            error
+	var transactionIds []string
+	var statements     *bondster.BondsterImportEnvelope
+	var lastSynced     time.Time = token.LastSyncedFrom[currency]
 
 	metrics.TimeTransactionSearchLatency(func() {
 		transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)
@@ -236,9 +243,15 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 }
 
 func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
-	for _, interval := range utils.PartitionInterval(token.LastSyncedFrom[currency], time.Now()) {
+	startTime, ok := token.LastSyncedFrom[currency]
+	if !ok {
+		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
+
+	for _, interval := range utils.PartitionInterval(startTime, time.Now()) {
 		lastSynced, err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
-		if lastSynced.After(token.LastSyncedFrom[currency]) {
+		if lastSynced.After(startTime) {
+			startTime = lastSynced
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
 				err = fmt.Errorf("Unable to update token")
@@ -251,8 +264,8 @@ func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient,
 	return true, nil
 }
 
-func importStatements(s *ActorSystem, token model.Token, callback func()) {
-	defer callback()
+func importStatements(s *ActorSystem, token model.Token, complete func()) {
+	defer complete()
 
 	log.WithField("token", token.ID).Debugf("Importing statements Start")
 
@@ -260,15 +273,9 @@ func importStatements(s *ActorSystem, token model.Token, callback func()) {
 	vaultClient := vault.NewVaultClient(s.VaultGateway)
 	ledgerClient := ledger.NewLedgerClient(s.LedgerGateway)
 
-	// FIXME lines get + update correncies should be a bondster method
 	currencies, err := bondsterClient.GetCurrencies()
 	if err != nil {
 		log.WithField("token", token.ID).Warnf("Unable to get currencies because %+v", err)
-		return
-	}
-
-	if token.UpdateCurrencies(currencies) && !persistence.UpdateToken(s.Storage, &token) {
-		log.WithField("token", token.ID).Warnf("Update of token currencies has failed, currencies: %s", currencies)
 		return
 	}
 
