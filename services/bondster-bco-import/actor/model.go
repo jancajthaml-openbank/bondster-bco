@@ -20,14 +20,14 @@ type ListTokens struct {
 
 // CreateToken is inbound request for creation of new token
 type CreateToken struct {
-  ID       string
-  Username string
-  Password string
+	ID       string
+	Username string
+	Password string
 }
 
 // DeleteToken is inbound request for deletion of token
 type DeleteToken struct {
-  ID string
+	ID string
 }
 
 // SynchronizeToken is inbound request to perform synchronization

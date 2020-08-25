@@ -180,10 +180,10 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
 	log.Debugf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
-	var err            error
+	var err error
 	var transactionIds []string
-	var statements     *bondster.BondsterImportEnvelope
-	var lastSynced     time.Time = token.LastSyncedFrom[currency]
+	var statements *bondster.BondsterImportEnvelope
+	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
 	metrics.TimeTransactionSearchLatency(func() {
 		transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)

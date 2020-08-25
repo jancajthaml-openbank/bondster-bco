@@ -14,18 +14,6 @@
 
 package actor
 
-import (
-	"fmt"
-	"strings"
-	"time"
-	"math/rand"
-	"encoding/hex"
-
-	"github.com/rs/xid"
-
-	"github.com/jancajthaml-openbank/bondster-bco-rest/utils"
-)
-
 // ReplyTimeout message
 type ReplyTimeout struct{}
 
@@ -34,65 +22,3 @@ type TokenCreated struct{}
 
 // TokenDeleted message
 type TokenDeleted struct{}
-
-// Token represents metadata of token entity
-type Token struct {
-	ID        string    `json:"-"`
-	CreatedAt time.Time `json:"-"`
-	Username  string    `json:"username"`
-	Password  string    `json:"password"`
-}
-
-// MarshalJSON serializes Token as json
-func (entity Token) MarshalJSON() ([]byte, error) {
-	return []byte("{\"id\":\"" + entity.ID + "\",\"createdAt\":\"" + entity.CreatedAt.Format(time.RFC3339) + "\"}"), nil
-}
-
-// UnmarshalJSON unmarshal json of Token entity
-func (entity *Token) UnmarshalJSON(data []byte) error {
-	if entity == nil {
-		return fmt.Errorf("cannot unmarshall to nil pointer")
-	}
-	all := struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}{}
-	err := utils.JSON.Unmarshal(data, &all)
-	if err != nil {
-		return err
-	}
-	if all.Username == "" {
-		return fmt.Errorf("missing attribute \"username\"")
-	}
-
-	if all.Password == "" {
-		return fmt.Errorf("missing attribute \"password\"")
-	}
-	entity.Username = all.Username
-	entity.Password = all.Password
-
-	noise := make([]byte, 10)
-	rand.Read(noise)
-	entity.ID = hex.EncodeToString(noise) + xid.New().String()
-
-	return nil
-}
-
-// Deserialize Token entity from persistent data
-func (entity *Token) Deserialize(data []byte) error {
-	if entity == nil {
-		return fmt.Errorf("called Token.Deserialize over nil")
-	}
-
-	// FIXME more optimal split
-	lines := strings.Split(string(data), "\n")
-	if len(lines) < 1 {
-		return fmt.Errorf("malformed data")
-	}
-
-	if cast, err := time.Parse(time.RFC3339, lines[0]); err == nil {
-		entity.CreatedAt = cast
-	}
-
-	return nil
-}

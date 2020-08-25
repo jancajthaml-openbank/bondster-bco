@@ -17,24 +17,24 @@ package persistence
 import (
 	localfs "github.com/jancajthaml-openbank/local-fs"
 
-	"github.com/jancajthaml-openbank/bondster-bco-rest/actor"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/model"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/utils"
 )
 
 // LoadTokens rehydrates token entity state from storage
-func LoadTokens(storage *localfs.EncryptedStorage, tenant string) ([]actor.Token, error) {
+func LoadTokens(storage *localfs.EncryptedStorage, tenant string) ([]model.Token, error) {
 	path := utils.TokensPath(tenant)
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {
-		return make([]actor.Token, 0), nil
+		return make([]model.Token, 0), nil
 	}
 	tokens, err := storage.ListDirectory(path, true)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]actor.Token, len(tokens))
+	result := make([]model.Token, len(tokens))
 	for i, id := range tokens {
-		token := actor.Token{
+		token := model.Token{
 			ID: id,
 		}
 		if HydrateToken(storage, tenant, &token) != nil {
@@ -45,7 +45,7 @@ func LoadTokens(storage *localfs.EncryptedStorage, tenant string) ([]actor.Token
 }
 
 // HydrateToken hydrate existing token from storage
-func HydrateToken(storage *localfs.EncryptedStorage, tenant string, entity *actor.Token) *actor.Token {
+func HydrateToken(storage *localfs.EncryptedStorage, tenant string, entity *model.Token) *model.Token {
 	if entity == nil {
 		return nil
 	}
