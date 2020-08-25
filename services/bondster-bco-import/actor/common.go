@@ -52,7 +52,6 @@ func parseMessage(msg string, to system.Coordinates) (interface{}, error) {
 	case SynchronizeTokens:
 		return SynchronizeToken{}, nil
 
-
 	case ReqCreateToken:
 		if idx == 3 {
 			return CreateToken{
