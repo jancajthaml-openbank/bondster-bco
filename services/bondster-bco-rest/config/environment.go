@@ -27,7 +27,8 @@ import (
 func loadConfFromEnv() Configuration {
 	logLevel := strings.ToUpper(getEnvString("BONDSTER_BCO_LOG_LEVEL", "DEBUG"))
 	encryptionKey := getEnvString("BONDSTER_BCO_ENCRYPTION_KEY", "")
-	secrets := getEnvString("BONDSTER_BCO_SECRETS", "")
+	serverKey := getEnvString("BONDSTER_BCO_SERVER_KEY", "")
+	serverCert := getEnvString("BONDSTER_BCO_SERVER_CERT", "")
 	rootStorage := getEnvString("BONDSTER_BCO_STORAGE", "/data")
 	lakeHostname := getEnvString("BONDSTER_BCO_LAKE_HOSTNAME", "")
 	port := getEnvInteger("BONDSTER_BCO_HTTP_PORT", 4001)
@@ -36,7 +37,7 @@ func loadConfFromEnv() Configuration {
 	metricsOutput := getEnvFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp")
 	metricsRefreshRate := getEnvDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second)
 
-	if lakeHostname == "" || secrets == "" || rootStorage == "" || encryptionKey == "" {
+	if lakeHostname == "" || serverKey == "" || serverCert == "" || rootStorage == "" || encryptionKey == "" {
 		log.Fatal("missing required parameter to run")
 	}
 
@@ -54,7 +55,8 @@ func loadConfFromEnv() Configuration {
 		RootStorage:        rootStorage,
 		EncryptionKey:      []byte(storageKey),
 		ServerPort:         port,
-		SecretsPath:        secrets,
+		ServerKey:          serverKey,
+		ServerCert:         serverCert,
 		LakeHostname:       lakeHostname,
 		LogLevel:           logLevel,
 		MetricsRefreshRate: metricsRefreshRate,

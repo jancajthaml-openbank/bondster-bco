@@ -15,74 +15,94 @@
 package actor
 
 import (
-	"strings"
+	"fmt"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
-// ProcessRemoteMessage processing of remote message to this bondster-bco
+func parseMessage(msg string, to system.Coordinates) (interface{}, error) {
+	start := 0
+	end := len(msg)
+	parts := make([]string, 3)
+	idx := 0
+	i := 0
+	for i < end && idx < 3 {
+		if msg[i] == 32 {
+			if !(start == i && msg[start] == 32) {
+				parts[idx] = msg[start:i]
+				idx++
+			}
+			start = i + 1
+		}
+		i++
+	}
+	if idx < 3 && msg[start] != 32 && len(msg[start:]) > 0 {
+		parts[idx] = msg[start:]
+		idx++
+	}
+
+	if i != end {
+		return nil, fmt.Errorf("message too large")
+	}
+
+	switch parts[0] {
+
+	case SynchronizeTokens:
+		return SynchronizeToken{}, nil
+
+	case ReqCreateToken:
+		if idx == 3 {
+			return CreateToken{
+				ID:       to.Name,
+				Username: parts[1],
+				Password: parts[2],
+			}, nil
+		}
+		return nil, fmt.Errorf("invalid message %s", msg)
+
+	case ReqDeleteToken:
+		return DeleteToken{
+			ID: to.Name,
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unknown message %s", msg)
+	}
+}
+
+// ProcessMessage processing of remote message to this bondster-bco
 func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
-
+		message, err := parseMessage(msg, to)
+		if err != nil {
+			log.Warnf("%s [remote %v -> local %v]", err, from, to)
+			s.SendMessage(FatalError, from, to)
+			return
+		}
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
-			ref, err = NewTokenActor(s, to.Name)
+			ref, err = spawnTokenActor(s, to.Name)
 		}
-
 		if err != nil {
 			log.Warnf("Actor not found [remote %v -> local %v]", from, to)
 			s.SendMessage(FatalError, to, from)
 			return
 		}
-
-		parts := strings.Split(msg, " ")
-
-		var message interface{}
-
-		switch parts[0] {
-
-		case SynchronizeTokens:
-			message = SynchronizeToken{}
-
-		case ReqCreateToken:
-			if len(parts) == 3 {
-				message = CreateToken{
-					ID:       to.Name,
-					Username: parts[1],
-					Password: parts[2],
-				}
-			} else {
-				message = nil
-			}
-
-		case ReqDeleteToken:
-			message = DeleteToken{
-				ID: to.Name,
-			}
-
-		default:
-			message = nil
-		}
-
-		if message == nil {
-			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, parts)
-			s.SendMessage(FatalError, to, from)
-			return
-		}
-
 		ref.Tell(message, to, from)
 	}
 }
 
-func NewTokenActor(s *ActorSystem, id string) (*system.Envelope, error) {
+func spawnTokenActor(s *ActorSystem, id string) (*system.Envelope, error) {
 	envelope := system.NewEnvelope(id, model.NewToken(id))
 
 	err := s.RegisterActor(envelope, NilToken(s))
 	if err != nil {
-		log.Warnf("%s ~ Spawning Token Error unable to register", id)
+		log.Warnf("%s ~ Spawning Actor Error unable to register", id)
 		return nil, err
 	}
+
+	log.Debugf("%s ~ Actor Spawned", id)
 	return envelope, nil
 }
