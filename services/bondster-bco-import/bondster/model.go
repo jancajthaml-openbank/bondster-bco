@@ -141,7 +141,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 
 		for _, transfer := range envelope.Transactions {
 			if transfer.IsStorno {
-				log.Warnf("storno transfer %+v", transfer)
+				log.Warn().Msgf("storno transfer %+v", transfer)
 			}
 
 			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
