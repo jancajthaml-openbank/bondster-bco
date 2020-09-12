@@ -18,4 +18,4 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/logging"
 )
 
-var log = logging.NewLogger("ledger")
+var log = logging.New("ledger")

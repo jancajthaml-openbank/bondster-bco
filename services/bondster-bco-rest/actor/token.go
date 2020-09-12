@@ -29,7 +29,7 @@ func CreateToken(sys *ActorSystem, tenant string, token model.Token) (result int
 	sys.Metrics.TimeCreateToken(func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Errorf("CreateToken recovered in %v", r)
+				log.Error().Msgf("CreateToken recovered in %v", r)
 				result = nil
 			}
 		}()
@@ -64,7 +64,7 @@ func CreateToken(sys *ActorSystem, tenant string, token model.Token) (result int
 		select {
 
 		case result = <-ch:
-			log.WithField("tenant", tenant).WithField("token", token.ID).Info("Token Created")
+			log.Debug().Msgf("Token %s/%s created", tenant, token.ID)
 			return
 
 		case <-time.After(time.Second):
@@ -80,7 +80,7 @@ func DeleteToken(sys *ActorSystem, tenant string, tokenID string) (result interf
 	sys.Metrics.TimeDeleteToken(func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Errorf("DeleteToken recovered in %v", r)
+				log.Error().Msgf("DeleteToken recovered in %v", r)
 				result = nil
 			}
 		}()
@@ -94,7 +94,7 @@ func DeleteToken(sys *ActorSystem, tenant string, tokenID string) (result interf
 		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
 			switch msg := context.Data.(type) {
 			case *TokenDeleted:
-				log.WithField("tenant", tenant).WithField("token", tokenID).Info("Token Deleted")
+				log.Debug().Msgf("Token %s/%s deleted", tenant, tokenID)
 				ch <- msg
 			default:
 				ch <- nil

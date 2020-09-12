@@ -40,10 +40,10 @@ func NilToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		if tokenHydration == nil {
 			context.Self.Become(state, NonExistToken(s))
-			log.WithField("token", state.ID).Debug("Nil -> NonExist")
+			log.Debug().Msgf("token %s Nil -> NonExist", state.ID)
 		} else {
 			context.Self.Become(*tokenHydration, ExistToken(s))
-			log.WithField("token", state.ID).Debug("Nil -> Exist")
+			log.Debug().Msgf("token %s Nil -> Exist", state.ID)
 		}
 
 		context.Self.Receive(context)
@@ -65,13 +65,13 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 			if tokenResult == nil {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.WithField("token", state.ID).Debug("(NonExist CreateToken) Error")
+				log.Debug().Msgf("token %s (NonExist CreateToken) Error", state.ID)
 				return
 			}
 
 			s.SendMessage(RespCreateToken, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Info("New Token Created")
-			log.WithField("token", state.ID).Debug("(NonExist CreateToken) OK")
+			log.Info().Msgf("New Token %s Created", state.ID)
+			log.Debug().Msgf("token %s (NonExist CreateToken) OK", state.ID)
 			s.Metrics.TokenCreated()
 
 			context.Self.Become(*tokenResult, ExistToken(s))
@@ -79,14 +79,14 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		case DeleteToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Debug("(NonExist DeleteToken) Error")
+			log.Debug().Msgf("token %s (NonExist DeleteToken) Error", state.ID)
 
 		case SynchronizeToken:
 			break
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Debug("(NonExist Unknown Message) Error")
+			log.Debug().Msgf("token %s (NonExist Unknown Message) Error", state.ID)
 		}
 
 		return
@@ -105,10 +105,10 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		case CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Debug("(Exist CreateToken) Error")
+			log.Debug().Msgf("token %s (Exist CreateToken) Error", state.ID)
 
 		case SynchronizeToken:
-			log.WithField("token", state.ID).Debug("(Exist SynchronizeToken)")
+			log.Debug().Msgf("token %s (Exist SynchronizeToken)", state.ID)
 			context.Self.Become(t_state, SynchronizingToken(s))
 			go importStatements(s, state, func() {
 				context.Self.Become(t_state, NilToken(s))
@@ -118,18 +118,18 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 		case DeleteToken:
 			if !persistence.DeleteToken(s.Storage, state.ID) {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.WithField("token", state.ID).Debug("(Exist DeleteToken) Error")
+				log.Debug().Msgf("token %s (Exist DeleteToken) Error", state.ID)
 				return
 			}
-			log.WithField("token", state.ID).Info("Token Deleted")
-			log.WithField("token", state.ID).Debug("(Exist DeleteToken) OK")
+			log.Info().Msgf("Token %s Deleted", state.ID)
+			log.Debug().Msgf("token %s (Exist DeleteToken) OK", state.ID)
 			s.Metrics.TokenDeleted()
 			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
 			context.Self.Become(state, NonExistToken(s))
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Warn("(Exist Unknown Message) Error")
+			log.Debug().Msgf("token %s (Exist Unknown Message) Error", state.ID)
 
 		}
 
@@ -149,28 +149,27 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 
 		case CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Debug("(Synchronizing CreateToken) Error")
+			log.Debug().Msgf("token %s (Synchronizing CreateToken) Error", state.ID)
 
 		case SynchronizeToken:
-			log.WithField("token", state.ID).Debug("(Synchronizing SynchronizeToken)")
+			log.Debug().Msgf("token %s (Synchronizing SynchronizeToken)", state.ID)
 
 		case DeleteToken:
-			log.WithField("token", state.ID).Debug("(Synchronizing DeleteToken) Error")
+			log.Debug().Msgf("token %s (Synchronizing DeleteToken) Error", state.ID)
 			if !persistence.DeleteToken(s.Storage, state.ID) {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.WithField("token", state.ID).Debug("(Synchronizing DeleteToken) Error")
+				log.Debug().Msgf("token %s (Synchronizing DeleteToken) Error", state.ID)
 				return
 			}
-			log.WithField("token", state.ID).Info("Token Deleted")
-			log.WithField("token", state.ID).Debug("(Synchronizing DeleteToken) OK")
+			log.Info().Msgf("Token %s Deleted", state.ID)
+			log.Debug().Msgf("token %s (Synchronizing DeleteToken) OK", state.ID)
 			s.Metrics.TokenDeleted()
 			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
 			context.Self.Become(state, NonExistToken(s))
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.WithField("token", state.ID).Warn("(Synchronizing Unknown Message) Error")
-
+			log.Debug().Msgf("token %s (Synchronizing Unknown Message) Error", state.ID)
 		}
 
 		return
@@ -178,7 +177,7 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 }
 
 func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
-	log.Debugf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+	log.Debug().Msgf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
 	var err error
 	var transactionIds []string
@@ -212,7 +211,7 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 		return statements.Transactions[i].IDTransaction == statements.Transactions[j].IDTransaction
 	})
 
-	log.WithField("token", token.ID).Debugf("importing accounts")
+	log.Debug().Msgf("token %s importing accounts", token.ID)
 
 	for account := range statements.GetAccounts(tenant) {
 		err = vaultClient.CreateAccount(account)
@@ -221,7 +220,7 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 		}
 	}
 
-	log.WithField("token", token.ID).Debugf("importing transactions")
+	log.Debug().Msgf("token %s importing transactions", token.ID)
 
 	for transaction := range statements.GetTransactions(tenant) {
 		err = ledgerClient.CreateTransaction(transaction)
@@ -267,7 +266,7 @@ func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient,
 func importStatements(s *ActorSystem, token model.Token, complete func()) {
 	defer complete()
 
-	log.WithField("token", token.ID).Debugf("Importing statements Start")
+	log.Debug().Msgf("token %s Importing statements Start", token.ID)
 
 	bondsterClient := bondster.NewBondsterClient(s.BondsterGateway, token)
 	vaultClient := vault.NewVaultClient(s.VaultGateway)
@@ -275,7 +274,7 @@ func importStatements(s *ActorSystem, token model.Token, complete func()) {
 
 	currencies, err := bondsterClient.GetCurrencies()
 	if err != nil {
-		log.WithField("token", token.ID).Warnf("Unable to get currencies because %+v", err)
+		log.Warn().Msgf("token %s Unable to get currencies because %+v", token.ID, err)
 		return
 	}
 
@@ -285,7 +284,7 @@ func importStatements(s *ActorSystem, token model.Token, complete func()) {
 		for _, currency := range clone {
 			finished, err := importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
 			if err != nil {
-				log.WithField("token", token.ID).Errorf("Import statements failed with %+v", err)
+				log.Error().Msgf("token %s Import statements failed with %+v", token.ID, err)
 			}
 			if finished {
 				for i, n := range currencies {
@@ -298,5 +297,5 @@ func importStatements(s *ActorSystem, token model.Token, complete func()) {
 		}
 	}
 
-	log.WithField("token", token.ID).Debugf("Importing statements End")
+	log.Debug().Msgf("token %s Importing statements End", token.ID)
 }

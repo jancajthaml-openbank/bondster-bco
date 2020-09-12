@@ -61,12 +61,12 @@ func (bondster BondsterImport) getActiveTokens() ([]string, error) {
 func (bondster BondsterImport) importRoundtrip() {
 	tokens, err := bondster.getActiveTokens()
 	if err != nil {
-		log.Errorf("unable to get active tokens %+v", err)
+		log.Error().Msgf("unable to get active tokens %+v", err)
 		return
 	}
 
 	for _, item := range tokens {
-		log.Debugf("Request to import token %s", item)
+		log.Debug().Msgf("Request to import token %s", item)
 		bondster.callback(item)
 	}
 }
@@ -83,7 +83,7 @@ func (bondster BondsterImport) Start() {
 		return
 	}
 
-	log.Infof("Start bondster-import daemon, sync now and then each %v", bondster.syncRate)
+	log.Info().Msgf("Start bondster-import daemon, sync now and then each %v", bondster.syncRate)
 
 	bondster.importRoundtrip()
 
@@ -100,5 +100,5 @@ func (bondster BondsterImport) Start() {
 	}()
 
 	bondster.WaitStop()
-	log.Info("Stop bondster-import daemon")
+	log.Info().Msg("Stop bondster-import daemon")
 }
