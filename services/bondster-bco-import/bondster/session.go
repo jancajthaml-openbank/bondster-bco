@@ -22,12 +22,13 @@ import (
 
 // Session hold bondster session headers
 type Session struct {
-	JWT     *JWT
-	SSID    *SSID
+	JWT     *valueWithExpiration
+	SSID    *valueWithExpiration
 	Device  string
 	Channel string
 }
 
+// NewSession returns new authenticated client session
 func NewSession() Session {
 	return Session{
 		JWT:     nil,
@@ -37,6 +38,7 @@ func NewSession() Session {
 	}
 }
 
+// IsSSIDExpired tells whenever session is expired
 func (session Session) IsSSIDExpired() bool {
 	if session.JWT == nil || session.SSID == nil {
 		return true
@@ -47,6 +49,7 @@ func (session Session) IsSSIDExpired() bool {
 	return false
 }
 
+// IsJWTExpired tells whenever JsonWebToken is expired
 func (session Session) IsJWTExpired() bool {
 	if session.JWT == nil {
 		return true

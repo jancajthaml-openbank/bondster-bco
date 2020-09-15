@@ -73,10 +73,12 @@ func (metrics *Metrics) TransactionImported() {
 	metrics.importedTransactions.Mark(1)
 }
 
+// TimeTransactionSearchLatency measures time of transaction search duration
 func (metrics *Metrics) TimeTransactionSearchLatency(f func()) {
 	metrics.transactionSearchLatency.Time(f)
 }
 
+// TimeTransactionListLatency measures time of transaction list duration
 func (metrics *Metrics) TimeTransactionListLatency(f func()) {
 	metrics.transactionListLatency.Time(f)
 }

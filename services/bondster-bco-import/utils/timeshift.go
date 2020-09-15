@@ -18,6 +18,7 @@ import (
 	"time"
 )
 
+// TimeRange represents segment of time
 type TimeRange struct {
 	StartTime time.Time
 	EndTime   time.Time
@@ -30,6 +31,7 @@ func (value *TimeRange) String() string {
 	return value.StartTime.Format(time.RFC3339) + " - " + value.EndTime.Format(time.RFC3339)
 }
 
+// SliceByMonths slices time range by months
 func SliceByMonths(startDate time.Time, endDate time.Time) []TimeRange {
 	dates := make([]TimeRange, 0)
 	current := time.Date(startDate.Year(), startDate.Month(), 1, 0, 0, 0, 0, time.UTC)
@@ -44,6 +46,7 @@ func SliceByMonths(startDate time.Time, endDate time.Time) []TimeRange {
 	return dates
 }
 
+// PartitionInterval partitions time range for optimal bondster search
 func PartitionInterval(startDate time.Time, endDate time.Time) []TimeRange {
 	timeline := SliceByMonths(startDate, endDate)
 	timeline[len(timeline)-1].EndTime = endDate

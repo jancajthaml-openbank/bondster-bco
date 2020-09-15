@@ -23,8 +23,8 @@ import (
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
-// ActorSystem represents actor system subroutine
-type ActorSystem struct {
+// System represents actor system subroutine
+type System struct {
 	system.System
 	Tenant          string
 	Storage         *localfs.EncryptedStorage
@@ -35,8 +35,8 @@ type ActorSystem struct {
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bondsterEndpoint string, vaultEndpoint string, ledgerEndpoint string, metrics *metrics.Metrics, storage *localfs.EncryptedStorage) ActorSystem {
-	result := ActorSystem{
+func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bondsterEndpoint string, vaultEndpoint string, ledgerEndpoint string, metrics *metrics.Metrics, storage *localfs.EncryptedStorage) System {
+	result := System{
 		System:          system.New(ctx, "BondsterImport/"+tenant, lakeEndpoint),
 		Storage:         storage,
 		Metrics:         metrics,
@@ -51,26 +51,26 @@ func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bon
 }
 
 // Start daemon noop
-func (system ActorSystem) Start() {
+func (system System) Start() {
 	system.System.Start()
 }
 
 // Stop daemon noop
-func (system ActorSystem) Stop() {
+func (system System) Stop() {
 	system.System.Stop()
 }
 
 // WaitStop daemon noop
-func (system ActorSystem) WaitStop() {
+func (system System) WaitStop() {
 	system.System.WaitStop()
 }
 
 // GreenLight daemon noop
-func (system ActorSystem) GreenLight() {
+func (system System) GreenLight() {
 	system.System.GreenLight()
 }
 
 // WaitReady wait for system to be ready
-func (system ActorSystem) WaitReady(deadline time.Duration) error {
+func (system System) WaitReady(deadline time.Duration) error {
 	return system.System.WaitReady(deadline)
 }
