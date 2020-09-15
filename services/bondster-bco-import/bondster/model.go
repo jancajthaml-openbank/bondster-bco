@@ -18,23 +18,17 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
+	"encoding/json"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
-	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 )
 
 // WebToken encrypted json web token and ssid of bondster session
 type WebToken struct {
-	JWT  JWT
-	SSID SSID
+	JWT  valueWithExpiration
+	SSID valueWithExpiration
 }
 
-type JWT struct {
-	Value     string
-	ExpiresAt time.Time
-}
-
-type SSID struct {
+type valueWithExpiration struct {
 	Value     string
 	ExpiresAt time.Time
 }
@@ -42,7 +36,7 @@ type SSID struct {
 // UnmarshalJSON is json JWT unmarhalling companion
 func (entity *WebToken) UnmarshalJSON(data []byte) error {
 	if entity == nil {
-		return fmt.Errorf("cannot unmarshall to nil pointer")
+		return fmt.Errorf("cannot unmarshal to nil pointer")
 	}
 	all := struct {
 		Result string `json:"result"`
@@ -55,7 +49,7 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
 			ExpiresAt string `json:"expirationDate"`
 		} `json:"ssid"`
 	}{}
-	err := utils.JSON.Unmarshal(data, &all)
+	err := json.Unmarshal(data, &all)
 	if err != nil {
 		return err
 	}
@@ -79,11 +73,11 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	entity.JWT = JWT{
+	entity.JWT = valueWithExpiration{
 		Value:     all.JWT.Value,
 		ExpiresAt: jwtExpiration,
 	}
-	entity.SSID = SSID{
+	entity.SSID = valueWithExpiration{
 		Value:     all.SSID.Value,
 		ExpiresAt: ssidExpiration,
 	}
@@ -91,8 +85,8 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// BondsterImportEnvelope represents bondster marketplace import statement entity
-type BondsterImportEnvelope struct {
+// ImportEnvelope represents bondster marketplace import statement entity
+type ImportEnvelope struct {
 	Transactions []bondsterTransaction
 	Currency     string
 }
@@ -126,14 +120,14 @@ type bondsterAmount struct {
 }
 
 // GetTransactions return generator of bondster transactions over given envelope
-func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan model.Transaction {
+func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan model.Transaction {
 	chnl := make(chan model.Transaction)
 	if envelope == nil {
 		close(chnl)
 		return chnl
 	}
 
-	var previousIdTransaction = ""
+	var previousIDTransaction = ""
 	var buffer = make([]model.Transfer, 0)
 
 	go func() {
@@ -173,18 +167,18 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 
 			idTransaction := transfer.IDTransaction
 
-			if previousIdTransaction == "" {
-				previousIdTransaction = idTransaction
-			} else if previousIdTransaction != idTransaction {
+			if previousIDTransaction == "" {
+				previousIDTransaction = idTransaction
+			} else if previousIDTransaction != idTransaction {
 				transfers := make([]model.Transfer, len(buffer))
 				copy(transfers, buffer)
 				buffer = make([]model.Transfer, 0)
 				chnl <- model.Transaction{
 					Tenant:        tenant,
-					IDTransaction: previousIdTransaction,
+					IDTransaction: previousIDTransaction,
 					Transfers:     transfers,
 				}
-				previousIdTransaction = idTransaction
+				previousIDTransaction = idTransaction
 			}
 
 			buffer = append(buffer, model.Transfer{
@@ -207,7 +201,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 		buffer = make([]model.Transfer, 0)
 		chnl <- model.Transaction{
 			Tenant:        tenant,
-			IDTransaction: previousIdTransaction,
+			IDTransaction: previousIDTransaction,
 			Transfers:     transfers,
 		}
 
@@ -217,7 +211,7 @@ func (envelope *BondsterImportEnvelope) GetTransactions(tenant string) <-chan mo
 }
 
 // GetAccounts return generator of bondster accounts over given envelope
-func (envelope *BondsterImportEnvelope) GetAccounts(tenant string) <-chan model.Account {
+func (envelope *ImportEnvelope) GetAccounts(tenant string) <-chan model.Account {
 	chnl := make(chan model.Account)
 	if envelope == nil {
 		close(chnl)
@@ -275,14 +269,14 @@ type LoginScenario struct {
 // UnmarshalJSON is json LoginScenario unmarhalling companion
 func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
 	if entity == nil {
-		return fmt.Errorf("cannot unmarshall to nil pointer")
+		return fmt.Errorf("cannot unmarshal to nil pointer")
 	}
 	all := struct {
 		Scenarios []struct {
 			Code string `json:"code"`
 		} `json:"scenarios"`
 	}{}
-	err := utils.JSON.Unmarshal(data, &all)
+	err := json.Unmarshal(data, &all)
 	if err != nil {
 		return err
 	}

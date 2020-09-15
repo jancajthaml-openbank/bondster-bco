@@ -19,7 +19,7 @@ import (
 	"regexp"
 	"sort"
 	"time"
-
+	"encoding/json"
 	"github.com/jancajthaml-openbank/bondster-bco-import/http"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
@@ -27,26 +27,26 @@ import (
 
 var whitespaceRegex = regexp.MustCompile(`\s`)
 
-// BondsterClient represents fascade for http client
-type BondsterClient struct {
-	underlying http.HttpClient
+// Client represents fascade for http client
+type Client struct {
+	underlying http.Client
 	gateway    string
 	token      model.Token
 	session    *Session
 }
 
-// NewBondsterClient returns new bondster http client
-func NewBondsterClient(gateway string, token model.Token) BondsterClient {
-	return BondsterClient{
+// NewClient returns new bondster http client
+func NewClient(gateway string, token model.Token) Client {
+	return Client{
 		gateway:    gateway,
-		underlying: http.NewHttpClient(),
+		underlying: http.NewHTTPClient(),
 		token:      token,
 		session:    nil,
 	}
 }
 
 // FIXME tied to session
-func (client *BondsterClient) checkSession() error {
+func (client *Client) checkSession() error {
 	if client == nil {
 		return fmt.Errorf("nil deference")
 	}
@@ -60,7 +60,7 @@ func (client *BondsterClient) checkSession() error {
 }
 
 // FIXME tied to session
-func (client *BondsterClient) login() error {
+func (client *Client) login() error {
 	if client == nil {
 		return fmt.Errorf("nil deference")
 	}
@@ -86,7 +86,7 @@ func (client *BondsterClient) login() error {
 	}
 
 	var scenario = new(LoginScenario)
-	err = utils.JSON.Unmarshal(response.Data, scenario)
+	err = json.Unmarshal(response.Data, scenario)
 	if err != nil {
 		return fmt.Errorf("bondster unsupported login scenario invalid response %s", response.String())
 	}
@@ -120,7 +120,7 @@ func (client *BondsterClient) login() error {
 	}
 
 	var webToken = new(WebToken)
-	err = utils.JSON.Unmarshal(response.Data, webToken)
+	err = json.Unmarshal(response.Data, webToken)
 	if err != nil {
 		return fmt.Errorf("bondster validate login step invalid response %s with error %+v", response.String(), err)
 	}
@@ -134,7 +134,7 @@ func (client *BondsterClient) login() error {
 }
 
 // FIXME tied to session
-func (client *BondsterClient) prolong() error {
+func (client *Client) prolong() error {
 	if client == nil {
 		return fmt.Errorf("nil defference")
 	}
@@ -174,7 +174,7 @@ func (client *BondsterClient) prolong() error {
 		} `json:"jwtToken"`
 	}{}
 
-	err = utils.JSON.Unmarshal(response.Data, &all)
+	err = json.Unmarshal(response.Data, &all)
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func (client *BondsterClient) prolong() error {
 }
 
 // GetCurrencies returns currencies tied to given token
-func (client *BondsterClient) GetCurrencies() ([]string, error) {
+func (client *Client) GetCurrencies() ([]string, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}
@@ -238,7 +238,7 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 		} `json:"marketVerifiedExternalAccount"`
 	}{}
 
-	err = utils.JSON.Unmarshal(response.Data, &all)
+	err = json.Unmarshal(response.Data, &all)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 }
 
 // GetTransactionIdsInInterval returns transaction ids happened during given interval
-func (client *BondsterClient) GetTransactionIdsInInterval(currency string, interval utils.TimeRange) ([]string, error) {
+func (client *Client) GetTransactionIdsInInterval(currency string, interval utils.TimeRange) ([]string, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}
@@ -306,7 +306,7 @@ func (client *BondsterClient) GetTransactionIdsInInterval(currency string, inter
 		IDs []string `json:"transferIdList"`
 	}{}
 
-	err = utils.JSON.Unmarshal(response.Data, &all)
+	err = json.Unmarshal(response.Data, &all)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +314,8 @@ func (client *BondsterClient) GetTransactionIdsInInterval(currency string, inter
 	return all.IDs, nil
 }
 
-func (client *BondsterClient) GetTransactionDetails(currency string, transactionIds []string) (*BondsterImportEnvelope, error) {
+// GetTransactionDetails returns transaction details for given currency and transaction ids
+func (client *Client) GetTransactionDetails(currency string, transactionIds []string) (*ImportEnvelope, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}
@@ -361,8 +362,8 @@ func (client *BondsterClient) GetTransactionDetails(currency string, transaction
 		return nil, fmt.Errorf("bondster get contact information error %s", response.String())
 	}
 
-	var envelope = new(BondsterImportEnvelope)
-	err = utils.JSON.Unmarshal(response.Data, &(envelope.Transactions))
+	var envelope = new(ImportEnvelope)
+	err = json.Unmarshal(response.Data, &(envelope.Transactions))
 	if err != nil {
 		return nil, err
 	}

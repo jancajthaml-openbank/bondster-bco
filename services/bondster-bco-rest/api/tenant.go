@@ -24,7 +24,7 @@ import (
 )
 
 // CreateTenant enables bondster-bco-import@{tenant}
-func CreateTenant(systemctl *system.SystemControl) func(c echo.Context) error {
+func CreateTenant(systemctl *system.Control) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
@@ -45,7 +45,7 @@ func CreateTenant(systemctl *system.SystemControl) func(c echo.Context) error {
 }
 
 // DeleteTenant disables bondster-bco-import@{tenant}
-func DeleteTenant(systemctl *system.SystemControl) func(c echo.Context) error {
+func DeleteTenant(systemctl *system.Control) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
@@ -66,7 +66,7 @@ func DeleteTenant(systemctl *system.SystemControl) func(c echo.Context) error {
 }
 
 // ListTenants lists bondster-bco-import@
-func ListTenants(systemctl *system.SystemControl) func(c echo.Context) error {
+func ListTenants(systemctl *system.Control) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 

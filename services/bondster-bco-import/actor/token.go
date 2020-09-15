@@ -32,7 +32,7 @@ import (
 )
 
 // NilToken represents token that is neither existing neither non existing
-func NilToken(s *ActorSystem) func(interface{}, system.Context) {
+func NilToken(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.Token)
 
@@ -51,7 +51,7 @@ func NilToken(s *ActorSystem) func(interface{}, system.Context) {
 }
 
 // NonExistToken represents token that does not exist
-func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
+func NonExistToken(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.Token)
 
@@ -94,7 +94,7 @@ func NonExistToken(s *ActorSystem) func(interface{}, system.Context) {
 }
 
 // ExistToken represents account that does exist
-func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
+func ExistToken(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.Token)
 
@@ -138,7 +138,7 @@ func ExistToken(s *ActorSystem) func(interface{}, system.Context) {
 }
 
 // SynchronizingToken represents account that is currently synchronizing
-func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
+func SynchronizingToken(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.Token)
 
@@ -176,12 +176,12 @@ func SynchronizingToken(s *ActorSystem) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
+func importStatementsForInterval(tenant string, bondsterClient *bondster.Client, vaultClient *vault.Client, ledgerClient *ledger.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
 	log.Debug().Msgf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
 	var err error
 	var transactionIds []string
-	var statements *bondster.BondsterImportEnvelope
+	var statements *bondster.ImportEnvelope
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
 	metrics.TimeTransactionSearchLatency(func() {
@@ -241,7 +241,7 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Bondste
 	return lastSynced, nil
 }
 
-func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient, vaultClient *vault.VaultClient, ledgerClient *ledger.LedgerClient, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
+func importNewStatements(tenant string, bondsterClient *bondster.Client, vaultClient *vault.Client, ledgerClient *ledger.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
 	startTime, ok := token.LastSyncedFrom[currency]
 	if !ok {
 		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -253,7 +253,7 @@ func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient,
 			startTime = lastSynced
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
-				err = fmt.Errorf("Unable to update token")
+				err = fmt.Errorf("unable to update token")
 			}
 			return false, err
 		} else if err != nil {
@@ -263,14 +263,14 @@ func importNewStatements(tenant string, bondsterClient *bondster.BondsterClient,
 	return true, nil
 }
 
-func importStatements(s *ActorSystem, token model.Token, complete func()) {
+func importStatements(s *System, token model.Token, complete func()) {
 	defer complete()
 
 	log.Debug().Msgf("token %s Importing statements Start", token.ID)
 
-	bondsterClient := bondster.NewBondsterClient(s.BondsterGateway, token)
-	vaultClient := vault.NewVaultClient(s.VaultGateway)
-	ledgerClient := ledger.NewLedgerClient(s.LedgerGateway)
+	bondsterClient := bondster.NewClient(s.BondsterGateway, token)
+	vaultClient := vault.NewClient(s.VaultGateway)
+	ledgerClient := ledger.NewClient(s.LedgerGateway)
 
 	currencies, err := bondsterClient.GetCurrencies()
 	if err != nil {
