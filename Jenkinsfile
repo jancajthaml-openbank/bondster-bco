@@ -272,17 +272,17 @@ pipeline {
                         "files": [
                             {
                                 "pattern": "${env.WORKSPACE}/packaging/bin/bondster-bco-rest-linux-(*)",
-                                "target": "generic-local/openbank/bondster-bco/linux/{1}/${env.VERSION}/bondster-bco-rest",
+                                "target": "generic-local/openbank/bondster-bco/${env.VERSION}/linux/{1}/bondster-bco-rest",
                                 "recursive": "false"
                             },
                             {
                                 "pattern": "${env.WORKSPACE}/packaging/bin/bondster-bco-import-linux-(*)",
-                                "target": "generic-local/openbank/bondster-bco/linux/{1}/${env.VERSION}/bondster-bco-import",
+                                "target": "generic-local/openbank/bondster-bco/${env.VERSION}/linux/{1}/bondster-bco-import",
                                 "recursive": "false"
                             },
                             {
                                 "pattern": "${env.WORKSPACE}/packaging/bin/bondster-bco_(*)_(*).deb",
-                                "target": "generic-local/openbank/bondster-bco/linux/{2}/{1}/bondster-bco.deb",
+                                "target": "generic-local/openbank/bondster-bco/{1}/linux/{2}/bondster-bco.deb",
                                 "recursive": "false"
                             }
                         ]
