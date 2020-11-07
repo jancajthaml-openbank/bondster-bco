@@ -299,15 +299,15 @@ pipeline {
                 publishHTML(target: [
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
-                    reportDir: "${env.WORKSPACE}/reports/unit-tests/bondster-bco-import",
-                    reportFiles: 'bondster-bco-import-coverage.html',
+                    reportDir: "${env.WORKSPACE}/reports/unit-tests/bondster-bco-import-coverage",
+                    reportFiles: '*',
                     reportName: 'Unit Test Coverage (Bondster BCO Import)'
                 ])
                 publishHTML(target: [
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
-                    reportDir: "${env.WORKSPACE}/reports/unit-tests/bondster-bco-rest",
-                    reportFiles: 'bondster-bco-rest-coverage.html',
+                    reportDir: "${env.WORKSPACE}/reports/unit-tests/bondster-bco-rest-coverage",
+                    reportFiles: '*',
                     reportName: 'Unit Test Coverage (Bondster BCO Rest)'
                 ])
                 cucumber(
