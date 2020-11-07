@@ -157,14 +157,14 @@ pipeline {
                     sh """
                         ${env.WORKSPACE}/dev/lifecycle/test \
                         --source ${env.WORKSPACE}/services/bondster-bco-rest \
-                        --output ${env.WORKSPACE}/reports/unit-tests/bondster-bco-rest
+                        --output ${env.WORKSPACE}/reports/unit-tests
                     """
                 }
                 script {
                     sh """
                         ${env.WORKSPACE}/dev/lifecycle/test \
                         --source ${env.WORKSPACE}/services/bondster-bco-import \
-                        --output ${env.WORKSPACE}/reports/unit-tests/bondster-bco-import
+                        --output ${env.WORKSPACE}/reports/unit-tests
                     """
                 }
             }
