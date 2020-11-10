@@ -14,7 +14,10 @@
 
 package config
 
-import "time"
+import (
+	"time"
+	"strings"
+)
 
 // Configuration of application
 type Configuration struct {
@@ -47,5 +50,17 @@ type Configuration struct {
 
 // GetConfig loads application configuration
 func GetConfig() Configuration {
-	return loadConfFromEnv()
+	return Configuration{
+		RootStorage:        envString("BONDSTER_BCO_STORAGE", "/data"),
+		EncryptionKey:      envSecret("BONDSTER_BCO_ENCRYPTION_KEY", nil),
+		ServerPort:         envInteger("BONDSTER_BCO_HTTP_PORT", 4001),
+		ServerKey:          envString("BONDSTER_BCO_SERVER_KEY", ""),
+		ServerCert:         envString("BONDSTER_BCO_SERVER_CERT", ""),
+		LakeHostname:       envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
+		LogLevel:           strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
+		MetricsRefreshRate: envDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second),
+		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp"),
+		MinFreeDiskSpace:   uint64(envInteger("BONDSTER_BCO_STORAGE_THRESHOLD", 0)),
+		MinFreeMemory:      uint64(envInteger("BONDSTER_BCO_MEMORY_THRESHOLD", 0)),
+	}
 }
