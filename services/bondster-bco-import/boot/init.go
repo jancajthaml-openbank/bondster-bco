@@ -84,9 +84,9 @@ func Initialize() Program {
 	)
 
 	var daemons = make([]utils.Daemon, 0)
-	daemons = append(daemons, metricsDaemon)
-	daemons = append(daemons, actorSystemDaemon)
-	daemons = append(daemons, bondsterDaemon)
+	daemons = append(daemons, &metricsDaemon)
+	daemons = append(daemons, &actorSystemDaemon)
+	daemons = append(daemons, &bondsterDaemon)
 
 	return Program{
 		interrupt: make(chan os.Signal, 1),

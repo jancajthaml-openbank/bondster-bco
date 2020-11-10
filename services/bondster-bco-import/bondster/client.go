@@ -15,14 +15,14 @@
 package bondster
 
 import (
-	"fmt"
-	"regexp"
-	"sort"
-	"time"
 	"encoding/json"
+	"fmt"
 	"github.com/jancajthaml-openbank/bondster-bco-import/http"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
+	"regexp"
+	"sort"
+	"time"
 )
 
 var whitespaceRegex = regexp.MustCompile(`\s`)

@@ -15,10 +15,10 @@
 package api
 
 import (
-	"net/http"
 	"encoding/json"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/system"
 	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 // HealtCheck returns 200 OK if service is healthy, 503 otherwise

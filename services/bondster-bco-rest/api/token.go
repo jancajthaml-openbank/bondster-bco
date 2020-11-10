@@ -15,15 +15,15 @@
 package api
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"encoding/json"
+	"fmt"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/actor"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/model"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/persistence"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/labstack/echo/v4"
+	"io/ioutil"
+	"net/http"
 )
 
 // DeleteToken removes existing token
