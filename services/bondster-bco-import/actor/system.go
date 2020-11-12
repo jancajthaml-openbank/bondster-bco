@@ -27,7 +27,7 @@ import (
 type System struct {
 	system.System
 	Tenant          string
-	Storage         *localfs.EncryptedStorage
+	Storage         localfs.Storage
 	Metrics         *metrics.Metrics
 	BondsterGateway string
 	VaultGateway    string
@@ -35,42 +35,65 @@ type System struct {
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bondsterEndpoint string, vaultEndpoint string, ledgerEndpoint string, metrics *metrics.Metrics, storage *localfs.EncryptedStorage) System {
-	result := System{
-		System:          system.New(ctx, "BondsterImport/"+tenant, lakeEndpoint),
-		Storage:         storage,
-		Metrics:         metrics,
-		Tenant:          tenant,
-		BondsterGateway: bondsterEndpoint,
-		VaultGateway:    vaultEndpoint,
-		LedgerGateway:   ledgerEndpoint,
+func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bondsterEndpoint string, vaultEndpoint string, ledgerEndpoint string, rootStorage string, storageKey []byte, metrics *metrics.Metrics) *System {
+	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
+	if err != nil {
+		log.Error().Msgf("Failed to ensure storage %+v", err)
+		return nil
 	}
-
-	result.System.RegisterOnMessage(ProcessMessage(&result))
+	sys, err := system.New(ctx, "BondsterImport/"+tenant, lakeEndpoint)
+	if err != nil {
+		log.Error().Msgf("Failed to register actor system %+v", err)
+		return nil
+	}
+	result := new(System)
+	result.System = sys
+	result.Storage = storage
+	result.Metrics = metrics
+	result.Tenant = tenant
+	result.BondsterGateway = bondsterEndpoint
+	result.VaultGateway = vaultEndpoint
+	result.LedgerGateway = ledgerEndpoint
+	result.System.RegisterOnMessage(ProcessMessage(result))
 	return result
 }
 
 // Start daemon noop
-func (system System) Start() {
+func (system *System) Start() {
+	if system == nil {
+		return
+	}
 	system.System.Start()
 }
 
 // Stop daemon noop
-func (system System) Stop() {
+func (system *System) Stop() {
+	if system == nil {
+		return
+	}
 	system.System.Stop()
 }
 
 // WaitStop daemon noop
-func (system System) WaitStop() {
+func (system *System) WaitStop() {
+	if system == nil {
+		return
+	}
 	system.System.WaitStop()
 }
 
 // GreenLight daemon noop
-func (system System) GreenLight() {
+func (system *System) GreenLight() {
+	if system == nil {
+		return
+	}
 	system.System.GreenLight()
 }
 
 // WaitReady wait for system to be ready
-func (system System) WaitReady(deadline time.Duration) error {
+func (system *System) WaitReady(deadline time.Duration) error {
+	if system == nil {
+		return nil
+	}
 	return system.System.WaitReady(deadline)
 }

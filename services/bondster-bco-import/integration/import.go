@@ -29,12 +29,17 @@ type BondsterImport struct {
 	utils.DaemonSupport
 	callback func(token string)
 	syncRate time.Duration
-	storage  *localfs.EncryptedStorage
+	storage  localfs.Storage
 }
 
 // NewBondsterImport returns bondster import fascade
-func NewBondsterImport(ctx context.Context, syncRate time.Duration, storage *localfs.EncryptedStorage, callback func(token string)) BondsterImport {
-	return BondsterImport{
+func NewBondsterImport(ctx context.Context, syncRate time.Duration, rootStorage string, storageKey []byte, callback func(token string)) *BondsterImport {
+	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
+	if err != nil {
+		log.Error().Msgf("Failed to ensure storage %+v", err)
+		return nil
+	}
+	return &BondsterImport{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "bondster"),
 		callback:      callback,
 		syncRate:      syncRate,

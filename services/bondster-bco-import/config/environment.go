@@ -15,74 +15,58 @@
 package config
 
 import (
-	"encoding/hex"
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+	"io/ioutil"
+	"encoding/hex"
 )
 
-func loadConfFromEnv() Configuration {
-	logLevel := strings.ToUpper(getEnvString("BONDSTER_BCO_LOG_LEVEL", "DEBUG"))
-	encryptionKey := getEnvString("BONDSTER_BCO_ENCRYPTION_KEY", "")
-	rootStorage := getEnvString("BONDSTER_BCO_STORAGE", "/data")
-	tenant := getEnvString("BONDSTER_BCO_TENANT", "")
-	bondsterGateway := getEnvString("BONDSTER_BCO_BONDSTER_GATEWAY", "https://bondster.com/ib/proxy")
-	syncRate := getEnvDuration("BONDSTER_BCO_SYNC_RATE", 22*time.Second)
-	ledgerGateway := getEnvString("BONDSTER_BCO_LEDGER_GATEWAY", "https://127.0.0.1:4401")
-	vaultGateway := getEnvString("BONDSTER_BCO_VAULT_GATEWAY", "https://127.0.0.1:4400")
-	lakeHostname := getEnvString("BONDSTER_BCO_LAKE_HOSTNAME", "")
-	metricsOutput := getEnvFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp")
-	metricsRefreshRate := getEnvDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second)
-
-	if tenant == "" || lakeHostname == "" || rootStorage == "" || encryptionKey == "" {
-		log.Error().Msg("missing required parameter to run")
-		panic("missing required parameter to run")
+func envBoolean(key string, fallback bool) bool {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
 	}
-
-	keyData, err := ioutil.ReadFile(encryptionKey)
+	cast, err := strconv.ParseBool(value)
 	if err != nil {
-		log.Error().Msgf("unable to load encryption key from %s", encryptionKey)
-		panic(fmt.Sprintf("unable to load encryption key from %s", encryptionKey))
+		log.Error().Msgf("invalid value of variable %s", key)
+		return fallback
 	}
-
-	key, err := hex.DecodeString(string(keyData))
-	if err != nil {
-		log.Error().Msgf("invalid encryption key %+v at %s", err, encryptionKey)
-		panic(fmt.Sprintf("invalid encryption key %+v at %s", err, encryptionKey))
-	}
-
-	return Configuration{
-		Tenant:             tenant,
-		RootStorage:        rootStorage + "/t_" + tenant + "/import/bondster",
-		EncryptionKey:      []byte(key),
-		BondsterGateway:    bondsterGateway,
-		SyncRate:           syncRate,
-		LedgerGateway:      ledgerGateway,
-		VaultGateway:       vaultGateway,
-		LakeHostname:       lakeHostname,
-		LogLevel:           logLevel,
-		MetricsRefreshRate: metricsRefreshRate,
-		MetricsOutput:      metricsOutput,
-	}
+	return cast
 }
 
-func getEnvFilename(key string, fallback string) string {
+func envFilename(key string, fallback string) string {
 	var value = strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
 	}
 	value = filepath.Clean(value)
 	if os.MkdirAll(value, os.ModePerm) != nil {
+		log.Error().Msgf("invalid value of variable %s", key)
 		return fallback
 	}
 	return value
 }
 
-func getEnvString(key string, fallback string) string {
+func envSecret(key string, fallback []byte) []byte {
+	var value = strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	data, err := ioutil.ReadFile(filepath.Clean(value))
+	if err != nil {
+		return fallback
+	}
+	decoded, err := hex.DecodeString(string(data))
+	if err != nil {
+		return fallback
+	}
+	return []byte(decoded)
+}
+
+func envString(key string, fallback string) string {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
@@ -90,7 +74,7 @@ func getEnvString(key string, fallback string) string {
 	return value
 }
 
-func getEnvInteger(key string, fallback int) int {
+func envInteger(key string, fallback int) int {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
@@ -103,7 +87,7 @@ func getEnvInteger(key string, fallback int) int {
 	return cast
 }
 
-func getEnvDuration(key string, fallback time.Duration) time.Duration {
+func envDuration(key string, fallback time.Duration) time.Duration {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback

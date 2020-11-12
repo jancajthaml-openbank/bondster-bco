@@ -15,8 +15,8 @@
 package ledger
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/jancajthaml-openbank/bondster-bco-import/http"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 )

@@ -26,7 +26,6 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
 	system "github.com/jancajthaml-openbank/actor-system"
-	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // Program encapsulate initialized application
@@ -45,10 +44,6 @@ func Initialize() Program {
 
 	logging.SetupLogger(cfg.LogLevel)
 
-	storage := localfs.NewEncryptedStorage(
-		cfg.RootStorage,
-		cfg.EncryptionKey,
-	)
 	metricsDaemon := metrics.NewMetrics(
 		ctx,
 		cfg.MetricsOutput,
@@ -62,13 +57,15 @@ func Initialize() Program {
 		cfg.BondsterGateway,
 		cfg.VaultGateway,
 		cfg.LedgerGateway,
-		&metricsDaemon,
-		&storage,
+		cfg.RootStorage,
+		cfg.EncryptionKey,
+		metricsDaemon,
 	)
 	bondsterDaemon := integration.NewBondsterImport(
 		ctx,
 		cfg.SyncRate,
-		&storage,
+		cfg.RootStorage,
+		cfg.EncryptionKey,
 		func(token string) {
 			actorSystemDaemon.SendMessage(actor.SynchronizeTokens,
 				system.Coordinates{

@@ -176,7 +176,7 @@ func SynchronizingToken(s *System) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(tenant string, bondsterClient *bondster.Client, vaultClient *vault.Client, ledgerClient *ledger.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
+func importStatementsForInterval(tenant string, bondsterClient *bondster.Client, vaultClient *vault.Client, ledgerClient *ledger.Client, storage localfs.Storage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
 	log.Debug().Msgf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
 	var err error
@@ -241,7 +241,7 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Client,
 	return lastSynced, nil
 }
 
-func importNewStatements(tenant string, bondsterClient *bondster.Client, vaultClient *vault.Client, ledgerClient *ledger.Client, storage *localfs.EncryptedStorage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
+func importNewStatements(tenant string, bondsterClient *bondster.Client, vaultClient *vault.Client, ledgerClient *ledger.Client, storage localfs.Storage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
 	startTime, ok := token.LastSyncedFrom[currency]
 	if !ok {
 		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)

@@ -15,11 +15,11 @@
 package bondster
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"strconv"
 	"time"
-	"encoding/json"
-	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 )
 
 // WebToken encrypted json web token and ssid of bondster session

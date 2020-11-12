@@ -15,15 +15,15 @@
 package api
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"encoding/json"
+	"fmt"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/actor"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/model"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/persistence"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/labstack/echo/v4"
+	"io/ioutil"
+	"net/http"
 )
 
 // DeleteToken removes existing token
@@ -101,7 +101,7 @@ func CreateToken(system *actor.System) func(c echo.Context) error {
 }
 
 // GetTokens return existing tokens of given tenant
-func GetTokens(storage *localfs.EncryptedStorage) func(c echo.Context) error {
+func GetTokens(storage localfs.Storage) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
