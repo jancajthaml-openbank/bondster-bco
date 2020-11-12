@@ -41,8 +41,13 @@ func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, bon
 		log.Error().Msgf("Failed to ensure storage %+v", err)
 		return nil
 	}
+	sys, err := system.New(ctx, "BondsterImport/"+tenant, lakeEndpoint)
+	if err != nil {
+		log.Error().Msgf("Failed to register actor system %+v", err)
+		return nil
+	}
 	result := new(System)
-	result.System = system.New(ctx, "BondsterImport/"+tenant, lakeEndpoint)
+	result.System = sys
 	result.Storage = storage
 	result.Metrics = metrics
 	result.Tenant = tenant
