@@ -245,12 +245,13 @@ func importNewStatements(tenant string, bondsterClient *bondster.Client, vaultCl
 	startTime, ok := token.LastSyncedFrom[currency]
 	if !ok {
 		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
+		token.LastSyncedFrom[currency] = startTime
 	}
 
 	for _, interval := range utils.PartitionInterval(startTime, time.Now()) {
 		lastSynced, err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
-		if lastSynced.After(startTime) {
-			startTime = lastSynced
+
+		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
 				err = fmt.Errorf("unable to update token")
