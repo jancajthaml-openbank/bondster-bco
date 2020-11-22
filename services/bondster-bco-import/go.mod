@@ -1,6 +1,6 @@
 module github.com/jancajthaml-openbank/bondster-bco-import
 
-go 1.14
+go 1.15
 
 require (
 	github.com/jancajthaml-openbank/actor-system v1.2.1
