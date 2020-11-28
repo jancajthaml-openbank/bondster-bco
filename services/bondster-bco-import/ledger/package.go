@@ -14,8 +14,6 @@
 
 package ledger
 
-import (
-	"github.com/jancajthaml-openbank/bondster-bco-import/logging"
-)
+import "github.com/jancajthaml-openbank/bondster-bco-import/support/logging"
 
 var log = logging.New("ledger")

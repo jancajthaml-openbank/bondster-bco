@@ -21,9 +21,9 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/actor"
 	"github.com/jancajthaml-openbank/bondster-bco-import/config"
 	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
-	"github.com/jancajthaml-openbank/bondster-bco-import/logging"
+	"github.com/jancajthaml-openbank/bondster-bco-import/support/logging"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
-	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
+	"github.com/jancajthaml-openbank/bondster-bco-import/support/concurrent"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 )
@@ -32,7 +32,7 @@ import (
 type Program struct {
 	interrupt chan os.Signal
 	cfg       config.Configuration
-	daemons   []utils.Daemon
+	daemons   []concurrent.Daemon
 	cancel    context.CancelFunc
 }
 
@@ -40,7 +40,7 @@ type Program struct {
 func Initialize() Program {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cfg := config.GetConfig()
+	cfg := config.LoadConfig()
 
 	logging.SetupLogger(cfg.LogLevel)
 
@@ -80,7 +80,7 @@ func Initialize() Program {
 		},
 	)
 
-	var daemons = make([]utils.Daemon, 0)
+	var daemons = make([]concurrent.Daemon, 0)
 	daemons = append(daemons, metricsDaemon)
 	daemons = append(daemons, actorSystemDaemon)
 	daemons = append(daemons, bondsterDaemon)

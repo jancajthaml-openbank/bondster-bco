@@ -19,14 +19,14 @@ import (
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
-	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
+	"github.com/jancajthaml-openbank/bondster-bco-import/support/concurrent"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // BondsterImport represents bondster gateway to ledger import subroutine
 type BondsterImport struct {
-	utils.DaemonSupport
+	concurrent.DaemonSupport
 	callback func(token string)
 	syncRate time.Duration
 	storage  localfs.Storage
@@ -40,7 +40,7 @@ func NewBondsterImport(ctx context.Context, syncRate time.Duration, rootStorage 
 		return nil
 	}
 	return &BondsterImport{
-		DaemonSupport: utils.NewDaemonSupport(ctx, "bondster"),
+		DaemonSupport: concurrent.NewDaemonSupport(ctx, "bondster"),
 		callback:      callback,
 		syncRate:      syncRate,
 		storage:       storage,

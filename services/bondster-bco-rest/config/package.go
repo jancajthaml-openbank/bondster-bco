@@ -14,8 +14,6 @@
 
 package config
 
-import (
-	"github.com/jancajthaml-openbank/bondster-bco-rest/logging"
-)
+import "github.com/jancajthaml-openbank/bondster-bco-rest/support/logging"
 
 var log = logging.New("config")

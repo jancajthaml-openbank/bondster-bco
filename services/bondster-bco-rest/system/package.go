@@ -15,7 +15,7 @@
 package system
 
 import (
-	"github.com/jancajthaml-openbank/bondster-bco-rest/logging"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/support/logging"
 )
 
 var log = logging.New("system")

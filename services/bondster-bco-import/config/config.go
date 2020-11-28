@@ -46,8 +46,8 @@ type Configuration struct {
 	MetricsOutput string
 }
 
-// GetConfig loads application configuration
-func GetConfig() Configuration {
+// LoadConfig loads application configuration
+func LoadConfig() Configuration {
 	return Configuration{
 		Tenant:             envString("BONDSTER_BCO_TENANT", ""),
 		RootStorage:        envString("BONDSTER_BCO_STORAGE", "/data") + "/t_" + envString("BONDSTER_BCO_TENANT", "") + "/import/bondster",
@@ -59,6 +59,6 @@ func GetConfig() Configuration {
 		SyncRate:           envDuration("BONDSTER_BCO_SYNC_RATE", 22*time.Second),
 		LogLevel:           strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
 		MetricsRefreshRate: envDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second),
-		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp"),
+		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp/bondster-bco-import-metrics"),
 	}
 }

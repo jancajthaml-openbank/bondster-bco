@@ -48,8 +48,8 @@ type Configuration struct {
 	MinFreeMemory uint64
 }
 
-// GetConfig loads application configuration
-func GetConfig() Configuration {
+// LoadConfig loads application configuration
+func LoadConfig() Configuration {
 	return Configuration{
 		RootStorage:        envString("BONDSTER_BCO_STORAGE", "/data"),
 		EncryptionKey:      envSecret("BONDSTER_BCO_ENCRYPTION_KEY", nil),
@@ -59,7 +59,7 @@ func GetConfig() Configuration {
 		LakeHostname:       envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
 		LogLevel:           strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
 		MetricsRefreshRate: envDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second),
-		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp"),
+		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp/bondster-bco-rest-metrics"),
 		MinFreeDiskSpace:   uint64(envInteger("BONDSTER_BCO_STORAGE_THRESHOLD", 0)),
 		MinFreeMemory:      uint64(envInteger("BONDSTER_BCO_MEMORY_THRESHOLD", 0)),
 	}
