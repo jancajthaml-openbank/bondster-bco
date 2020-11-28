@@ -21,9 +21,9 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/actor"
 	"github.com/jancajthaml-openbank/bondster-bco-import/config"
 	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
-	"github.com/jancajthaml-openbank/bondster-bco-import/support/logging"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/support/concurrent"
+	"github.com/jancajthaml-openbank/bondster-bco-import/support/logging"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 )

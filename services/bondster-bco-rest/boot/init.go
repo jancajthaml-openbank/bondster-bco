@@ -21,10 +21,10 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-rest/actor"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/api"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/config"
-	"github.com/jancajthaml-openbank/bondster-bco-rest/support/logging"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/metrics"
-	"github.com/jancajthaml-openbank/bondster-bco-rest/system"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/support/concurrent"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/support/logging"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/system"
 )
 
 // Program encapsulate initialized application

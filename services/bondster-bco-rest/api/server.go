@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-rest/actor"
-	"github.com/jancajthaml-openbank/bondster-bco-rest/system"
 	"github.com/jancajthaml-openbank/bondster-bco-rest/support/concurrent"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/system"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/labstack/echo/v4"
