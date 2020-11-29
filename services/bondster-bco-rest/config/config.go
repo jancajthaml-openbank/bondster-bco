@@ -15,8 +15,8 @@
 package config
 
 import (
-	"time"
 	"strings"
+	"time"
 )
 
 // Configuration of application
@@ -35,6 +35,8 @@ type Configuration struct {
 	LakeHostname string
 	// LogLevel ignorecase log level
 	LogLevel string
+	// MetricsContinuous determines if metrics should start from last state
+	MetricsContinuous bool
 	// MetricsRefreshRate represents interval in which in memory metrics should be
 	// persisted to disk
 	MetricsRefreshRate time.Duration
@@ -48,8 +50,8 @@ type Configuration struct {
 	MinFreeMemory uint64
 }
 
-// GetConfig loads application configuration
-func GetConfig() Configuration {
+// LoadConfig loads application configuration
+func LoadConfig() Configuration {
 	return Configuration{
 		RootStorage:        envString("BONDSTER_BCO_STORAGE", "/data"),
 		EncryptionKey:      envSecret("BONDSTER_BCO_ENCRYPTION_KEY", nil),
@@ -58,8 +60,9 @@ func GetConfig() Configuration {
 		ServerCert:         envString("BONDSTER_BCO_SERVER_CERT", ""),
 		LakeHostname:       envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
 		LogLevel:           strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
+		MetricsContinuous:  envBoolean("BONDSTER_BCO_METRICS_CONTINUOUS", true),
 		MetricsRefreshRate: envDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second),
-		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp"),
+		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp/bondster-bco-rest-metrics"),
 		MinFreeDiskSpace:   uint64(envInteger("BONDSTER_BCO_STORAGE_THRESHOLD", 0)),
 		MinFreeMemory:      uint64(envInteger("BONDSTER_BCO_MEMORY_THRESHOLD", 0)),
 	}

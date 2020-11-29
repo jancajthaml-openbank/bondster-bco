@@ -15,35 +15,27 @@
 package integration
 
 import (
-	"context"
-	"time"
-
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
-	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // BondsterImport represents bondster gateway to ledger import subroutine
 type BondsterImport struct {
-	utils.DaemonSupport
 	callback func(token string)
-	syncRate time.Duration
 	storage  localfs.Storage
 }
 
 // NewBondsterImport returns bondster import fascade
-func NewBondsterImport(ctx context.Context, syncRate time.Duration, rootStorage string, storageKey []byte, callback func(token string)) *BondsterImport {
+func NewBondsterImport(rootStorage string, storageKey []byte, callback func(token string)) *BondsterImport {
 	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure storage %+v", err)
 		return nil
 	}
 	return &BondsterImport{
-		DaemonSupport: utils.NewDaemonSupport(ctx, "bondster"),
-		callback:      callback,
-		syncRate:      syncRate,
-		storage:       storage,
+		callback: callback,
+		storage:  storage,
 	}
 }
 
@@ -76,34 +68,24 @@ func (bondster BondsterImport) importRoundtrip() {
 	}
 }
 
-// Start handles everything needed to start bondster import daemon
-func (bondster BondsterImport) Start() {
-	bondster.MarkReady()
+// Setup does nothing
+func (bondster BondsterImport) Setup() error {
+	return nil
+}
 
-	select {
-	case <-bondster.CanStart:
-		break
-	case <-bondster.Done():
-		bondster.MarkDone()
-		return
-	}
-
-	log.Info().Msgf("Start bondster-import daemon, sync now and then each %v", bondster.syncRate)
-
+// Work performs import roundtrip
+func (bondster BondsterImport) Work() {
 	bondster.importRoundtrip()
+}
 
-	go func() {
-		for {
-			select {
-			case <-bondster.Done():
-				bondster.MarkDone()
-				return
-			case <-time.After(bondster.syncRate):
-				bondster.importRoundtrip()
-			}
-		}
-	}()
+// Cancel does nothing
+func (bondster BondsterImport) Cancel() {
 
-	bondster.WaitStop()
-	log.Info().Msg("Stop bondster-import daemon")
+}
+
+// Done always returns done
+func (bondster BondsterImport) Done() <-chan interface{} {
+	done := make(chan interface{})
+	close(done)
+	return done
 }

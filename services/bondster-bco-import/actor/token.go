@@ -19,13 +19,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/bondster"
-	"github.com/jancajthaml-openbank/bondster-bco-import/ledger"
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
-	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
-	"github.com/jancajthaml-openbank/bondster-bco-import/vault"
+	"github.com/jancajthaml-openbank/bondster-bco-import/support/http"
+	"github.com/jancajthaml-openbank/bondster-bco-import/support/timeshift"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -176,12 +174,12 @@ func SynchronizingToken(s *System) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(tenant string, bondsterClient *bondster.Client, vaultClient *vault.Client, ledgerClient *ledger.Client, storage localfs.Storage, metrics *metrics.Metrics, token *model.Token, currency string, interval utils.TimeRange) (time.Time, error) {
+func importStatementsForInterval(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics *metrics.Metrics, token *model.Token, currency string, interval timeshift.TimeRange) (time.Time, error) {
 	log.Debug().Msgf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
 	var err error
 	var transactionIds []string
-	var statements *bondster.ImportEnvelope
+	var statements *model.ImportEnvelope
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
 	metrics.TimeTransactionSearchLatency(func() {
@@ -241,16 +239,17 @@ func importStatementsForInterval(tenant string, bondsterClient *bondster.Client,
 	return lastSynced, nil
 }
 
-func importNewStatements(tenant string, bondsterClient *bondster.Client, vaultClient *vault.Client, ledgerClient *ledger.Client, storage localfs.Storage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
+func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
 	startTime, ok := token.LastSyncedFrom[currency]
 	if !ok {
 		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
+		token.LastSyncedFrom[currency] = startTime
 	}
 
-	for _, interval := range utils.PartitionInterval(startTime, time.Now()) {
+	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
 		lastSynced, err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
-		if lastSynced.After(startTime) {
-			startTime = lastSynced
+
+		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
 				err = fmt.Errorf("unable to update token")
@@ -268,9 +267,9 @@ func importStatements(s *System, token model.Token, complete func()) {
 
 	log.Debug().Msgf("token %s Importing statements Start", token.ID)
 
-	bondsterClient := bondster.NewClient(s.BondsterGateway, token)
-	vaultClient := vault.NewClient(s.VaultGateway)
-	ledgerClient := ledger.NewClient(s.LedgerGateway)
+	bondsterClient := http.NewBondsterClient(s.BondsterGateway, token)
+	vaultClient := http.NewVaultClient(s.VaultGateway)
+	ledgerClient := http.NewLedgerClient(s.LedgerGateway)
 
 	currencies, err := bondsterClient.GetCurrencies()
 	if err != nil {
