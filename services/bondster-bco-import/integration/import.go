@@ -15,34 +15,26 @@
 package integration
 
 import (
-	"context"
-	"time"
-
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
-	"github.com/jancajthaml-openbank/bondster-bco-import/support/concurrent"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // BondsterImport represents bondster gateway to ledger import subroutine
 type BondsterImport struct {
-	concurrent.DaemonSupport
 	callback func(token string)
-	syncRate time.Duration
 	storage  localfs.Storage
 }
 
 // NewBondsterImport returns bondster import fascade
-func NewBondsterImport(ctx context.Context, syncRate time.Duration, rootStorage string, storageKey []byte, callback func(token string)) *BondsterImport {
+func NewBondsterImport(rootStorage string, storageKey []byte, callback func(token string)) *BondsterImport {
 	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure storage %+v", err)
 		return nil
 	}
 	return &BondsterImport{
-		DaemonSupport: concurrent.NewDaemonSupport(ctx, "bondster"),
 		callback:      callback,
-		syncRate:      syncRate,
 		storage:       storage,
 	}
 }
@@ -76,34 +68,20 @@ func (bondster BondsterImport) importRoundtrip() {
 	}
 }
 
-// Start handles everything needed to start bondster import daemon
-func (bondster BondsterImport) Start() {
-	bondster.MarkReady()
+func (bondster BondsterImport) Setup() error {
+	return nil
+}
 
-	select {
-	case <-bondster.CanStart:
-		break
-	case <-bondster.Done():
-		bondster.MarkDone()
-		return
-	}
-
-	log.Info().Msgf("Start bondster-import daemon, sync now and then each %v", bondster.syncRate)
-
+func (bondster BondsterImport) Work() {
 	bondster.importRoundtrip()
+}
 
-	go func() {
-		for {
-			select {
-			case <-bondster.Done():
-				bondster.MarkDone()
-				return
-			case <-time.After(bondster.syncRate):
-				bondster.importRoundtrip()
-			}
-		}
-	}()
+func (bondster BondsterImport) Cancel() {
 
-	bondster.WaitStop()
-	log.Info().Msg("Stop bondster-import daemon")
+}
+
+func (bondster BondsterImport) Done() <-chan interface{} {
+	done := make(chan interface{})
+	close(done)
+	return done
 }

@@ -39,6 +39,8 @@ type Configuration struct {
 	LakeHostname string
 	// LogLevel ignorecase log level
 	LogLevel string
+	// MetricsContinuous determines if metrics should start from last state
+	MetricsContinuous bool
 	// MetricsRefreshRate represents interval in which in memory metrics should be
 	// persisted to disk
 	MetricsRefreshRate time.Duration
@@ -58,6 +60,7 @@ func LoadConfig() Configuration {
 		LakeHostname:       envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
 		SyncRate:           envDuration("BONDSTER_BCO_SYNC_RATE", 22*time.Second),
 		LogLevel:           strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
+		MetricsContinuous:  envBoolean("BONDSTER_BCO_METRICS_CONTINUOUS", true),
 		MetricsRefreshRate: envDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second),
 		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp/bondster-bco-import-metrics"),
 	}

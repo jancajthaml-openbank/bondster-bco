@@ -22,6 +22,7 @@ class UnitHelper(object):
       "VAULT_GATEWAY": "https://127.0.0.1:4400",
       "LEDGER_GATEWAY": "https://127.0.0.1:4401",
       "LAKE_HOSTNAME": "127.0.0.1",
+      "METRICS_CONTINUOUS": True,
       "METRICS_OUTPUT": os.path.realpath('{}/../../reports/blackbox-tests/metrics'.format(os.path.dirname(__file__))),
       "METRICS_REFRESHRATE": "1h",
       "HTTP_PORT": "443",
