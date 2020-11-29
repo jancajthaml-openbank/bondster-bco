@@ -21,8 +21,8 @@ import (
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
-	"github.com/jancajthaml-openbank/bondster-bco-import/support/http"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
+	"github.com/jancajthaml-openbank/bondster-bco-import/support/http"
 	"github.com/jancajthaml-openbank/bondster-bco-import/support/timeshift"
 
 	system "github.com/jancajthaml-openbank/actor-system"

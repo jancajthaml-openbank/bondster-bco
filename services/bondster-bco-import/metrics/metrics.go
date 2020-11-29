@@ -52,7 +52,6 @@ func NewMetrics(output string, continuous bool, tenant string) *Metrics {
 	}
 }
 
-
 // TokenCreated increments token created by one
 func (metrics *Metrics) TokenCreated() {
 	if metrics == nil {

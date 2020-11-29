@@ -25,9 +25,9 @@ import (
 	"time"
 )
 
-const TLS_HANDSHAKE_TIMEOUT = 10 * time.Second
-const DIAL_TIMEOUT = 30 * time.Second
-const REQUEST_TIMEOUT = 120 * time.Second
+const handshakeTimeout = 10 * time.Second
+const dialTimeout = 30 * time.Second
+const requestTimeout = 120 * time.Second
 
 // Client represents fascade for http client
 type Client struct {
@@ -38,12 +38,12 @@ type Client struct {
 func NewHTTPClient() Client {
 	return Client{
 		underlying: &http.Client{
-			Timeout: REQUEST_TIMEOUT,
+			Timeout: requestTimeout,
 			Transport: &http.Transport{
 				DialContext: (&net.Dialer{
-					Timeout: DIAL_TIMEOUT,
+					Timeout: dialTimeout,
 				}).DialContext,
-				TLSHandshakeTimeout: TLS_HANDSHAKE_TIMEOUT,
+				TLSHandshakeTimeout: handshakeTimeout,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify:       false,
 					MinVersion:               tls.VersionTLS12,
@@ -178,4 +178,3 @@ func (value *Response) String() string {
 	}
 	return fmt.Sprintf("Response{ Status: %d, Data: %s, Header: %+v }", value.Status, string(value.Data), value.Header)
 }
-

@@ -34,8 +34,8 @@ func NewBondsterImport(rootStorage string, storageKey []byte, callback func(toke
 		return nil
 	}
 	return &BondsterImport{
-		callback:      callback,
-		storage:       storage,
+		callback: callback,
+		storage:  storage,
 	}
 }
 
@@ -68,18 +68,22 @@ func (bondster BondsterImport) importRoundtrip() {
 	}
 }
 
+// Setup does nothing
 func (bondster BondsterImport) Setup() error {
 	return nil
 }
 
+// Work performs import roundtrip
 func (bondster BondsterImport) Work() {
 	bondster.importRoundtrip()
 }
 
+// Cancel does nothing
 func (bondster BondsterImport) Cancel() {
 
 }
 
+// Done always returns done
 func (bondster BondsterImport) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)

@@ -34,7 +34,6 @@ type valueWithExpiration struct {
 	ExpiresAt time.Time
 }
 
-
 // Session hold bondster session headers
 type Session struct {
 	JWT     *valueWithExpiration
@@ -74,7 +73,6 @@ func (session Session) IsJWTExpired() bool {
 	}
 	return false
 }
-
 
 // UnmarshalJSON is json JWT unmarhalling companion
 func (entity *WebToken) UnmarshalJSON(data []byte) error {
@@ -178,7 +176,7 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 
 		for _, transfer := range envelope.Transactions {
 			//if transfer.IsStorno {
-				// FIXME case not handled
+			// FIXME case not handled
 			//}
 
 			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
