@@ -15,114 +15,105 @@
 package metrics
 
 import (
-	localfs "github.com/jancajthaml-openbank/local-fs"
-	metrics "github.com/rcrowley/go-metrics"
+	"sync/atomic"
+
+	"github.com/DataDog/datadog-go/statsd"
 )
 
-// Metrics holds metrics counters
-type Metrics struct {
-	storage                  localfs.Storage
-	tenant                   string
-	continuous               bool
-	createdTokens            metrics.Counter
-	deletedTokens            metrics.Counter
-	transactionSearchLatency metrics.Timer
-	transactionListLatency   metrics.Timer
-	importedTransfers        metrics.Meter
-	importedTransactions     metrics.Meter
+type Metrics interface {
+	TokenCreated()
+	TokenDeleted()
+	TransactionImported(transfers int)
+}
+
+type metrics struct {
+	client               *statsd.Client
+	tenant               string
+	createdTokens        int64
+	deletedTokens        int64
+	importedTransactions int64
+	importedTransfers    int64
 }
 
 // NewMetrics returns blank metrics holder
-func NewMetrics(output string, continuous bool, tenant string) *Metrics {
-	storage, err := localfs.NewPlaintextStorage(output)
+func NewMetrics(tenant string, endpoint string) *metrics {
+	client, err := statsd.New(endpoint, statsd.WithClientSideAggregation(), statsd.WithoutTelemetry())
 	if err != nil {
-		log.Error().Msgf("Failed to ensure storage %+v", err)
+		log.Error().Msgf("Failed to ensure statsd client %+v", err)
 		return nil
 	}
-	return &Metrics{
-		continuous:               continuous,
-		storage:                  storage,
-		tenant:                   tenant,
-		createdTokens:            metrics.NewCounter(),
-		deletedTokens:            metrics.NewCounter(),
-		importedTransfers:        metrics.NewMeter(),
-		importedTransactions:     metrics.NewMeter(),
-		transactionSearchLatency: metrics.NewTimer(),
-		transactionListLatency:   metrics.NewTimer(),
+	return &metrics{
+		client:               client,
+		tenant:               tenant,
+		createdTokens:        int64(0),
+		deletedTokens:        int64(0),
+		importedTransactions: int64(0),
+		importedTransfers:    int64(0),
 	}
 }
 
 // TokenCreated increments token created by one
-func (metrics *Metrics) TokenCreated() {
-	if metrics == nil {
+func (instance *metrics) TokenCreated() {
+	if instance == nil {
 		return
 	}
-	metrics.createdTokens.Inc(1)
+	atomic.AddInt64(&(instance.createdTokens), 1)
 }
 
 // TokenDeleted increments token deleted by one
-func (metrics *Metrics) TokenDeleted() {
-	if metrics == nil {
+func (instance *metrics) TokenDeleted() {
+	if instance == nil {
 		return
 	}
-	metrics.deletedTokens.Inc(1)
+	//metrics.deletedTokens.Inc(1)
+	atomic.AddInt64(&(instance.deletedTokens), 1)
 }
 
-// TransfersImported increments transfers created by count
-func (metrics *Metrics) TransfersImported(count int64) {
-	if metrics == nil {
+// TransactionImported increments transactions importer by one
+func (instance *metrics) TransactionImported(transfers int) {
+	if instance == nil {
 		return
 	}
-	metrics.importedTransfers.Mark(count)
+	atomic.AddInt64(&(instance.importedTransactions), 1)
+	atomic.AddInt64(&(instance.importedTransfers), int64(transfers))
 }
 
-// TransactionImported increments transactions created by count
-func (metrics *Metrics) TransactionImported() {
-	if metrics == nil {
-		return
-	}
-	metrics.importedTransactions.Mark(1)
-}
-
-// TimeTransactionSearchLatency measures time of transaction search duration
-func (metrics *Metrics) TimeTransactionSearchLatency(f func()) {
-	if metrics == nil {
-		return
-	}
-	metrics.transactionSearchLatency.Time(f)
-}
-
-// TimeTransactionListLatency measures time of transaction list duration
-func (metrics *Metrics) TimeTransactionListLatency(f func()) {
-	if metrics == nil {
-		return
-	}
-	metrics.transactionListLatency.Time(f)
-}
-
-// Setup hydrates metrics from storage
-func (metrics *Metrics) Setup() error {
-	if metrics == nil {
-		return nil
-	}
-	if metrics.continuous {
-		metrics.Hydrate()
-	}
+// Setup does nothing
+func (_ *metrics) Setup() error {
 	return nil
 }
 
 // Done returns always finished
-func (metrics *Metrics) Done() <-chan interface{} {
+func (_ *metrics) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done
 }
 
 // Cancel does nothing
-func (metrics *Metrics) Cancel() {
+func (_ *metrics) Cancel() {
 }
 
 // Work represents metrics worker work
-func (metrics *Metrics) Work() {
-	metrics.Persist()
+func (instance *metrics) Work() {
+	if instance == nil {
+		return
+	}
+
+	createdTokens := instance.createdTokens
+	deletedTokens := instance.deletedTokens
+	importedTransactions := instance.importedTransactions
+	importedTransfers := instance.importedTransfers
+
+	atomic.AddInt64(&(instance.createdTokens), -createdTokens)
+	atomic.AddInt64(&(instance.deletedTokens), -deletedTokens)
+	atomic.AddInt64(&(instance.importedTransactions), -importedTransactions)
+	atomic.AddInt64(&(instance.importedTransfers), -importedTransfers)
+
+	tags := []string{"tenant:" +instance.tenant}
+
+	instance.client.Count("openbank.bco.bondster.token.created", createdTokens, tags, 1)
+	instance.client.Count("openbank.bco.bondster.token.deleted", deletedTokens, tags, 1)
+	instance.client.Count("openbank.bco.bondster.transaction.imported", importedTransactions, tags, 1)
+	instance.client.Count("openbank.bco.bondster.transfer.imported", importedTransfers, tags, 1)
 }

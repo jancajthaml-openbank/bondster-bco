@@ -174,7 +174,7 @@ func SynchronizingToken(s *System) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics *metrics.Metrics, token *model.Token, currency string, interval timeshift.TimeRange) (time.Time, error) {
+func importStatementsForInterval(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string, interval timeshift.TimeRange) (time.Time, error) {
 	log.Debug().Msgf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
 	var err error
@@ -182,9 +182,7 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 	var statements *model.ImportEnvelope
 	var lastSynced time.Time = token.LastSyncedFrom[currency]
 
-	metrics.TimeTransactionSearchLatency(func() {
-		transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)
-	})
+	transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)
 	if err != nil {
 		return lastSynced, err
 	}
@@ -193,9 +191,7 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 		return interval.EndTime, nil
 	}
 
-	metrics.TimeTransactionListLatency(func() {
-		statements, err = bondsterClient.GetTransactionDetails(currency, transactionIds)
-	})
+	statements, err = bondsterClient.GetTransactionDetails(currency, transactionIds)
 	if err != nil {
 		return lastSynced, err
 	}
@@ -226,8 +222,7 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 			return lastSynced, err
 		}
 
-		metrics.TransactionImported()
-		metrics.TransfersImported(int64(len(transaction.Transfers)))
+		metrics.TransactionImported(len(transaction.Transfers))
 
 		for _, transfer := range transaction.Transfers {
 			if transfer.ValueDateRaw.After(lastSynced) {
@@ -239,7 +234,7 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 	return lastSynced, nil
 }
 
-func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics *metrics.Metrics, token *model.Token, currency string) (bool, error) {
+func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string) (bool, error) {
 	startTime, ok := token.LastSyncedFrom[currency]
 	if !ok {
 		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
