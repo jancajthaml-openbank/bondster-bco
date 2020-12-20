@@ -1,48 +1,20 @@
 Feature: Metrics test
 
-  Scenario: metrics have expected keys
-    Given tenant M1 is onboarded
-    And   bondster-bco is configured with
-      | property            | value |
-      | METRICS_REFRESHRATE |    1s |
-
-    Then metrics file reports/blackbox-tests/metrics/metrics.M1.json should have following keys:
-      | key                      |
-      | createdTokens            |
-      | deletedTokens            |
-      | importedTransactions     |
-      | importedTransfers        |
-      | transactionListLatency   |
-      | transactionSearchLatency |
-    And metrics file reports/blackbox-tests/metrics/metrics.M1.json has permissions -rw-r--r--
-
-    And metrics file reports/blackbox-tests/metrics/metrics.json should have following keys:
-      | key                      |
-      | createTokenLatency       |
-      | deleteTokenLatency       |
-      | getTokenLatency          |
-      | memoryAllocated          |
-    And metrics file reports/blackbox-tests/metrics/metrics.json has permissions -rw-r--r--
-
-  Scenario: metrics can remembers previous values after reboot
+  Scenario: metrics measures expected stats
     Given tenant M2 is onboarded
-    And   bondster-bco is configured with
-      | property            | value |
-      | METRICS_REFRESHRATE |    1s |
 
-    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
-      | key                      | value |
-      | createdTokens            |     0 |
-      | deletedTokens            |     0 |
+    Then metrics reports:
+      | key                                           | type  | value |
+      | openbank.bco.bondster.M2.token.created        | count |     0 |
+      | openbank.bco.bondster.M2.token.deleted        | count |     0 |
+      | openbank.bco.bondster.M2.transaction.imported | count |       |
+      | openbank.bco.bondster.M2.transfer.imported    | count |       |
 
     When token M2/A is created
-    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
-      | key                      | value |
-      | createdTokens            |     1 |
-      | deletedTokens            |     0 |
 
-    When restart unit "bondster-bco-import@M2.service"
-    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
-      | key                      | value |
-      | createdTokens            |     1 |
-      | deletedTokens            |     0 |
+    Then metrics reports:
+      | key                                           | type  | value |
+      | openbank.bco.bondster.M2.token.created        | count |     1 |
+      | openbank.bco.bondster.M2.token.deleted        | count |     0 |
+      | openbank.bco.bondster.M2.transaction.imported | count |       |
+      | openbank.bco.bondster.M2.transfer.imported    | count |       |

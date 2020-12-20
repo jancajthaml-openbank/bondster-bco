@@ -39,29 +39,22 @@ type Configuration struct {
 	LakeHostname string
 	// LogLevel ignorecase log level
 	LogLevel string
-	// MetricsContinuous determines if metrics should start from last state
-	MetricsContinuous bool
-	// MetricsRefreshRate represents interval in which in memory metrics should be
-	// persisted to disk
-	MetricsRefreshRate time.Duration
-	// MetricsOutput represents output file for metrics persistence
-	MetricsOutput string
+	// MetricsStastdEndpoint represents statsd daemon hostname
+	MetricsStastdEndpoint string
 }
 
 // LoadConfig loads application configuration
 func LoadConfig() Configuration {
 	return Configuration{
-		Tenant:             envString("BONDSTER_BCO_TENANT", ""),
-		RootStorage:        envString("BONDSTER_BCO_STORAGE", "/data") + "/t_" + envString("BONDSTER_BCO_TENANT", "") + "/import/bondster",
-		EncryptionKey:      envSecret("BONDSTER_BCO_ENCRYPTION_KEY", nil),
-		BondsterGateway:    envString("BONDSTER_BCO_BONDSTER_GATEWAY", "https://bondster.com/ib/proxy"),
-		LedgerGateway:      envString("BONDSTER_BCO_LEDGER_GATEWAY", "https://127.0.0.1:4401"),
-		VaultGateway:       envString("BONDSTER_BCO_VAULT_GATEWAY", "https://127.0.0.1:4400"),
-		LakeHostname:       envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
-		SyncRate:           envDuration("BONDSTER_BCO_SYNC_RATE", 22*time.Second),
-		LogLevel:           strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
-		MetricsContinuous:  envBoolean("BONDSTER_BCO_METRICS_CONTINUOUS", true),
-		MetricsRefreshRate: envDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second),
-		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp/bondster-bco-import-metrics"),
+		Tenant:                envString("BONDSTER_BCO_TENANT", ""),
+		RootStorage:           envString("BONDSTER_BCO_STORAGE", "/data") + "/t_" + envString("BONDSTER_BCO_TENANT", "") + "/import/bondster",
+		EncryptionKey:         envSecret("BONDSTER_BCO_ENCRYPTION_KEY", nil),
+		BondsterGateway:       envString("BONDSTER_BCO_BONDSTER_GATEWAY", "https://bondster.com/ib/proxy"),
+		LedgerGateway:         envString("BONDSTER_BCO_LEDGER_GATEWAY", "https://127.0.0.1:4401"),
+		VaultGateway:          envString("BONDSTER_BCO_VAULT_GATEWAY", "https://127.0.0.1:4400"),
+		LakeHostname:          envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
+		SyncRate:              envDuration("BONDSTER_BCO_SYNC_RATE", 22*time.Second),
+		LogLevel:              strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
+		MetricsStastdEndpoint: envString("FIO_BCO_STATSD_ENDPOINT", "127.0.0.1:8125"),
 	}
 }

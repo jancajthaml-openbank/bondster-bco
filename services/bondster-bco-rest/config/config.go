@@ -14,10 +14,7 @@
 
 package config
 
-import (
-	"strings"
-	"time"
-)
+import "strings"
 
 // Configuration of application
 type Configuration struct {
@@ -35,13 +32,6 @@ type Configuration struct {
 	LakeHostname string
 	// LogLevel ignorecase log level
 	LogLevel string
-	// MetricsContinuous determines if metrics should start from last state
-	MetricsContinuous bool
-	// MetricsRefreshRate represents interval in which in memory metrics should be
-	// persisted to disk
-	MetricsRefreshRate time.Duration
-	// MetricsOutput represents output file for metrics persistence
-	MetricsOutput string
 	// MinFreeDiskSpace respresents threshold for minimum disk free space to
 	// be possible operating
 	MinFreeDiskSpace uint64
@@ -53,17 +43,14 @@ type Configuration struct {
 // LoadConfig loads application configuration
 func LoadConfig() Configuration {
 	return Configuration{
-		RootStorage:        envString("BONDSTER_BCO_STORAGE", "/data"),
-		EncryptionKey:      envSecret("BONDSTER_BCO_ENCRYPTION_KEY", nil),
-		ServerPort:         envInteger("BONDSTER_BCO_HTTP_PORT", 4001),
-		ServerKey:          envString("BONDSTER_BCO_SERVER_KEY", ""),
-		ServerCert:         envString("BONDSTER_BCO_SERVER_CERT", ""),
-		LakeHostname:       envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
-		LogLevel:           strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
-		MetricsContinuous:  envBoolean("BONDSTER_BCO_METRICS_CONTINUOUS", true),
-		MetricsRefreshRate: envDuration("BONDSTER_BCO_METRICS_REFRESHRATE", time.Second),
-		MetricsOutput:      envFilename("BONDSTER_BCO_METRICS_OUTPUT", "/tmp/bondster-bco-rest-metrics"),
-		MinFreeDiskSpace:   uint64(envInteger("BONDSTER_BCO_STORAGE_THRESHOLD", 0)),
-		MinFreeMemory:      uint64(envInteger("BONDSTER_BCO_MEMORY_THRESHOLD", 0)),
+		RootStorage:      envString("BONDSTER_BCO_STORAGE", "/data"),
+		EncryptionKey:    envSecret("BONDSTER_BCO_ENCRYPTION_KEY", nil),
+		ServerPort:       envInteger("BONDSTER_BCO_HTTP_PORT", 4001),
+		ServerKey:        envString("BONDSTER_BCO_SERVER_KEY", ""),
+		ServerCert:       envString("BONDSTER_BCO_SERVER_CERT", ""),
+		LakeHostname:     envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
+		LogLevel:         strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
+		MinFreeDiskSpace: uint64(envInteger("BONDSTER_BCO_STORAGE_THRESHOLD", 0)),
+		MinFreeMemory:    uint64(envInteger("BONDSTER_BCO_MEMORY_THRESHOLD", 0)),
 	}
 }
