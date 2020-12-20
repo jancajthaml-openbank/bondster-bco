@@ -4,17 +4,14 @@ Feature: Metrics test
     Given tenant M2 is onboarded
 
     Then metrics reports:
-      | key                                           | type  | value |
-      | openbank.bco.bondster.M2.token.created        | count |     0 |
-      | openbank.bco.bondster.M2.token.deleted        | count |     0 |
-      | openbank.bco.bondster.M2.transaction.imported | count |       |
-      | openbank.bco.bondster.M2.transfer.imported    | count |       |
+      | key                                        | type  |      tags | value |
+      | openbank.bco.bondster.token.created        | count | tenant:M2 |     0 |
+      | openbank.bco.bondster.token.deleted        | count | tenant:M2 |     0 |
+      | openbank.bco.bondster.transaction.imported | count | tenant:M2 |       |
+      | openbank.bco.bondster.transfer.imported    | count | tenant:M2 |       |
 
     When token M2/A is created
 
     Then metrics reports:
-      | key                                           | type  | value |
-      | openbank.bco.bondster.M2.token.created        | count |     1 |
-      | openbank.bco.bondster.M2.token.deleted        | count |     0 |
-      | openbank.bco.bondster.M2.transaction.imported | count |       |
-      | openbank.bco.bondster.M2.transfer.imported    | count |       |
+      | key                                 | type  |      tags | value |
+      | openbank.bco.bondster.token.created | count | tenant:M2 |     1 |
