@@ -178,15 +178,23 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 	go func() {
 		defer close(chnl)
 
+		set := make(map[string][]Transfer)
 		for _, transfer := range envelope.Transactions {
+			if _, ok := set[transfer.IDTransaction]; !ok {
+				set[transfer.IDTransaction] = make([]Transfer)
+			}
+			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
+		}
+
+		for idTransaction, transfer := range set {
 
 			if transfer.IsStorno {
 				log.Warn().Msgf("Transfer %+v is STORNO", transfer)
 			}
 
 			if previousIDTransaction == "" {
-				previousIDTransaction = transfer.IDTransaction
-			} else if previousIDTransaction != transfer.IDTransaction {
+				previousIDTransaction = idTransaction
+			} else if previousIDTransaction != idTransaction {
 				transfers := make([]Transfer, len(buffer))
 				copy(transfers, buffer)
 				buffer = make([]Transfer, 0)
@@ -195,7 +203,7 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 					IDTransaction: previousIDTransaction,
 					Transfers:     transfers,
 				}
-				previousIDTransaction = transfer.IDTransaction
+				previousIDTransaction = idTransaction
 			}
 
 			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
