@@ -178,10 +178,10 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 	go func() {
 		defer close(chnl)
 
-		set := make(map[string][]Transfer)
+		set := make(map[string][]bondsterTransaction)
 		for _, transfer := range envelope.Transactions {
 			if _, ok := set[transfer.IDTransaction]; !ok {
-				set[transfer.IDTransaction] = make([]Transfer, 0)
+				set[transfer.IDTransaction] = make([]bondsterTransaction, 0)
 			}
 			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
 		}
