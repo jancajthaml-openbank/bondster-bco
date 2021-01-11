@@ -160,10 +160,10 @@ type bondsterAmount struct {
 	Currency string  `json:"currencyCode"`
 }
 
-
 func creditTransfer() {
 
 }
+
 // GetTransactions return generator of bondster transactions over given envelope
 func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transaction {
 	chnl := make(chan Transaction)
@@ -184,6 +184,20 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 				log.Warn().Msgf("Transfer %+v is STORNO", transfer)
 			}
 
+			if previousIDTransaction == "" {
+				previousIDTransaction = transfer.IDTransaction
+			} else if previousIDTransaction != transfer.IDTransaction {
+				transfers := make([]Transfer, len(buffer))
+				copy(transfers, buffer)
+				buffer = make([]Transfer, 0)
+				chnl <- Transaction{
+					Tenant:        tenant,
+					IDTransaction: previousIDTransaction,
+					Transfers:     transfers,
+				}
+				previousIDTransaction = transfer.IDTransaction
+			}
+
 			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
 
 			credit := AccountPair{
@@ -199,20 +213,6 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 			} else {
 				credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 				debit.Name = envelope.Currency + "_TYPE_NOSTRO"
-			}
-
-			if previousIDTransaction == "" {
-				previousIDTransaction =  transfer.IDTransaction
-			} else if previousIDTransaction != transfer.IDTransaction {
-				transfers := make([]Transfer, len(buffer))
-				copy(transfers, buffer)
-				buffer = make([]Transfer, 0)
-				chnl <- Transaction{
-					Tenant:        tenant,
-					IDTransaction: previousIDTransaction,
-					Transfers:     transfers,
-				}
-				previousIDTransaction =  transfer.IDTransaction
 			}
 
 			buffer = append(buffer, Transfer{

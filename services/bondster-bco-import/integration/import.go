@@ -55,7 +55,15 @@ func (bondster BondsterImport) getActiveTokens() ([]string, error) {
 	return uniq, nil
 }
 
-func (bondster BondsterImport) importRoundtrip() {
+// Setup does nothing
+func (bondster BondsterImport) Setup() error {
+	return nil
+}
+
+// Work performs import roundtrip
+func (bondster BondsterImport) Work() {
+	log.Debug().Msg("Importing from Bondster Marketplace")
+
 	tokens, err := bondster.getActiveTokens()
 	if err != nil {
 		log.Error().Msgf("unable to get active tokens %+v", err)
@@ -66,16 +74,6 @@ func (bondster BondsterImport) importRoundtrip() {
 		log.Debug().Msgf("Request to import token %s", item)
 		bondster.callback(item)
 	}
-}
-
-// Setup does nothing
-func (bondster BondsterImport) Setup() error {
-	return nil
-}
-
-// Work performs import roundtrip
-func (bondster BondsterImport) Work() {
-	bondster.importRoundtrip()
 }
 
 // Cancel does nothing
