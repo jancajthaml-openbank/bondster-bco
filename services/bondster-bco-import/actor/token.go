@@ -201,9 +201,10 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 
 	// FIXME getStatements end here
 
-	sort.SliceStable(statements.Transactions, func(i, j int) bool {
-		return statements.Transactions[i].IDTransaction == statements.Transactions[j].IDTransaction
-	})
+	// FIXME this sort is not ideal
+	//sort.SliceStable(statements.Transactions, func(i, j int) bool {
+		//return statements.Transactions[i].IDTransaction == statements.Transactions[j].IDTransaction
+	//})
 
 	log.Debug().Msgf("token %s importing accounts", token.ID)
 
