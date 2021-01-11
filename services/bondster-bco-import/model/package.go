@@ -14,23 +14,6 @@
 
 package model
 
-import "time"
+import "github.com/jancajthaml-openbank/bondster-bco-import/support/logging"
 
-// Transaction entity in ledger-rest format
-type Transaction struct {
-	Tenant        string     `json:"-"`
-	IDTransaction string     `json:"id"`
-	Transfers     []Transfer `json:"transfers"`
-}
-
-// Transfer entity in ledger-rest format
-type Transfer struct {
-	IDTransfer   string      `json:"id"`
-	Credit       AccountPair `json:"credit"`
-	Debit        AccountPair `json:"debit"`
-	ValueDate    string      `json:"valueDate"`
-	ValueDateRaw time.Time   `json:"-"`
-	Amount       string      `json:"amount"`
-	Currency     string      `json:"currency"`
-}
-
+var log = logging.New("model")

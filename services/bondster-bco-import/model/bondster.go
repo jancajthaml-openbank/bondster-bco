@@ -160,6 +160,10 @@ type bondsterAmount struct {
 	Currency string  `json:"currencyCode"`
 }
 
+
+func creditTransfer() {
+
+}
 // GetTransactions return generator of bondster transactions over given envelope
 func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transaction {
 	chnl := make(chan Transaction)
@@ -175,9 +179,10 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 		defer close(chnl)
 
 		for _, transfer := range envelope.Transactions {
-			//if transfer.IsStorno {
-			// FIXME case not handled
-			//}
+
+			if transfer.IsStorno {
+				log.Warn().Msgf("Transfer %+v is STORNO", transfer)
+			}
 
 			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
 
@@ -189,28 +194,16 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 			}
 
 			if transfer.Direction == "CREDIT" {
-				if transfer.Originator != nil {
-					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-					debit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
-				} else {
-					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
-					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-				}
+				credit.Name = envelope.Currency + "_TYPE_NOSTRO"
+				debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
 			} else {
-				if transfer.Originator != nil {
-					credit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
-					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-				} else {
-					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
-				}
+				credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
+				debit.Name = envelope.Currency + "_TYPE_NOSTRO"
 			}
 
-			idTransaction := transfer.IDTransaction
-
 			if previousIDTransaction == "" {
-				previousIDTransaction = idTransaction
-			} else if previousIDTransaction != idTransaction {
+				previousIDTransaction =  transfer.IDTransaction
+			} else if previousIDTransaction != transfer.IDTransaction {
 				transfers := make([]Transfer, len(buffer))
 				copy(transfers, buffer)
 				buffer = make([]Transfer, 0)
@@ -219,7 +212,7 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 					IDTransaction: previousIDTransaction,
 					Transfers:     transfers,
 				}
-				previousIDTransaction = idTransaction
+				previousIDTransaction =  transfer.IDTransaction
 			}
 
 			buffer = append(buffer, Transfer{
@@ -273,19 +266,6 @@ func (envelope *ImportEnvelope) GetAccounts(tenant string) <-chan Account {
 		}
 
 		for _, transfer := range envelope.Transactions {
-			if transfer.Originator != nil {
-				if _, ok := visited[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name]; !ok {
-					chnl <- Account{
-						Tenant:         tenant,
-						Name:           envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
-						Format:         "BONDSTER_ORIGINATOR",
-						Currency:       envelope.Currency,
-						IsBalanceCheck: false,
-					}
-					visited[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = nil
-				}
-			}
-
 			if _, ok := visited[envelope.Currency+"_TYPE_"+transfer.Type]; !ok {
 				chnl <- Account{
 					Tenant:         tenant,
