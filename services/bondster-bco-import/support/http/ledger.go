@@ -42,19 +42,19 @@ func (client LedgerClient) CreateTransaction(transaction model.Transaction) erro
 	}
 	response, err := client.underlying.Post(client.gateway+"/transaction/"+transaction.Tenant, request, nil)
 	if err != nil {
-		return fmt.Errorf("create transaction error %+v", err)
+		return fmt.Errorf("create transaction %s error %+v", transaction.IDTransaction, err)
 	}
 	if response.Status == 409 {
-		return fmt.Errorf("create transaction duplicate %+v", transaction)
+		return fmt.Errorf("create transaction %s duplicate %+v", transaction.IDTransaction, transaction)
 	}
 	if response.Status == 400 {
-		return fmt.Errorf("create transaction malformed request %s", string(request))
+		return fmt.Errorf("create transaction %s malformed request %s", transaction.IDTransaction, string(request))
 	}
 	if response.Status == 504 {
-		return fmt.Errorf("create transaction timeout")
+		return fmt.Errorf("create transaction %s timeout", transaction.IDTransaction,)
 	}
 	if response.Status != 200 && response.Status != 201 && response.Status != 202 {
-		return fmt.Errorf("create transaction error %s", response.String())
+		return fmt.Errorf("create transaction %s error %s", transaction.IDTransaction, response.String())
 	}
 	return nil
 }
