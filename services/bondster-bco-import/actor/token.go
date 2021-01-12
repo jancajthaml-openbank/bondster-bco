@@ -16,7 +16,6 @@ package actor
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
