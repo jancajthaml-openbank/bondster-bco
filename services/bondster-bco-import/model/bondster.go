@@ -186,52 +186,53 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
 		}
 
-		for idTransaction, transfer := range set {
-
-			if transfer.IsStorno {
-				log.Warn().Msgf("Transfer %+v is STORNO", transfer)
-			}
-
-			if previousIDTransaction == "" {
-				previousIDTransaction = idTransaction
-			} else if previousIDTransaction != idTransaction {
-				transfers := make([]Transfer, len(buffer))
-				copy(transfers, buffer)
-				buffer = make([]Transfer, 0)
-				chnl <- Transaction{
-					Tenant:        tenant,
-					IDTransaction: previousIDTransaction,
-					Transfers:     transfers,
+		for idTransaction, transfers := range set {
+			for _, transfer := range transfers {
+				if transfer.IsStorno {
+					log.Warn().Msgf("Transfer %+v is STORNO", transfer)
 				}
-				previousIDTransaction = idTransaction
-			}
 
-			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
+				if previousIDTransaction == "" {
+					previousIDTransaction = idTransaction
+				} else if previousIDTransaction != idTransaction {
+					transfers := make([]Transfer, len(buffer))
+					copy(transfers, buffer)
+					buffer = make([]Transfer, 0)
+					chnl <- Transaction{
+						Tenant:        tenant,
+						IDTransaction: previousIDTransaction,
+						Transfers:     transfers,
+					}
+					previousIDTransaction = idTransaction
+				}
 
-			credit := AccountPair{
-				Tenant: tenant,
-			}
-			debit := AccountPair{
-				Tenant: tenant,
-			}
+				valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
 
-			if transfer.Direction == "CREDIT" {
-				credit.Name = envelope.Currency + "_TYPE_NOSTRO"
-				debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-			} else {
-				credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-				debit.Name = envelope.Currency + "_TYPE_NOSTRO"
-			}
+				credit := AccountPair{
+					Tenant: tenant,
+				}
+				debit := AccountPair{
+					Tenant: tenant,
+				}
 
-			buffer = append(buffer, Transfer{
-				IDTransfer:   transfer.IDTransfer,
-				Credit:       credit,
-				Debit:        debit,
-				ValueDate:    valueDate,
-				ValueDateRaw: transfer.ValueDate,
-				Amount:       strconv.FormatFloat(transfer.Amount.Value, 'f', -1, 64),
-				Currency:     transfer.Amount.Currency,
-			})
+				if transfer.Direction == "CREDIT" {
+					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
+					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
+				} else {
+					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
+					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
+				}
+
+				buffer = append(buffer, Transfer{
+					IDTransfer:   transfer.IDTransfer,
+					Credit:       credit,
+					Debit:        debit,
+					ValueDate:    valueDate,
+					ValueDateRaw: transfer.ValueDate,
+					Amount:       strconv.FormatFloat(transfer.Amount.Value, 'f', -1, 64),
+					Currency:     transfer.Amount.Currency,
+				})
+			}
 		}
 
 		if len(buffer) == 0 {
