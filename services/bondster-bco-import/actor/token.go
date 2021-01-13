@@ -178,7 +178,8 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 	var err error
 	var transactionIds []string
 	var statements *model.ImportEnvelope
-	var lastSynced := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	lastSynced := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)
 	if err != nil {
