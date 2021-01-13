@@ -210,7 +210,7 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 	}
 
 	if accountsStageError != nil {
-		log.Debug().Msgf("token %s importing account %+v failed with %+v", token.ID, account, accountsStageError)
+		log.Debug().Msgf("token %s importing accounts failed with %+v", token.ID, accountsStageError)
 		return lastSynced, accountsStageError
 	}
 
@@ -235,7 +235,7 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 	}
 
 	if transactionStageError != nil {
-		log.Debug().Msgf("token %s importing transfers %+v failed with %+v", token.ID, account, transactionStageError)
+		log.Debug().Msgf("token %s importing transfers failed with %+v", token.ID, transactionStageError)
 		return lastSynced, transactionStageError
 	}
 
@@ -263,7 +263,7 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 		)
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
-			log.Debug("token %s setting last synced for currency %s to %s", currency, lastSynced.Format(time.RFC3339))
+			log.Debug().Msgf("token %s setting last synced for currency %s to %s", token.ID, currency, lastSynced.Format(time.RFC3339))
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
 				err = fmt.Errorf("unable to update token")
