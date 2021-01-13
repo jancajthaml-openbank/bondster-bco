@@ -160,10 +160,6 @@ type bondsterAmount struct {
 	Currency string  `json:"currencyCode"`
 }
 
-func creditTransfer() {
-
-}
-
 // GetTransactions return generator of bondster transactions over given envelope
 func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transaction {
 	chnl := make(chan Transaction)

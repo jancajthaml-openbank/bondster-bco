@@ -178,14 +178,16 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 	var err error
 	var transactionIds []string
 	var statements *model.ImportEnvelope
-	var lastSynced time.Time = token.LastSyncedFrom[currency]
+	var lastSynced := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)
 	if err != nil {
+		log.Warn().Msgf("token %s failed to obtain statements for this period", token.ID)
 		return lastSynced, err
 	}
 
 	if len(transactionIds) == 0 {
+		log.Info().Msgf("token %s no statements in this period", token.ID)
 		return interval.EndTime, nil
 	}
 
@@ -193,43 +195,47 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 	if err != nil {
 		return lastSynced, err
 	}
-	if len(statements.Transactions) == 0 {
-		return lastSynced, nil
-	}
-
-	// FIXME getStatements end here
-
-	// FIXME this sort is not ideal
-	//sort.SliceStable(statements.Transactions, func(i, j int) bool {
-		//return statements.Transactions[i].IDTransaction == statements.Transactions[j].IDTransaction
-	//})
 
 	log.Debug().Msgf("token %s importing accounts", token.ID)
 
+	var accountsStageError error
+
 	for account := range statements.GetAccounts(tenant) {
-		log.Debug().Msgf("token %s importing account %+v", token.ID, account)
-		err = vaultClient.CreateAccount(account)
-		if err != nil {
-			return lastSynced, err
+		if accountsStageError != nil {
+			continue
 		}
+		log.Debug().Msgf("token %s importing account %+v", token.ID, account)
+		accountsStageError = vaultClient.CreateAccount(account)
+	}
+
+	if accountsStageError != nil {
+		log.Debug().Msgf("token %s importing account %+v failed with %+v", token.ID, account, accountsStageError)
+		return lastSynced, accountsStageError
 	}
 
 	log.Debug().Msgf("token %s importing transactions", token.ID)
 
+	var transactionStageError error
+
 	for transaction := range statements.GetTransactions(tenant) {
-		log.Debug().Msgf("token %s importing transaction %+v", token.ID, transaction)
-		err = ledgerClient.CreateTransaction(transaction)
-		if err != nil {
-			return lastSynced, err
+		if transactionStageError != nil {
+			continue
 		}
-
-		metrics.TransactionImported(len(transaction.Transfers))
-
-		for _, transfer := range transaction.Transfers {
-			if transfer.ValueDateRaw.After(lastSynced) {
-				lastSynced = transfer.ValueDateRaw
+		log.Debug().Msgf("token %s importing transaction %+v", token.ID, transaction)
+		transactionStageError = ledgerClient.CreateTransaction(transaction)
+		if transactionStageError == nil {
+			metrics.TransactionImported(len(transaction.Transfers))
+			for _, transfer := range transaction.Transfers {
+				if transfer.ValueDateRaw.After(lastSynced) {
+					lastSynced = transfer.ValueDateRaw
+				}
 			}
 		}
+	}
+
+	if transactionStageError != nil {
+		log.Debug().Msgf("token %s importing transfers %+v failed with %+v", token.ID, account, transactionStageError)
+		return lastSynced, transactionStageError
 	}
 
 	return lastSynced, nil
@@ -243,9 +249,20 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 	}
 
 	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
-		lastSynced, err := importStatementsForInterval(tenant, bondsterClient, vaultClient, ledgerClient, storage, metrics, token, currency, interval)
+		lastSynced, err := importStatementsForInterval(
+			tenant,
+			bondsterClient,
+			vaultClient,
+			ledgerClient,
+			storage,
+			metrics,
+			token,
+			currency,
+			interval,
+		)
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
+			log.Debug("token %s setting last synced for currency %s to %s", currency, lastSynced.Format(time.RFC3339))
 			token.LastSyncedFrom[currency] = lastSynced
 			if !persistence.UpdateToken(storage, token) {
 				err = fmt.Errorf("unable to update token")
@@ -277,7 +294,16 @@ func importStatements(s *System, token model.Token, complete func()) {
 		clone := make([]string, len(currencies))
 		copy(clone, currencies)
 		for _, currency := range clone {
-			finished, err := importNewStatements(s.Tenant, &bondsterClient, &vaultClient, &ledgerClient, s.Storage, s.Metrics, &token, currency)
+			finished, err := importNewStatements(
+				s.Tenant,
+				&bondsterClient,
+				&vaultClient,
+				&ledgerClient,
+				s.Storage,
+				s.Metrics,
+				&token,
+				currency,
+			)
 			if err != nil {
 				log.Error().Msgf("token %s Import statements failed with %+v", token.ID, err)
 			}
