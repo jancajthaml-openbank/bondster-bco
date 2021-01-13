@@ -82,6 +82,8 @@ func CreateToken(system *actor.System) func(c echo.Context) error {
 			return nil
 		}
 
+		log.Debug().Msgf("Token %s Creating Requested", req.ID)
+
 		switch actor.CreateToken(system, tenant, *req).(type) {
 
 		case *actor.TokenCreated:
