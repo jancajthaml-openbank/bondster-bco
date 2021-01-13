@@ -43,15 +43,17 @@ func DeleteToken(system *actor.System) func(c echo.Context) error {
 		switch actor.DeleteToken(system, tenant, id).(type) {
 
 		case *actor.TokenDeleted:
+			log.Debug().Msgf("Token %s Deleted", id)
 			c.Response().WriteHeader(http.StatusOK)
 			return nil
 
 		case *actor.ReplyTimeout:
+			log.Debug().Msgf("Token %s Deletion Timeout", id)
 			c.Response().WriteHeader(http.StatusGatewayTimeout)
 			return nil
 
 		default:
-			return fmt.Errorf("internal error")
+			return fmt.Errorf("interval server error")
 
 		}
 	}
@@ -83,6 +85,7 @@ func CreateToken(system *actor.System) func(c echo.Context) error {
 		switch actor.CreateToken(system, tenant, *req).(type) {
 
 		case *actor.TokenCreated:
+			log.Debug().Msgf("Token %s Created", req.ID)
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			c.Response().WriteHeader(http.StatusOK)
 			c.Response().Write([]byte(req.ID))
@@ -90,11 +93,12 @@ func CreateToken(system *actor.System) func(c echo.Context) error {
 			return nil
 
 		case *actor.ReplyTimeout:
+			log.Debug().Msgf("Token %s Creation Timeout", req.ID)
 			c.Response().WriteHeader(http.StatusGatewayTimeout)
 			return nil
 
 		default:
-			return fmt.Errorf("internal error")
+			return fmt.Errorf("interval server error")
 
 		}
 	}
