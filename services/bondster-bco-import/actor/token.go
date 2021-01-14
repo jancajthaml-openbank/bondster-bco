@@ -325,7 +325,7 @@ func importStatementsForCurrency(
 			exists, err := storage.Exists("token/" + token.ID + "/transaction/" + id)
 
 			if err != nil {
-				log.Warn().Msgf("Unable to obtain check if transaction %s exists for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+				log.Warn().Msgf("Unable to check if transaction %s exists for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 				return
 			}
 
@@ -333,7 +333,13 @@ func importStatementsForCurrency(
 				continue
 			}
 
-			log.Info().Msgf("Token New %s transaction %s (import)", token.ID, id)
+			err = storage.TouchFile("token/" + token.ID + "/transaction/" + id)
+			if err != nil {
+				log.Warn().Msgf("Unable to mark transaction %s as known for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+				return
+			}
+
+			//log.Info().Msgf("Token New %s transaction %s (import)", token.ID, id)
 		}
 
 		log.Debug().Msgf("End Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
