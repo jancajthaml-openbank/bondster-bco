@@ -333,7 +333,7 @@ func importStatementsForCurrency(
 				continue
 			}
 
-			err = storage.TouchFile("token/" + token.ID + "/statements/" + id)
+			err = storage.WriteFileExclusive("token/" + token.ID + "/statements/" + id + "/date", []byte(interval.EndTime.Format("2006-01-02T15:04:05Z0700")))
 			if err != nil {
 				log.Warn().Msgf("Unable to mark transaction %s as known for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 				return
