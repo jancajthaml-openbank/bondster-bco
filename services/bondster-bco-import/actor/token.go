@@ -287,7 +287,7 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 		}
 
 		log.Debug().Msgf("Transactions %+v", transactions)
-		lastSynced = interval.EndTime
+		lastSynced := interval.EndTime
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			log.Debug().Msgf("token %s setting last synced for currency %s to %s", token.ID, currency, lastSynced.Format(time.RFC3339))
