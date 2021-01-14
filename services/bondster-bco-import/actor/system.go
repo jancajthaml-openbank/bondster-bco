@@ -25,7 +25,8 @@ import (
 type System struct {
 	system.System
 	Tenant          string
-	Storage         localfs.Storage
+	EncryptedStorage         localfs.Storage
+	PlaintextStorage         localfs.Storage
 	Metrics         metrics.Metrics
 	BondsterGateway string
 	LedgerGateway   string
@@ -43,9 +44,14 @@ func NewActorSystem(
 	storageKey []byte,
 	metrics metrics.Metrics,
 ) *System {
-	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
+	encryptedStorage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
 	if err != nil {
-		log.Error().Msgf("Failed to ensure storage %+v", err)
+		log.Error().Msgf("Failed to ensure encrypted storage %+v", err)
+		return nil
+	}
+	plaintextStorage, err := localfs.NewPlaintextStorage(rootStorage)
+	if err != nil {
+		log.Error().Msgf("Failed to ensure plaintext storage %+v", err)
 		return nil
 	}
 	sys, err := system.New("BondsterImport/"+tenant, lakeEndpoint)
@@ -55,7 +61,8 @@ func NewActorSystem(
 	}
 	result := new(System)
 	result.System = sys
-	result.Storage = storage
+	result.EncryptedStorage = encryptedStorage
+	result.PlaintextStorage = plaintextStorage
 	result.Metrics = metrics
 	result.Tenant = tenant
 	result.BondsterGateway = bondsterEndpoint

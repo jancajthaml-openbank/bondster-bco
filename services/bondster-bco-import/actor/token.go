@@ -34,7 +34,7 @@ func NilToken(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.Token)
 
-		tokenHydration := persistence.LoadToken(s.Storage, state.ID)
+		tokenHydration := persistence.LoadToken(s.EncryptedStorage, state.ID)
 
 		if tokenHydration == nil {
 			context.Self.Become(state, NonExistToken(s))
@@ -59,7 +59,7 @@ func NonExistToken(s *System) func(interface{}, system.Context) {
 			break
 
 		case CreateToken:
-			tokenResult := persistence.CreateToken(s.Storage, state.ID, msg.Username, msg.Password)
+			tokenResult := persistence.CreateToken(s.EncryptedStorage, state.ID, msg.Username, msg.Password)
 
 			if tokenResult == nil {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
@@ -114,7 +114,7 @@ func ExistToken(s *System) func(interface{}, system.Context) {
 			})
 
 		case DeleteToken:
-			if !persistence.DeleteToken(s.Storage, state.ID) {
+			if !persistence.DeleteToken(s.EncryptedStorage, state.ID) {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
 				log.Debug().Msgf("token %s (Exist DeleteToken) Error", state.ID)
 				return
@@ -153,7 +153,7 @@ func SynchronizingToken(s *System) func(interface{}, system.Context) {
 			log.Debug().Msgf("token %s (Synchronizing SynchronizeToken)", state.ID)
 
 		case DeleteToken:
-			if !persistence.DeleteToken(s.Storage, state.ID) {
+			if !persistence.DeleteToken(s.EncryptedStorage, state.ID) {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
 				log.Debug().Msgf("token %s (Synchronizing DeleteToken) Error", state.ID)
 				return
@@ -292,7 +292,8 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 func importStatementsForCurrency(
 	wg *sync.WaitGroup,
 	currency string,
-	storage localfs.Storage,
+	encryptedStorage localfs.Storage,
+	plaintextStorage localfs.Storage,
 	token *model.Token,
 	bondsterClient *http.BondsterClient,
 ) {
@@ -306,7 +307,7 @@ func importStatementsForCurrency(
 	if !ok {
 		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
 		token.LastSyncedFrom[currency] = startTime
-		if !persistence.UpdateToken(storage, token) {
+		if !persistence.UpdateToken(encryptedStorage, token) {
 			log.Warn().Msgf("unable to update token %s", token.ID)
 			return
 		}
@@ -322,7 +323,7 @@ func importStatementsForCurrency(
 		}
 
 		for _, id := range ids {
-			exists, err := storage.Exists("token/" + token.ID + "/statements/" + id)
+			exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + id)
 
 			if err != nil {
 				log.Warn().Msgf("Unable to check if transaction %s exists for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
@@ -333,7 +334,7 @@ func importStatementsForCurrency(
 				continue
 			}
 
-			err = storage.WriteFileExclusive("token/" + token.ID + "/statements/" + id + "/date", []byte(interval.EndTime.Format("2006-01-02T15:04:05Z0700")))
+			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + id + "/date", []byte(interval.EndTime.Format("2006-01-02T15:04:05Z0700")))
 			if err != nil {
 				log.Warn().Msgf("Unable to mark transaction %s as known for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 				return
@@ -367,7 +368,8 @@ func importStatements(s *System, token model.Token, complete func()) {
 		go importStatementsForCurrency(
 			&wg,
 			currency,
-			s.Storage,
+			s.EncryptedStorage,
+			s.PlaintextStorage,
 			&token,
 			&bondsterClient,
 		)
