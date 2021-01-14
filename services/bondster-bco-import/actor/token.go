@@ -15,11 +15,11 @@
 package actor
 
 import (
-	"fmt"
+	//"fmt"
 	"time"
 	"sync"
 
-	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
+	//"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/support/http"
@@ -173,27 +173,7 @@ func SynchronizingToken(s *System) func(interface{}, system.Context) {
 	}
 }
 
-func getTransactionIdsInInterval(
-	tenant string,
-	bondsterClient *http.BondsterClient,
-	storage localfs.Storage,
-	token *model.Token,
-	currency string,
-	interval timeshift.TimeRange,
-) ([]string, error) {
-	log.Debug().Msgf("Retrieving bondster transaction IDs for currency %s and interval %s - %s", currency, interval.StartTime.Format("2006-01-02T15:04:05Z0700"), interval.EndTime.Format("2006-01-02T15:04:05Z0700"))
 
-	//var transactionIds []string
-
-	/*
-	ids, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
-	if err != nil {
-		log.Warn().Msgf("token %s failed to obtain statements for this period", token.ID)
-		return nil, err
-	}*/
-
-	return nil, nil
-}
 
 /*
 func importStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string, interval timeshift.TimeRange) (time.Time, error) {
@@ -266,6 +246,7 @@ func importStatements(tenant string, bondsterClient *http.BondsterClient, vaultC
 	return lastSynced, nil
 }*/
 
+/*
 func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string) (bool, error) {
 	startTime, ok := token.LastSyncedFrom[currency]
 	if !ok {
@@ -306,12 +287,14 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 	}
 	return true, nil
 }
+*/
 
 func importStatementsForCurrency(
 	wg *sync.WaitGroup,
 	currency string,
 	storage localfs.Storage,
 	token *model.Token,
+	bondsterClient *http.BondsterClient,
 ) {
 	defer func() {
 		recover()
@@ -330,6 +313,16 @@ func importStatementsForCurrency(
 
 	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
 		log.Debug().Msgf("Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+
+		ids, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
+		if err != nil {
+			log.Warn().Msgf("Unable to obtain transaction ids for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+			return
+		}
+
+		for _, id := range ids {
+			log.Debug().Msgf("Token %s transaction %s", token.ID, id)
+		}
 	}
 }
 
@@ -351,7 +344,13 @@ func importStatements(s *System, token model.Token, complete func()) {
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
 	for _, currency := range currencies {
-		go importStatementsForCurrency(&wg, currency, s.Storage, &token)
+		go importStatementsForCurrency(
+			&wg,
+			currency,
+			s.Storage,
+			&token,
+			&bondsterClient,
+		)
 	}
 	wg.Wait()
 
