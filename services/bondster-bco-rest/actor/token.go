@@ -49,7 +49,6 @@ func CreateToken(sys *System, tenant string, token model.Token) interface{} {
 
 	select {
 	case result := <-ch:
-		log.Debug().Msgf("Token create actor replied with %+v", result)
 		return result
 	case <-time.After(5 * time.Second):
 		return new(ReplyTimeout)
@@ -81,7 +80,6 @@ func DeleteToken(sys *System, tenant string, tokenID string) interface{} {
 
 	select {
 	case result := <-ch:
-		log.Debug().Msgf("Token delete actor replied with %+v", result)
 		return result
 	case <-time.After(5 * time.Second):
 		return new(ReplyTimeout)

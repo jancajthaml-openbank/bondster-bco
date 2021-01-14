@@ -172,7 +172,29 @@ func SynchronizingToken(s *System) func(interface{}, system.Context) {
 	}
 }
 
-func importStatementsForInterval(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string, interval timeshift.TimeRange) (time.Time, error) {
+func getTransactionIdsInInterval(
+	tenant string,
+	bondsterClient *http.BondsterClient,
+	storage localfs.Storage,
+	token *model.Token,
+	currency string,
+	interval timeshift.TimeRange,
+) ([]string, error) {
+	log.Debug().Msgf("Importing bondster transactions for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+
+	//var transactionIds []string
+
+	ids, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
+	if err != nil {
+		log.Warn().Msgf("token %s failed to obtain statements for this period", token.ID)
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+/*
+func importStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string, interval timeshift.TimeRange) (time.Time, error) {
 	log.Debug().Msgf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
 	var err error
@@ -240,7 +262,7 @@ func importStatementsForInterval(tenant string, bondsterClient *http.BondsterCli
 	}
 
 	return lastSynced, nil
-}
+}*/
 
 func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string) (bool, error) {
 	startTime, ok := token.LastSyncedFrom[currency]
@@ -250,17 +272,22 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 	}
 
 	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
-		lastSynced, err := importStatementsForInterval(
+		transactions, err := getTransactionIdsInInterval(
 			tenant,
 			bondsterClient,
-			vaultClient,
-			ledgerClient,
 			storage,
-			metrics,
 			token,
 			currency,
 			interval,
 		)
+
+		if err != nil {
+			log.Warn().Msgf("Unable to obtain transactions with error %+v", err)
+			continue
+		}
+
+		log.Debug().Msgf("Transactions %+v", transactions)
+		lastSynced = interval.EndTime
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			log.Debug().Msgf("token %s setting last synced for currency %s to %s", token.ID, currency, lastSynced.Format(time.RFC3339))
