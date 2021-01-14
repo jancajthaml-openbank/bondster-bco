@@ -313,7 +313,11 @@ func importStatementsForCurrency(
 		}
 	}
 
-	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
+	endTime := time.Now()
+
+	log.Info().Msgf("Token %s discovering new statements for currency %s between %d/%d and %d/%d", token.ID, currency, startTime.Month(), startTime.Year(), endTime.Month(), endTime.Year())
+
+	for _, interval := range timeshift.PartitionInterval(startTime, endTime) {
 		log.Debug().Msgf("Start Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
 		ids, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
@@ -323,28 +327,26 @@ func importStatementsForCurrency(
 		}
 
 		for _, id := range ids {
-			exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + id)
-
+			exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id)
 			if err != nil {
 				log.Warn().Msgf("Unable to check if transaction %s exists for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 				return
 			}
-
 			if exists {
 				continue
 			}
-
-			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + id + "/date", []byte(interval.EndTime.Format("2006-01-02T15:04:05Z0700")))
+			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + id + "/date", []byte(interval.EndTime.Format("2006-01-02T15:04:05Z0700")))
 			if err != nil {
 				log.Warn().Msgf("Unable to mark transaction %s as known for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 				return
 			}
-
-			//log.Info().Msgf("Token New %s transaction %s (import)", token.ID, id)
 		}
 
 		log.Debug().Msgf("End Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 	}
+
+	log.Info().Msgf("Token %s synchronizing statements from gateway for currency %s", token.ID, currency)
+
 }
 
 func importStatements(s *System, token model.Token, complete func()) {
