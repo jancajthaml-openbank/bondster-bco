@@ -17,6 +17,7 @@ package actor
 import (
 	"fmt"
 	"time"
+	"sync"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
@@ -180,17 +181,18 @@ func getTransactionIdsInInterval(
 	currency string,
 	interval timeshift.TimeRange,
 ) ([]string, error) {
-	log.Debug().Msgf("Importing bondster transactions for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+	log.Debug().Msgf("Retrieving bondster transaction IDs for currency %s and interval %s - %s", currency, interval.StartTime.Format("2006-01-02T15:04:05Z0700"), interval.EndTime.Format("2006-01-02T15:04:05Z0700"))
 
 	//var transactionIds []string
 
+	/*
 	ids, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
 	if err != nil {
 		log.Warn().Msgf("token %s failed to obtain statements for this period", token.ID)
 		return nil, err
-	}
+	}*/
 
-	return ids, nil
+	return nil, nil
 }
 
 /*
@@ -286,8 +288,10 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 			continue
 		}
 
-		log.Debug().Msgf("Transactions %+v", transactions)
 		lastSynced := interval.EndTime
+
+		log.Debug().Msgf("Transactions %+v", transactions)
+		log.Debug().Msgf("Setting currency %s lastSynced to %+v", transactions, lastSynced)
 
 		if lastSynced.After(token.LastSyncedFrom[currency]) {
 			log.Debug().Msgf("token %s setting last synced for currency %s to %s", token.ID, currency, lastSynced.Format(time.RFC3339))
@@ -303,14 +307,40 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 	return true, nil
 }
 
+func importStatementsForCurrency(
+	wg *sync.WaitGroup,
+	currency string,
+	storage localfs.Storage,
+	token *model.Token,
+) {
+	defer func() {
+		recover()
+		wg.Done()
+	}()
+
+	startTime, ok := token.LastSyncedFrom[currency]
+	if !ok {
+		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
+		token.LastSyncedFrom[currency] = startTime
+		if !persistence.UpdateToken(storage, token) {
+			log.Warn().Msgf("unable to update token %s", token.ID)
+			return
+		}
+	}
+
+	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
+		log.Debug().Msgf("Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+	}
+}
+
 func importStatements(s *System, token model.Token, complete func()) {
 	defer complete()
 
 	log.Debug().Msgf("token %s Importing statements Start", token.ID)
 
 	bondsterClient := http.NewBondsterClient(s.BondsterGateway, token)
-	vaultClient := http.NewVaultClient(s.VaultGateway)
-	ledgerClient := http.NewLedgerClient(s.LedgerGateway)
+	//vaultClient := http.NewVaultClient(s.VaultGateway)
+	//ledgerClient := http.NewLedgerClient(s.LedgerGateway)
 
 	currencies, err := bondsterClient.GetCurrencies()
 	if err != nil {
@@ -318,33 +348,12 @@ func importStatements(s *System, token model.Token, complete func()) {
 		return
 	}
 
-	for len(currencies) > 0 {
-		clone := make([]string, len(currencies))
-		copy(clone, currencies)
-		for _, currency := range clone {
-			finished, err := importNewStatements(
-				s.Tenant,
-				&bondsterClient,
-				&vaultClient,
-				&ledgerClient,
-				s.Storage,
-				s.Metrics,
-				&token,
-				currency,
-			)
-			if err != nil {
-				log.Error().Msgf("token %s Import statements failed with %+v", token.ID, err)
-			}
-			if finished {
-				for i, n := range currencies {
-					if currency == n {
-						currencies = append(currencies[:i], currencies[i+1:]...)
-						break
-					}
-				}
-			}
-		}
+	var wg sync.WaitGroup
+	wg.Add(len(currencies))
+	for _, currency := range currencies {
+		go importStatementsForCurrency(&wg, currency, s.Storage, &token)
 	}
+	wg.Wait()
 
 	log.Debug().Msgf("token %s Importing statements End", token.ID)
 }

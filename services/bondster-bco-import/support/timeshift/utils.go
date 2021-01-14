@@ -47,6 +47,9 @@ func SliceByMonths(startDate time.Time, endDate time.Time) []TimeRange {
 // PartitionInterval partitions time range for optimal bondster search
 func PartitionInterval(startDate time.Time, endDate time.Time) []TimeRange {
 	timeline := SliceByMonths(startDate, endDate)
+	if len(timeline) == 0 {
+		return timeline
+	}
 	timeline[len(timeline)-1].EndTime = endDate
 	timeline[0].StartTime = startDate
 	if len(timeline) == 0 && timeline[0].StartTime == timeline[0].EndTime {
