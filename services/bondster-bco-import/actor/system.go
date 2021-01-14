@@ -33,8 +33,17 @@ type System struct {
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(tenant string, lakeEndpoint string, bondsterEndpoint string, vaultEndpoint string, ledgerEndpoint string, rootStorage string, storageKey []byte, metrics metrics.Metrics) *System {
-	storage, err := localfs.NewPlaintextStorage(rootStorage)
+func NewActorSystem(
+	tenant string,
+	lakeEndpoint string,
+	bondsterEndpoint string,
+	vaultEndpoint string,
+	ledgerEndpoint string,
+	rootStorage string,
+	storageKey []byte,
+	metrics metrics.Metrics,
+) *System {
+	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure storage %+v", err)
 		return nil

@@ -322,7 +322,7 @@ func importStatementsForCurrency(
 		}
 
 		for _, id := range ids {
-			exists, err := storage.Exists("token/" + token.ID + "/transaction/" + id)
+			exists, err := storage.Exists("token/" + token.ID + "/statements/" + id)
 
 			if err != nil {
 				log.Warn().Msgf("Unable to check if transaction %s exists for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
@@ -333,7 +333,7 @@ func importStatementsForCurrency(
 				continue
 			}
 
-			err = storage.TouchFile("token/" + token.ID + "/transaction/" + id)
+			err = storage.TouchFile("token/" + token.ID + "/statements/" + id)
 			if err != nil {
 				log.Warn().Msgf("Unable to mark transaction %s as known for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 				return
