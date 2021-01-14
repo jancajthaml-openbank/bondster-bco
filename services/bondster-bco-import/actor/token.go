@@ -315,15 +315,26 @@ func importStatementsForCurrency(
 	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
 		log.Debug().Msgf("Start Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 
-		_, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
+		ids, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
 		if err != nil {
 			log.Warn().Msgf("Unable to obtain transaction ids for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 			return
 		}
 
-		//for _, id := range ids {
-			//log.Debug().Msgf("Token %s transaction %s", token.ID, id)
-		//}
+		for _, id := range ids {
+			exists, err := storage.Exists("token/" + token.ID + "/transaction/" + id)
+
+			if err != nil {
+				log.Warn().Msgf("Unable to obtain check if transaction %s exists for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
+				return
+			}
+
+			if exists {
+				continue
+			}
+
+			log.Info().Msgf("Token New %s transaction %s (import)", token.ID, id)
+		}
 
 		log.Debug().Msgf("End Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 	}

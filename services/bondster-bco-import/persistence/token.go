@@ -64,7 +64,7 @@ func CreateToken(storage localfs.Storage, id string, username string, password s
 
 // DeleteToken deletes existing token entity
 func DeleteToken(storage localfs.Storage, id string) bool {
-	path := "token/" + id
+	path := "token/" + id + "/value"
 	return storage.DeleteFile(path) == nil
 }
 
@@ -73,7 +73,7 @@ func PersistToken(storage localfs.Storage, entity *model.Token) *model.Token {
 	if entity == nil {
 		return nil
 	}
-	path := "token/" + entity.ID
+	path := "token/" + entity.ID + "/value"
 	data, err := entity.Serialize()
 	if err != nil {
 		return nil
@@ -89,7 +89,7 @@ func HydrateToken(storage localfs.Storage, entity *model.Token) *model.Token {
 	if entity == nil {
 		return nil
 	}
-	path := "token/" + entity.ID
+	path := "token/" + entity.ID + "/value"
 	data, err := storage.ReadFileFully(path)
 	if err != nil {
 		return nil
@@ -106,7 +106,7 @@ func UpdateToken(storage localfs.Storage, entity *model.Token) bool {
 	if entity == nil {
 		return false
 	}
-	path := "token/" + entity.ID
+	path := "token/" + entity.ID + "/value"
 	data, err := entity.Serialize()
 	if err != nil {
 		return false

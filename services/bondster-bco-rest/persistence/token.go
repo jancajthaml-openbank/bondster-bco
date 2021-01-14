@@ -48,7 +48,7 @@ func HydrateToken(storage localfs.Storage, tenant string, entity *model.Token) *
 	if entity == nil {
 		return nil
 	}
-	path := "t_" + tenant + "/import/bondster/token/" + entity.ID
+	path := "t_" + tenant + "/import/bondster/token/" + entity.ID + "/value"
 	data, err := storage.ReadFileFully(path)
 	if err != nil {
 		return nil
