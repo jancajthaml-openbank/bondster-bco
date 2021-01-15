@@ -248,8 +248,6 @@ func downloadStatements(
 		if transaction.ValueDate.After(startTime) {
 			startTime = transaction.ValueDate
 		}
-	}
-	for _, transaction := range statements {
 		data, err := json.Marshal(transaction)
 		if err != nil {
 			log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", tokenID, currency, transaction.IDTransfer)
