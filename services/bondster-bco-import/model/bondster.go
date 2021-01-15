@@ -183,16 +183,16 @@ func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransact
 			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
 		}
 
-		for idTransaction, transfers := range set {
+		for transaction, transfers := range set {
 			for _, transfer := range transfers {
 				if previousIDTransaction == "" {
-					previousIDTransaction = idTransaction
-				} else if previousIDTransaction != idTransaction {
-					transfers := make([]bondsterTransaction, len(buffer))
-					copy(transfers, buffer)
+					previousIDTransaction = transaction
+				} else if previousIDTransaction != transaction {
+					clone := make([]bondsterTransaction, len(buffer))
+					copy(clone, buffer)
 					buffer = make([]bondsterTransaction, 0)
-					chnl <- transfers
-					previousIDTransaction = idTransaction
+					chnl <- clone
+					previousIDTransaction = transaction
 				}
 				buffer = append(buffer, transfer)
 			}
@@ -202,10 +202,10 @@ func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransact
 			return
 		}
 
-		transfers := make([]bondsterTransaction, len(buffer))
-		copy(transfers, buffer)
+		clone := make([]bondsterTransaction, len(buffer))
+		copy(clone, buffer)
 		buffer = make([]bondsterTransaction, 0)
-		chnl <- transfers
+		chnl <- clone
 	}()
 
 	return chnl

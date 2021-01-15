@@ -388,7 +388,7 @@ func importStatementsForCurrency(
 			}
 			id := statements[0].IDTransaction
 
-			log.Debug().Msgf("Number of statements in transaction %s %d", id, len(statements))
+			log.Debug().Msgf("%d Statements in transaction %s", len(statements), id)
 
 			data, err := json.Marshal(statements)
 			if err != nil {
