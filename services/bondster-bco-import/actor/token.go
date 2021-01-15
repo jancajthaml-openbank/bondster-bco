@@ -174,127 +174,9 @@ func SynchronizingToken(s *System) func(interface{}, system.Context) {
 	}
 }
 
-
-
-/*
-func importStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string, interval timeshift.TimeRange) (time.Time, error) {
-	log.Debug().Msgf("Importing bondster statements for currency %s and interval %d/%d - %d/%d", currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
-
-	var err error
-	var transactionIds []string
-	var statements *model.ImportEnvelope
-
-	lastSynced := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
-
-	transactionIds, err = bondsterClient.GetTransferIdsInInterval(currency, interval)
-	if err != nil {
-		log.Warn().Msgf("token %s failed to obtain statements for this period", token.ID)
-		return lastSynced, err
-	}
-
-	if len(transactionIds) == 0 {
-		log.Info().Msgf("token %s no statements in this period", token.ID)
-		return interval.EndTime, nil
-	}
-
-	statements, err = bondsterClient.GetTransactionDetails(currency, transactionIds)
-	if err != nil {
-		return lastSynced, err
-	}
-
-	log.Debug().Msgf("token %s importing accounts", token.ID)
-
-	var accountsStageError error
-
-	for account := range statements.GetAccounts(tenant) {
-		if accountsStageError != nil {
-			continue
-		}
-		log.Debug().Msgf("token %s importing account %+v", token.ID, account)
-		accountsStageError = vaultClient.CreateAccount(account)
-	}
-
-	if accountsStageError != nil {
-		log.Debug().Msgf("token %s importing accounts failed with %+v", token.ID, accountsStageError)
-		return lastSynced, accountsStageError
-	}
-
-	log.Debug().Msgf("token %s importing transactions", token.ID)
-
-	var transactionStageError error
-
-	for transaction := range statements.GetTransactions(tenant) {
-		if transactionStageError != nil {
-			continue
-		}
-		log.Debug().Msgf("token %s importing transaction %+v", token.ID, transaction)
-		transactionStageError = ledgerClient.CreateTransaction(transaction)
-		if transactionStageError == nil {
-			metrics.TransactionImported(len(transaction.Transfers))
-			for _, transfer := range transaction.Transfers {
-				if transfer.ValueDateRaw.After(lastSynced) {
-					lastSynced = transfer.ValueDateRaw
-				}
-			}
-		}
-	}
-
-	if transactionStageError != nil {
-		log.Debug().Msgf("token %s importing transfers failed with %+v", token.ID, transactionStageError)
-		return lastSynced, transactionStageError
-	}
-
-	return lastSynced, nil
-}*/
-
-/*
-func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vaultClient *http.VaultClient, ledgerClient *http.LedgerClient, storage localfs.Storage, metrics metrics.Metrics, token *model.Token, currency string) (bool, error) {
-	startTime, ok := token.LastSyncedFrom[currency]
-	if !ok {
-		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
-		token.LastSyncedFrom[currency] = startTime
-	}
-
-	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
-		transactions, err := GetTransferIdsInInterval(
-			tenant,
-			bondsterClient,
-			storage,
-			token,
-			currency,
-			interval,
-		)
-
-		if err != nil {
-			log.Warn().Msgf("Unable to obtain transactions with error %+v", err)
-			continue
-		}
-
-		lastSynced := interval.EndTime
-
-		log.Debug().Msgf("Transactions %+v", transactions)
-		log.Debug().Msgf("Setting currency %s lastSynced to %+v", transactions, lastSynced)
-
-		if lastSynced.After(token.LastSyncedFrom[currency]) {
-			log.Debug().Msgf("token %s setting last synced for currency %s to %s", token.ID, currency, lastSynced.Format(time.RFC3339))
-			token.LastSyncedFrom[currency] = lastSynced
-			if !persistence.UpdateToken(storage, token) {
-				err = fmt.Errorf("unable to update token")
-			}
-			return false, err
-		} else if err != nil {
-			return false, err
-		}
-	}
-	return true, nil
-}
-*/
-
 func importAccountsFromStatemets(
 	wg *sync.WaitGroup,
-	//mutex *sync.RWMutex,
 	currency string,
-	//encryptedStorage localfs.Storage,
 	plaintextStorage localfs.Storage,
 	token *model.Token,
 	vaultClient *http.VaultClient,
@@ -312,6 +194,9 @@ func importAccountsFromStatemets(
 		return
 	}
 
+	accounts := make(map[string]bool)
+	accounts[currency + "_TYPE_NOSTRO"] = true
+
 	for _, id := range ids {
 		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
 		if err != nil {
@@ -322,9 +207,23 @@ func importAccountsFromStatemets(
 			continue
 		}
 
-		// FIXME load statement
+		data, err := plaintextStorage.ReadFileFully("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
+		if err != nil {
+			log.Warn().Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
+			continue
+		}
 
-		log.Debug().Msgf("Token %s creating account from %s/%s", token.ID, currency, id)
+		statement := new(model.BondsterStatement)
+		if json.Unmarshal(data, statement) != nil {
+			log.Warn().Msgf("Unable to unmarshal statement %s/%s/%s", token.ID, currency, id)
+			continue
+		}
+
+		accounts[currency + "_TYPE_" + statement.Type] = true
+	}
+
+	for account := range accounts {
+		log.Debug().Msgf("Token %s creating account %s", token.ID, account)
 	}
 
 }

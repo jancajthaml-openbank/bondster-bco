@@ -128,11 +128,11 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
 
 // ImportEnvelope represents bondster marketplace import statement entity
 type ImportEnvelope struct {
-	Transactions []bondsterTransaction
+	Transactions []BondsterStatement
 	Currency     string
 }
 
-type bondsterTransaction struct {
+type BondsterStatement struct {
 	IDTransaction string                   `json:"idTransaction"`
 	IDTransfer    string                   `json:"idTransfer"`
 	Type          string                   `json:"transactionType"`
@@ -160,10 +160,10 @@ type bondsterAmount struct {
 	Currency string  `json:"currencyCode"`
 }
 
-// GetBondsterTransactions return generator of bondster transactions over given envelope
+// GetBondsterStatements return generator of bondster transactions over given envelope
 /*
-func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransaction {
-	chnl := make(chan []bondsterTransaction)
+func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []BondsterStatement {
+	chnl := make(chan []BondsterStatement)
 	if envelope == nil {
 		close(chnl)
 		return chnl
@@ -172,10 +172,10 @@ func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransact
 	go func() {
 		defer close(chnl)
 
-		set := make(map[string][]bondsterTransaction)
+		set := make(map[string][]BondsterStatement)
 		for _, transfer := range envelope.Transactions {
 			if _, ok := set[transfer.IDTransaction]; !ok {
-				set[transfer.IDTransaction] = make([]bondsterTransaction, 0)
+				set[transfer.IDTransaction] = make([]BondsterStatement, 0)
 			}
 			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
 		}
@@ -205,10 +205,10 @@ func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transactio
 	go func() {
 		defer close(chnl)
 
-		set := make(map[string][]bondsterTransaction)
+		set := make(map[string][]BondsterStatement)
 		for _, transfer := range envelope.Transactions {
 			if _, ok := set[transfer.IDTransaction]; !ok {
-				set[transfer.IDTransaction] = make([]bondsterTransaction, 0)
+				set[transfer.IDTransaction] = make([]BondsterStatement, 0)
 			}
 			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
 		}
