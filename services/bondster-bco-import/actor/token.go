@@ -18,6 +18,7 @@ import (
 	//"fmt"
 	"time"
 	"encoding/json"
+	"strconv"
 	"sync"
 
 	//"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
@@ -224,7 +225,7 @@ func importAccountsFromStatemets(
 	}
 
 	for account := range accounts {
-		log.Debug().Msgf("Token %s creating account %s", token.ID, account)
+		log.Debug().Msgf("Creating account %s", account)
 
 		request := model.Account{
 			Tenant: tenant,
@@ -245,6 +246,96 @@ func importAccountsFromStatemets(
 		if err != nil {
 			log.Warn().Msgf("Unable to mark account discovery for %s/%s/%s", token.ID, currency, id)
 		}
+	}
+
+}
+
+func importTransactionsFromStatemets(
+	wg *sync.WaitGroup,
+	currency string,
+	plaintextStorage localfs.Storage,
+	token *model.Token,
+	tenant string,
+	ledgerClient *http.LedgerClient,
+) {
+	defer func() {
+		recover()
+		wg.Done()
+	}()
+
+	log.Info().Msgf("Token %s creating transactions from statements for currency %s", token.ID, currency)
+
+	ids, err := plaintextStorage.ListDirectory("token/" + token.ID + "/statements/" + currency, true)
+	if err != nil {
+		log.Warn().Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
+		return
+	}
+
+	for _, id := range ids {
+		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/transactions")
+		if err != nil {
+			log.Warn().Msgf("Unable to check if statement %s/%s/%s transactions exists", token.ID, currency, id)
+			continue
+		}
+		if exists {
+			continue
+		}
+
+		data, err := plaintextStorage.ReadFileFully("token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
+		if err != nil {
+			log.Warn().Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
+			continue
+		}
+
+		statement := new(model.BondsterStatement)
+		if json.Unmarshal(data, statement) != nil {
+			log.Warn().Msgf("Unable to unmarshal statement %s/%s/%s", token.ID, currency, id)
+			continue
+		}
+
+		credit := model.AccountPair{
+			Tenant: tenant,
+		}
+		debit := model.AccountPair{
+			Tenant: tenant,
+		}
+
+		if statement.Direction == "CREDIT" {
+			credit.Name = statement.Amount.Currency + "_TYPE_NOSTRO"
+			debit.Name = statement.Amount.Currency + "_TYPE_" + statement.Type
+		} else {
+			credit.Name = statement.Amount.Currency + "_TYPE_" + statement.Type
+			debit.Name = statement.Amount.Currency + "_TYPE_NOSTRO"
+		}
+
+		request := model.Transaction{
+			Tenant: tenant,
+			IDTransaction: statement.IDTransfer,
+			Transfers: []model.Transfer{
+				{
+					IDTransfer: statement.IDTransfer,
+					Credit: credit,
+					Debit: debit,
+					ValueDate: statement.ValueDate.Format("2006-01-02T15:04:05Z0700"),
+					Amount: strconv.FormatFloat(statement.Amount.Value, 'f', -1, 64),
+					Currency: statement.Amount.Currency,
+				},
+			},
+		}
+
+		log.Debug().Msgf("Creating transaction %s", statement.IDTransfer)
+
+		err = ledgerClient.CreateTransaction(request)
+		if err != nil {
+			log.Warn().Msgf("Unable to create transaction %s/%s with %+v", tenant, statement.IDTransfer, err)
+			continue
+		}
+
+		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/transactions")
+		if err != nil {
+			log.Warn().Msgf("Unable to mark transactions discovery for %s/%s/%s", token.ID, currency, id)
+		}
+
 	}
 
 }
@@ -397,7 +488,7 @@ func importStatements(s *System, token model.Token, complete func()) {
 
 	bondsterClient := http.NewBondsterClient(s.BondsterGateway, token)
 	vaultClient := http.NewVaultClient(s.VaultGateway)
-	//ledgerClient := http.NewLedgerClient(s.LedgerGateway)
+	ledgerClient := http.NewLedgerClient(s.LedgerGateway)
 
 	currencies, err := bondsterClient.GetCurrencies()
 	if err != nil {
@@ -406,6 +497,9 @@ func importStatements(s *System, token model.Token, complete func()) {
 	}
 
 	// Bondster stage
+
+	log.Debug().Msgf("token %s synchronizing statements from Bondster gateway", token.ID)
+
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
 	mutex := sync.RWMutex{}
@@ -424,6 +518,9 @@ func importStatements(s *System, token model.Token, complete func()) {
 	wg.Wait()
 
 	// Vault stage
+
+	log.Debug().Msgf("token %s ensuring accounts based on statements", token.ID)
+
 	wg.Add(len(currencies))
 
 	for _, currency := range currencies {
@@ -439,7 +536,22 @@ func importStatements(s *System, token model.Token, complete func()) {
 	wg.Wait()
 
 	// Ledger stage
-	// FIXME TBD
+
+	log.Debug().Msgf("token %s creating transactions based on statements", token.ID)
+
+	wg.Add(len(currencies))
+
+	for _, currency := range currencies {
+		go importTransactionsFromStatemets(
+			&wg,
+			currency,
+			s.PlaintextStorage,
+			&token,
+			s.Tenant,
+			&ledgerClient,
+		)
+	}
+	wg.Wait()
 
 	log.Debug().Msgf("token %s Importing statements End", token.ID)
 }

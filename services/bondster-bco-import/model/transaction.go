@@ -14,7 +14,7 @@
 
 package model
 
-import "time"
+//import "time"
 
 // Transaction entity in ledger-rest format
 type Transaction struct {
@@ -29,7 +29,7 @@ type Transfer struct {
 	Credit       AccountPair `json:"credit"`
 	Debit        AccountPair `json:"debit"`
 	ValueDate    string      `json:"valueDate"`
-	ValueDateRaw time.Time   `json:"-"`
+	//ValueDateRaw time.Time   `json:"-"`
 	Amount       string      `json:"amount"`
 	Currency     string      `json:"currency"`
 }
