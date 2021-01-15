@@ -318,8 +318,6 @@ func importStatementsForCurrency(
 	log.Info().Msgf("Token %s discovering new statements for currency %s between %d/%d and %d/%d", token.ID, currency, startTime.Month(), startTime.Year(), endTime.Month(), endTime.Year())
 
 	for _, interval := range timeshift.PartitionInterval(startTime, endTime) {
-		log.Debug().Msgf("Start Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
-
 		ids, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
 		if err != nil {
 			log.Warn().Msgf("Unable to obtain transaction ids for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
@@ -341,11 +339,40 @@ func importStatementsForCurrency(
 				return
 			}
 		}
-
-		log.Debug().Msgf("End Importing statements for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 	}
 
 	log.Info().Msgf("Token %s synchronizing statements from gateway for currency %s", token.ID, currency)
+
+	ids, err := plaintextStorage.ListDirectory("token/" + token.ID + "/statements/" + currency, true)
+	if err != nil {
+		log.Warn().Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
+		return
+	}
+
+	unsynchronized := make([]string, 0)
+	for _, id := range ids {
+		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
+		if err != nil {
+			log.Warn().Msgf("Unable to check if statement %s/%s/%s data exists", token.ID, currency, id)
+			continue
+		}
+		if exists {
+			continue
+		}
+		unsynchronized = append(unsynchronized, id)
+	}
+
+	batchSize := 100
+	batches := make([][]string, 0, (len(unsynchronized) + batchSize - 1) / batchSize)
+
+	for batchSize < len(unsynchronized) {
+	  unsynchronized, batches = unsynchronized[batchSize:], append(batches, unsynchronized[0:batchSize:batchSize])
+	}
+	batches = append(batches, unsynchronized)
+
+	for _, ids := range batches {
+		log.Debug().Msgf("Following stamenents needs to be downloaded from gateway %+v", ids)
+	}
 
 }
 
@@ -364,6 +391,7 @@ func importStatements(s *System, token model.Token, complete func()) {
 		return
 	}
 
+	// Bondster stage
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
 	for _, currency := range currencies {
@@ -377,6 +405,12 @@ func importStatements(s *System, token model.Token, complete func()) {
 		)
 	}
 	wg.Wait()
+
+	// Vault stage
+	// FIXME TBD
+
+	// Ledger stage
+	// FIXME TBD
 
 	log.Debug().Msgf("token %s Importing statements End", token.ID)
 }
