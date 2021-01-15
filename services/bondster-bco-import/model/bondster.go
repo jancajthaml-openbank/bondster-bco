@@ -185,7 +185,6 @@ func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransact
 
 		for idTransaction, transfers := range set {
 			for _, transfer := range transfers {
-
 				if previousIDTransaction == "" {
 					previousIDTransaction = idTransaction
 				} else if previousIDTransaction != idTransaction {

@@ -387,6 +387,9 @@ func importStatementsForCurrency(
 				continue
 			}
 			id := statements[0].IDTransaction
+
+			log.Debug().Msgf("Number of statements in transaction %s %d", id, len(statements))
+
 			data, err := json.Marshal(statements)
 			if err != nil {
 				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, id)
@@ -395,6 +398,7 @@ func importStatementsForCurrency(
 			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + id + "/data", data)
 			if err != nil {
 				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s", token.ID, currency, id)
+				log.Debug().Msgf("Statements are %+v", statements)
 				continue
 			}
 			for _, statement := range statements {
