@@ -179,6 +179,7 @@ func importAccountsFromStatemets(
 	currency string,
 	plaintextStorage localfs.Storage,
 	token *model.Token,
+	tenant string,
 	vaultClient *http.VaultClient,
 ) {
 	defer func() {
@@ -224,6 +225,21 @@ func importAccountsFromStatemets(
 
 	for account := range accounts {
 		log.Debug().Msgf("Token %s creating account %s", token.ID, account)
+		request := model.Account{
+			Tenant: tenant,
+			Name: account,
+		}
+		if vaultClient.CreateAccount(request) != nil {
+			log.Warn().Msgf("Unable to create account %s/%s", tenant, account)
+			return
+		}
+	}
+
+	for _, id := range ids {
+		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
+		if err != nil {
+			log.Warn().Msgf("Unable to mark account discovery for %s/%s/%s", token.ID, currency, id)
+		}
 	}
 
 }
@@ -279,7 +295,7 @@ func importStatementsForCurrency(
 			if exists {
 				continue
 			}
-			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + id + "/mark", []byte(interval.EndTime.Format("2006-01-02T15:04:05Z0700")))
+			err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/mark")
 			if err != nil {
 				log.Warn().Msgf("Unable to mark transaction %s as known for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 				return
@@ -291,7 +307,7 @@ func importStatementsForCurrency(
 
 	// Stage when ensuring that all transfer ids in given time range have downloaded statements
 
-	log.Info().Msgf("Token %s synchronizing statements from gateway for currency %s", token.ID, currency)
+	//log.Info().Msgf("Token %s synchronizing statements from gateway for currency %s", token.ID, currency)
 
 	ids, err := plaintextStorage.ListDirectory("token/" + token.ID + "/statements/" + currency, true)
 	if err != nil {
@@ -312,6 +328,8 @@ func importStatementsForCurrency(
 		// FIXME in-place if reached 100 synchronize, don't load all in memory
 		unsynchronized = append(unsynchronized, id)
 	}
+
+	log.Info().Msgf("Will synchronize %d statements from bondster gateway", len(unsynchronized))
 
 	batchSize := 100
 	batches := make([][]string, 0, (len(unsynchronized) + batchSize - 1) / batchSize)
@@ -341,13 +359,13 @@ func importStatementsForCurrency(
 		token.LastSyncedFrom[currency] = startTime
 		mutex.Unlock()
 
-		log.Debug().Msgf("Updating last synchronized time for token %s and currency %s to %s", token.ID, currency, startTime.Format(time.RFC3339))
+		//log.Debug().Msgf("Updating last synchronized time for token %s and currency %s to %s", token.ID, currency, startTime.Format(time.RFC3339))
 
 		if !persistence.UpdateToken(encryptedStorage, token) {
 			log.Warn().Msgf("unable to update token %s", token.ID)
 		}
 
-		log.Debug().Msgf("Downloading new statements for token %s and currency %s", token.ID, currency)
+		//log.Debug().Msgf("Downloading new statements for token %s and currency %s", token.ID, currency)
 
 		for _, transaction := range envelope.Transactions {
 			data, err := json.Marshal(transaction)
@@ -409,6 +427,7 @@ func importStatements(s *System, token model.Token, complete func()) {
 			currency,
 			s.PlaintextStorage,
 			&token,
+			s.Tenant,
 			&vaultClient,
 		)
 	}

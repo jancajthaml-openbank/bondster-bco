@@ -24,7 +24,6 @@ import (
 type VaultClient struct {
 	underlying Client
 	gateway    string
-	cache      map[model.Account]interface{}
 }
 
 // NewVaultClient returns new vault http client
@@ -32,15 +31,11 @@ func NewVaultClient(gateway string) VaultClient {
 	return VaultClient{
 		gateway:    gateway,
 		underlying: NewHTTPClient(),
-		cache:      make(map[model.Account]interface{}),
 	}
 }
 
 // CreateAccount creates account in vault
 func (client VaultClient) CreateAccount(account model.Account) error {
-	if _, ok := client.cache[account]; ok {
-		return nil
-	}
 	request, err := json.Marshal(account)
 	if err != nil {
 		return err
@@ -55,7 +50,6 @@ func (client VaultClient) CreateAccount(account model.Account) error {
 	if response.Status == 504 {
 		return fmt.Errorf("create account timeout")
 	}
-	client.cache[account] = nil
 	if response.Status != 200 && response.Status != 409 {
 		return fmt.Errorf("create account error %s", response.String())
 	}
