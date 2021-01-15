@@ -122,6 +122,7 @@ func ExistToken(s *System) func(interface{}, system.Context) {
 					s.PlaintextStorage,
 				)
 
+				// FIXME stage workflow.SynchronizeCurrencies()
 				workflow.SynchronizeStatements()
 				workflow.CreateAccounts()
 				workflow.CreateTransactions()
