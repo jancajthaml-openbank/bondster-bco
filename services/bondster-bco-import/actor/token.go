@@ -308,6 +308,7 @@ func importStatementsForCurrency(
 	mutex.Lock()
 	startTime, ok := token.LastSyncedFrom[currency]
 	mutex.Unlock()
+
 	if !ok {
 		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
 		mutex.Lock()
@@ -318,6 +319,8 @@ func importStatementsForCurrency(
 			return
 		}
 	}
+
+	// Stage of discovering new transfer ids within given time range
 
 	endTime := time.Now()
 
@@ -347,9 +350,11 @@ func importStatementsForCurrency(
 		}
 	}
 
-	log.Info().Msgf("Token %s synchronizing statements from gateway for currency %s", token.ID, currency)
-
 	// FIXME to separate method
+
+	// Stage when ensuring that all transfer ids in given time range have downloaded statements
+
+	log.Info().Msgf("Token %s synchronizing statements from gateway for currency %s", token.ID, currency)
 
 	ids, err := plaintextStorage.ListDirectory("token/" + token.ID + "/statements/" + currency, true)
 	if err != nil {
@@ -367,6 +372,7 @@ func importStatementsForCurrency(
 		if exists {
 			continue
 		}
+		// FIXME in-place if reached 100 synchronize, don't load all in memory
 		unsynchronized = append(unsynchronized, id)
 	}
 
@@ -376,6 +382,7 @@ func importStatementsForCurrency(
 	for batchSize < len(unsynchronized) {
 	  unsynchronized, batches = unsynchronized[batchSize:], append(batches, unsynchronized[0:batchSize:batchSize])
 	}
+
 	batches = append(batches, unsynchronized)
 
 	for _, ids := range batches {
@@ -388,59 +395,41 @@ func importStatementsForCurrency(
 		}
 
 		for _, transaction := range envelope.Transactions {
-			data, err := json.Marshal(transaction)
-			if err != nil {
-				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, transaction.IDTransfer)
-				continue
-			}
-			log.Debug().Msgf("Writing to path %s", "token/" + token.ID + "/statements/" + currency + "/" + transaction.IDTransfer + "/data")
-			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + transaction.IDTransfer + "/data", data)
-			if err != nil {
-				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s with %+v", token.ID, currency, transaction.IDTransfer, err)
-				continue
-			}
 			if transaction.ValueDate.After(startTime) {
 				startTime = transaction.ValueDate
 			}
 		}
 
-		/*
-		for statements := range envelope.GroupByTransactionID() {
-			if len(statements) == 0 {
-				continue
-			}
-			id := statements[0].IDTransaction
-
-			log.Debug().Msgf("%d Statements in transaction %s", len(statements), id)
-
-			data, err := json.Marshal(statements)
-			if err != nil {
-				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, id)
-				continue
-			}
-			log.Debug().Msgf("Writing to path %s", "token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
-			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + id + "/data", data)
-			if err != nil {
-				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s with %+v", token.ID, currency, id, err)
-				continue
-			}
-			for _, statement := range statements {
-				if statement.ValueDate.After(startTime) {
-					startTime = statement.ValueDate
-				}
-			}
-		}
-		*/
-
-		log.Debug().Msgf("Updating last synchronized time for token %s and currency %s to %s ", token.ID, currency, startTime.Format(time.RFC3339))
-
 		mutex.Lock()
 		token.LastSyncedFrom[currency] = startTime
 		mutex.Unlock()
 
+		log.Debug().Msgf("Updating last synchronized time for token %s and currency %s to %s", token.ID, currency, startTime.Format(time.RFC3339))
+
 		if !persistence.UpdateToken(encryptedStorage, token) {
 			log.Warn().Msgf("unable to update token %s", token.ID)
 		}
+
+		log.Debug().Msgf("Downloading new statements for token %s and currency %s", token.ID, currency)
+
+		for _, transaction := range envelope.Transactions {
+			data, err := json.Marshal(transaction)
+			if err != nil {
+				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, transaction.IDTransfer)
+				continue
+			}
+			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + transaction.IDTransfer + "/data", data)
+			if err != nil {
+				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s with %+v", token.ID, currency, transaction.IDTransfer, err)
+				continue
+			}
+
+		}
+
+
+		//log.Debug().Msgf("Creating new", token.ID, currency)
+
+
 
 	}
 
