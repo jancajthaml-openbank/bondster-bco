@@ -225,10 +225,13 @@ func importAccountsFromStatemets(
 
 	for account := range accounts {
 		log.Debug().Msgf("Token %s creating account %s", token.ID, account)
+
 		request := model.Account{
 			Tenant: tenant,
 			Name: account,
 			Currency: currency,
+			Format: "BONDSTER_TECHNICAL",
+			IsBalanceCheck: false,
 		}
 		err = vaultClient.CreateAccount(request)
 		if err != nil {
