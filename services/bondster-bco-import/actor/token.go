@@ -382,21 +382,26 @@ func importStatementsForCurrency(
 			return
 		}
 
-		for _, statement := range envelope.Transactions {
-			data, err := json.Marshal(statement)
+		for statements := range envelope.GroupByTransactionID() {
+			if len(statements) == 0 {
+				continue
+			}
+			id := statements[0].IDTransaction
+			data, err := json.Marshal(statements)
 			if err != nil {
-				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, statement.IDTransaction)
+				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, id)
 				continue
 			}
-			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + statement.IDTransaction + "/data", data)
+			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + id + "/data", data)
 			if err != nil {
-				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s", token.ID, currency, statement.IDTransaction)
+				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s", token.ID, currency, id)
 				continue
 			}
-			if statement.ValueDate.Before(startTime) {
-				continue
+			for _, statement := range statements {
+				if statement.ValueDate.After(startTime) {
+					startTime = statement.ValueDate
+				}
 			}
-			startTime = statement.ValueDate
 		}
 
 		log.Debug().Msgf("Updating last synchronized time for token %s and currency %s to %s ", token.ID, currency, startTime.Format(time.RFC3339))

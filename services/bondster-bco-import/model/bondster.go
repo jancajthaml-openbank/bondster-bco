@@ -160,6 +160,58 @@ type bondsterAmount struct {
 	Currency string  `json:"currencyCode"`
 }
 
+
+// GetBondsterTransactions return generator of bondster transactions over given envelope
+func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransaction {
+	chnl := make(chan []bondsterTransaction)
+	if envelope == nil {
+		close(chnl)
+		return chnl
+	}
+
+	var previousIDTransaction = ""
+	var buffer = make([]bondsterTransaction, 0)
+
+	go func() {
+		defer close(chnl)
+
+		set := make(map[string][]bondsterTransaction)
+		for _, transfer := range envelope.Transactions {
+			if _, ok := set[transfer.IDTransaction]; !ok {
+				set[transfer.IDTransaction] = make([]bondsterTransaction, 0)
+			}
+			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
+		}
+
+		for idTransaction, transfers := range set {
+			for _, transfer := range transfers {
+
+				if previousIDTransaction == "" {
+					previousIDTransaction = idTransaction
+				} else if previousIDTransaction != idTransaction {
+					transfers := make([]bondsterTransaction, len(buffer))
+					copy(transfers, buffer)
+					buffer = make([]bondsterTransaction, 0)
+					chnl <- transfers
+					previousIDTransaction = idTransaction
+				}
+				buffer = append(buffer, transfer)
+			}
+		}
+
+		if len(buffer) == 0 {
+			return
+		}
+
+		transfers := make([]bondsterTransaction, len(buffer))
+		copy(transfers, buffer)
+		buffer = make([]bondsterTransaction, 0)
+		chnl <- transfers
+	}()
+
+	return chnl
+}
+
 // GetTransactions return generator of bondster transactions over given envelope
 func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transaction {
 	chnl := make(chan Transaction)
