@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -252,8 +252,8 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 	return currencies, nil
 }
 
-// GetTransferIdsInInterval returns transaction ids happened during given interval
-func (client *BondsterClient) GetTransferIdsInInterval(currency string, interval timeshift.TimeRange) ([]string, error) {
+// GetStatementIdsInInterval returns transfer ids that happened during given interval
+func (client *BondsterClient) GetStatementIdsInInterval(currency string, interval timeshift.TimeRange) ([]string, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}
@@ -269,7 +269,7 @@ func (client *BondsterClient) GetTransferIdsInInterval(currency string, interval
 		"x-account-context": currency,
 		"host":              "ib.bondster.com",
 		"origin":            client.gateway,
-		"referer":           client.gateway + "/cs",
+		"referer":           client.gateway + "/cs/statement",
 	}
 
 	if client.session.JWT != nil {
@@ -313,8 +313,8 @@ func (client *BondsterClient) GetTransferIdsInInterval(currency string, interval
 	return all.IDs, nil
 }
 
-// GetTransactionDetails returns transaction details for given currency and transaction ids
-func (client *BondsterClient) GetTransactionDetails(currency string, transactionIds []string) (*model.ImportEnvelope, error) {
+// GetStatements returns statements for given currency and transaction ids
+func (client *BondsterClient) GetStatements(currency string, transferIds []string) ([]model.BondsterStatement, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}
@@ -323,7 +323,7 @@ func (client *BondsterClient) GetTransactionDetails(currency string, transaction
 		return nil, err
 	}
 	ids := ""
-	for _, id := range transactionIds {
+	for _, id := range transferIds {
 		ids += "\"" + id + "\","
 	}
 
@@ -334,7 +334,7 @@ func (client *BondsterClient) GetTransactionDetails(currency string, transaction
 		"x-account-context": currency,
 		"host":              "ib.bondster.com",
 		"origin":            client.gateway,
-		"referer":           client.gateway + "/cs",
+		"referer":           client.gateway + "/cs/statement",
 	}
 
 	if client.session.JWT != nil {
@@ -361,12 +361,11 @@ func (client *BondsterClient) GetTransactionDetails(currency string, transaction
 		return nil, fmt.Errorf("bondster get contact information error %s", response.String())
 	}
 
-	var envelope = new(model.ImportEnvelope)
-	err = json.Unmarshal(response.Data, &(envelope.Transactions))
+	envelope := make([]model.BondsterStatement, 0)
+	err = json.Unmarshal(response.Data, &envelope)
 	if err != nil {
 		return nil, err
 	}
-	envelope.Currency = currency
 
 	return envelope, nil
 }

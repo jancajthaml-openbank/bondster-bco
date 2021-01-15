@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	//"strconv"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
@@ -126,12 +125,6 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// ImportEnvelope represents bondster marketplace import statement entity
-type ImportEnvelope struct {
-	Transactions []BondsterStatement
-	Currency     string
-}
-
 type BondsterStatement struct {
 	IDTransaction string                   `json:"idTransaction"`
 	IDTransfer    string                   `json:"idTransfer"`
@@ -159,164 +152,6 @@ type bondsterAmount struct {
 	Value    float64 `json:"amount"`
 	Currency string  `json:"currencyCode"`
 }
-
-// GetBondsterStatements return generator of bondster transactions over given envelope
-/*
-func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []BondsterStatement {
-	chnl := make(chan []BondsterStatement)
-	if envelope == nil {
-		close(chnl)
-		return chnl
-	}
-
-	go func() {
-		defer close(chnl)
-
-		set := make(map[string][]BondsterStatement)
-		for _, transfer := range envelope.Transactions {
-			if _, ok := set[transfer.IDTransaction]; !ok {
-				set[transfer.IDTransaction] = make([]BondsterStatement, 0)
-			}
-			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
-		}
-
-		for transaction, transfers := range set {
-			chnl <- transfers
-		}
-
-	}()
-
-	return chnl
-}
-*/
-
-/*
-// GetTransactions return generator of bondster transactions over given envelope
-func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transaction {
-	chnl := make(chan Transaction)
-	if envelope == nil {
-		close(chnl)
-		return chnl
-	}
-
-	var previousIDTransaction = ""
-	var buffer = make([]Transfer, 0)
-
-	go func() {
-		defer close(chnl)
-
-		set := make(map[string][]BondsterStatement)
-		for _, transfer := range envelope.Transactions {
-			if _, ok := set[transfer.IDTransaction]; !ok {
-				set[transfer.IDTransaction] = make([]BondsterStatement, 0)
-			}
-			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
-		}
-
-		for idTransaction, transfers := range set {
-			for _, transfer := range transfers {
-				if transfer.IsStorno {
-					log.Warn().Msgf("Transfer %+v is STORNO", transfer)
-				}
-
-				if previousIDTransaction == "" {
-					previousIDTransaction = idTransaction
-				} else if previousIDTransaction != idTransaction {
-					transfers := make([]Transfer, len(buffer))
-					copy(transfers, buffer)
-					buffer = make([]Transfer, 0)
-					chnl <- Transaction{
-						Tenant:        tenant,
-						IDTransaction: previousIDTransaction,
-						Transfers:     transfers,
-					}
-					previousIDTransaction = idTransaction
-				}
-
-				valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
-
-				credit := AccountPair{
-					Tenant: tenant,
-				}
-				debit := AccountPair{
-					Tenant: tenant,
-				}
-
-				if transfer.Direction == "CREDIT" {
-					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
-					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-				} else {
-					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
-				}
-
-				buffer = append(buffer, Transfer{
-					IDTransfer:   transfer.IDTransfer,
-					Credit:       credit,
-					Debit:        debit,
-					ValueDate:    valueDate,
-					ValueDateRaw: transfer.ValueDate,
-					Amount:       strconv.FormatFloat(transfer.Amount.Value, 'f', -1, 64),
-					Currency:     transfer.Amount.Currency,
-				})
-			}
-		}
-
-		if len(buffer) == 0 {
-			return
-		}
-
-		transfers := make([]Transfer, len(buffer))
-		copy(transfers, buffer)
-		buffer = make([]Transfer, 0)
-		chnl <- Transaction{
-			Tenant:        tenant,
-			IDTransaction: previousIDTransaction,
-			Transfers:     transfers,
-		}
-
-	}()
-
-	return chnl
-}
-
-// GetAccounts return generator of bondster accounts over given envelope
-func (envelope *ImportEnvelope) GetAccounts(tenant string) <-chan Account {
-	chnl := make(chan Account)
-	if envelope == nil {
-		close(chnl)
-		return chnl
-	}
-
-	var visited = make(map[string]interface{})
-
-	go func() {
-		defer close(chnl)
-
-		chnl <- Account{
-			Tenant:         tenant,
-			Name:           envelope.Currency + "_TYPE_NOSTRO",
-			Format:         "BONDSTER_TECHNICAL",
-			Currency:       envelope.Currency,
-			IsBalanceCheck: false,
-		}
-
-		for _, transfer := range envelope.Transactions {
-			if _, ok := visited[envelope.Currency+"_TYPE_"+transfer.Type]; !ok {
-				chnl <- Account{
-					Tenant:         tenant,
-					Name:           envelope.Currency + "_TYPE_" + transfer.Type,
-					Format:         "BONDSTER_TECHNICAL",
-					Currency:       envelope.Currency,
-					IsBalanceCheck: false,
-				}
-				visited[envelope.Currency+"_TYPE_"+transfer.Type] = nil
-			}
-		}
-	}()
-
-	return chnl
-}*/
 
 // LoginScenario holds code representing how service should log in
 type LoginScenario struct {
