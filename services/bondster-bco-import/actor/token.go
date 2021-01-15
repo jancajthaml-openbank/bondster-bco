@@ -292,6 +292,7 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 
 func importStatementsForCurrency(
 	wg *sync.WaitGroup,
+	mutex *sync.RWMutex,
 	currency string,
 	encryptedStorage localfs.Storage,
 	plaintextStorage localfs.Storage,
@@ -304,10 +305,14 @@ func importStatementsForCurrency(
 		wg.Done()
 	}()
 
+	mutex.Lock()
 	startTime, ok := token.LastSyncedFrom[currency]
+	mutex.Unlock()
 	if !ok {
 		startTime = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
+		mutex.Lock()
 		token.LastSyncedFrom[currency] = startTime
+		mutex.Unlock()
 		if !persistence.UpdateToken(encryptedStorage, token) {
 			log.Warn().Msgf("unable to update token %s", token.ID)
 			return
@@ -410,7 +415,9 @@ func importStatementsForCurrency(
 
 		log.Debug().Msgf("Updating last synchronized time for token %s and currency %s to %s ", token.ID, currency, startTime.Format(time.RFC3339))
 
+		mutex.Lock()
 		token.LastSyncedFrom[currency] = startTime
+		mutex.Unlock()
 		if !persistence.UpdateToken(encryptedStorage, token) {
 			log.Warn().Msgf("unable to update token %s", token.ID)
 		}
@@ -437,9 +444,12 @@ func importStatements(s *System, token model.Token, complete func()) {
 	// Bondster stage
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
+	mutex := sync.RWMutex{}
+
 	for _, currency := range currencies {
 		go importStatementsForCurrency(
 			&wg,
+			&mutex,
 			currency,
 			s.EncryptedStorage,
 			s.PlaintextStorage,
