@@ -252,8 +252,8 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 	return currencies, nil
 }
 
-// GetTransactionIdsInInterval returns transaction ids happened during given interval
-func (client *BondsterClient) GetTransactionIdsInInterval(currency string, interval timeshift.TimeRange) ([]string, error) {
+// GetTransferIdsInInterval returns transaction ids happened during given interval
+func (client *BondsterClient) GetTransferIdsInInterval(currency string, interval timeshift.TimeRange) ([]string, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}

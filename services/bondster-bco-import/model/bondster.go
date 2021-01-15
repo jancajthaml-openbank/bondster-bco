@@ -161,6 +161,7 @@ type bondsterAmount struct {
 }
 
 // GetBondsterTransactions return generator of bondster transactions over given envelope
+/*
 func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransaction {
 	chnl := make(chan []bondsterTransaction)
 	if envelope == nil {
@@ -180,7 +181,6 @@ func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransact
 		}
 
 		for transaction, transfers := range set {
-			log.Info().Msgf("Yielding %d transfers for %s", len(transfers), transaction)
 			chnl <- transfers
 		}
 
@@ -188,6 +188,7 @@ func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransact
 
 	return chnl
 }
+*/
 
 /*
 // GetTransactions return generator of bondster transactions over given envelope

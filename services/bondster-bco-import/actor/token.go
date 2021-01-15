@@ -186,7 +186,7 @@ func importStatements(tenant string, bondsterClient *http.BondsterClient, vaultC
 
 	lastSynced := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	transactionIds, err = bondsterClient.GetTransactionIdsInInterval(currency, interval)
+	transactionIds, err = bondsterClient.GetTransferIdsInInterval(currency, interval)
 	if err != nil {
 		log.Warn().Msgf("token %s failed to obtain statements for this period", token.ID)
 		return lastSynced, err
@@ -256,7 +256,7 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 	}
 
 	for _, interval := range timeshift.PartitionInterval(startTime, time.Now()) {
-		transactions, err := getTransactionIdsInInterval(
+		transactions, err := GetTransferIdsInInterval(
 			tenant,
 			bondsterClient,
 			storage,
@@ -324,7 +324,7 @@ func importStatementsForCurrency(
 	log.Info().Msgf("Token %s discovering new statements for currency %s between %d/%d and %d/%d", token.ID, currency, startTime.Month(), startTime.Year(), endTime.Month(), endTime.Year())
 
 	for _, interval := range timeshift.PartitionInterval(startTime, endTime) {
-		ids, err := bondsterClient.GetTransactionIdsInInterval(currency, interval)
+		ids, err := bondsterClient.GetTransferIdsInInterval(currency, interval)
 		if err != nil {
 			log.Warn().Msgf("Unable to obtain transaction ids for token %s currency %s and interval %d/%d -> %d/%d", token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 			return
@@ -387,6 +387,24 @@ func importStatementsForCurrency(
 			return
 		}
 
+		for _, transaction := range envelope.Transactions {
+			data, err := json.Marshal(transaction)
+			if err != nil {
+				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, transaction.IDTransfer)
+				continue
+			}
+			log.Debug().Msgf("Writing to path %s", "token/" + token.ID + "/statements/" + currency + "/" + transaction.IDTransfer + "/data")
+			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + transaction.IDTransfer + "/data", data)
+			if err != nil {
+				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s with %+v", token.ID, currency, transaction.IDTransfer, err)
+				continue
+			}
+			if transaction.ValueDate.After(startTime) {
+				startTime = transaction.ValueDate
+			}
+		}
+
+		/*
 		for statements := range envelope.GroupByTransactionID() {
 			if len(statements) == 0 {
 				continue
@@ -412,12 +430,14 @@ func importStatementsForCurrency(
 				}
 			}
 		}
+		*/
 
 		log.Debug().Msgf("Updating last synchronized time for token %s and currency %s to %s ", token.ID, currency, startTime.Format(time.RFC3339))
 
 		mutex.Lock()
 		token.LastSyncedFrom[currency] = startTime
 		mutex.Unlock()
+
 		if !persistence.UpdateToken(encryptedStorage, token) {
 			log.Warn().Msgf("unable to update token %s", token.ID)
 		}
