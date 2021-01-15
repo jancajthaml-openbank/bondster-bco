@@ -207,7 +207,7 @@ func importAccountsFromStatemets(
 			continue
 		}
 
-		data, err := plaintextStorage.ReadFileFully("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
+		data, err := plaintextStorage.ReadFileFully("token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
 		if err != nil {
 			log.Warn().Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
 			continue
@@ -323,7 +323,7 @@ func importStatementsForCurrency(
 	batches = append(batches, unsynchronized)
 
 	for _, ids := range batches {
-		log.Debug().Msgf("Following stamenents needs to be downloaded from gateway %+v", ids)
+		//log.Debug().Msgf("Following stamenents needs to be downloaded from gateway %+v", ids)
 
 		envelope, err := bondsterClient.GetTransactionDetails(currency, ids)
 		if err != nil {
