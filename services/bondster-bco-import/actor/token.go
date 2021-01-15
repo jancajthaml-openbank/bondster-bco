@@ -103,7 +103,6 @@ func ExistToken(s *System) func(interface{}, system.Context) {
 			context.Self.Become(t_state, SynchronizingToken(s))
 
 			go func() {
-
 				log.Debug().Msgf("token %s Importing statements Start", state.ID)
 
 				defer func() {
