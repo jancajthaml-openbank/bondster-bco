@@ -17,6 +17,7 @@ package actor
 import (
 	//"fmt"
 	"time"
+	"encoding/json"
 	"sync"
 
 	//"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
@@ -333,7 +334,7 @@ func importStatementsForCurrency(
 			if exists {
 				continue
 			}
-			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + id + "/date", []byte(interval.EndTime.Format("2006-01-02T15:04:05Z0700")))
+			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + id + "/mark", []byte(interval.EndTime.Format("2006-01-02T15:04:05Z0700")))
 			if err != nil {
 				log.Warn().Msgf("Unable to mark transaction %s as known for token %s currency %s and interval %d/%d -> %d/%d", id, token.ID, currency, interval.StartTime.Month(), interval.StartTime.Year(), interval.EndTime.Month(), interval.EndTime.Year())
 				return
@@ -342,6 +343,8 @@ func importStatementsForCurrency(
 	}
 
 	log.Info().Msgf("Token %s synchronizing statements from gateway for currency %s", token.ID, currency)
+
+	// FIXME to separate method
 
 	ids, err := plaintextStorage.ListDirectory("token/" + token.ID + "/statements/" + currency, true)
 	if err != nil {
@@ -372,6 +375,37 @@ func importStatementsForCurrency(
 
 	for _, ids := range batches {
 		log.Debug().Msgf("Following stamenents needs to be downloaded from gateway %+v", ids)
+
+		envelope, err := bondsterClient.GetTransactionDetails(currency, ids)
+		if err != nil {
+			log.Warn().Msgf("Unable to download statements details for currency %s", currency)
+			return
+		}
+
+		for _, statement := range envelope.Transactions {
+			data, err := json.Marshal(statement)
+			if err != nil {
+				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, statement.IDTransaction)
+				continue
+			}
+			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + statement.IDTransaction + "/data", data)
+			if err != nil {
+				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s", token.ID, currency, statement.IDTransaction)
+				continue
+			}
+			if statement.ValueDate.Before(startTime) {
+				continue
+			}
+			startTime = statement.ValueDate
+		}
+
+		log.Debug().Msgf("Updating last synchronized time for token %s and currency %s to %s ", token.ID, currency, startTime.Format(time.RFC3339))
+
+		token.LastSyncedFrom[currency] = startTime
+		if !persistence.UpdateToken(encryptedStorage, token) {
+			log.Warn().Msgf("unable to update token %s", token.ID)
+		}
+
 	}
 
 }
