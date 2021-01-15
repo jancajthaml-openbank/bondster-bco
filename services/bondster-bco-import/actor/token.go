@@ -290,6 +290,45 @@ func importNewStatements(tenant string, bondsterClient *http.BondsterClient, vau
 }
 */
 
+func importAccountsFromStatemets(
+	wg *sync.WaitGroup,
+	//mutex *sync.RWMutex,
+	currency string,
+	//encryptedStorage localfs.Storage,
+	plaintextStorage localfs.Storage,
+	token *model.Token,
+	vaultClient *http.VaultClient,
+) {
+	defer func() {
+		recover()
+		wg.Done()
+	}()
+
+	log.Info().Msgf("Token %s creating accounts from statements for currency %s", token.ID, currency)
+
+	ids, err := plaintextStorage.ListDirectory("token/" + token.ID + "/statements/" + currency, true)
+	if err != nil {
+		log.Warn().Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
+		return
+	}
+
+	for _, id := range ids {
+		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
+		if err != nil {
+			log.Warn().Msgf("Unable to check if statement %s/%s/%s accounts exists", token.ID, currency, id)
+			continue
+		}
+		if exists {
+			continue
+		}
+
+		// FIXME load statement
+
+		log.Debug().Msgf("Token %s creating account from %s/%s", token.ID, currency, id)
+	}
+
+}
+
 func importStatementsForCurrency(
 	wg *sync.WaitGroup,
 	mutex *sync.RWMutex,
@@ -301,7 +340,6 @@ func importStatementsForCurrency(
 ) {
 	defer func() {
 		recover()
-		log.Debug().Msgf("Import for token %s and currency %s finished", token.ID, currency)
 		wg.Done()
 	}()
 
@@ -426,11 +464,6 @@ func importStatementsForCurrency(
 
 		}
 
-
-		//log.Debug().Msgf("Creating new", token.ID, currency)
-
-
-
 	}
 
 }
@@ -441,7 +474,7 @@ func importStatements(s *System, token model.Token, complete func()) {
 	log.Debug().Msgf("token %s Importing statements Start", token.ID)
 
 	bondsterClient := http.NewBondsterClient(s.BondsterGateway, token)
-	//vaultClient := http.NewVaultClient(s.VaultGateway)
+	vaultClient := http.NewVaultClient(s.VaultGateway)
 	//ledgerClient := http.NewLedgerClient(s.LedgerGateway)
 
 	currencies, err := bondsterClient.GetCurrencies()
@@ -469,7 +502,18 @@ func importStatements(s *System, token model.Token, complete func()) {
 	wg.Wait()
 
 	// Vault stage
-	// FIXME TBD
+	wg.Add(len(currencies))
+
+	for _, currency := range currencies {
+		go importAccountsFromStatemets(
+			&wg,
+			currency,
+			s.PlaintextStorage,
+			&token,
+			&vaultClient,
+		)
+	}
+	wg.Wait()
 
 	// Ledger stage
 	// FIXME TBD
