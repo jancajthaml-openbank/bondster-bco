@@ -229,8 +229,9 @@ func importAccountsFromStatemets(
 			Tenant: tenant,
 			Name: account,
 		}
-		if vaultClient.CreateAccount(request) != nil {
-			log.Warn().Msgf("Unable to create account %s/%s", tenant, account)
+		err = vaultClient.CreateAccount(request)
+		if err != nil {
+			log.Warn().Msgf("Unable to create account %s/%s with %+v", tenant, account, err)
 			return
 		}
 	}
