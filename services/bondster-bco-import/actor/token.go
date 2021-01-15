@@ -228,6 +228,7 @@ func importAccountsFromStatemets(
 		request := model.Account{
 			Tenant: tenant,
 			Name: account,
+			Currency: currency,
 		}
 		err = vaultClient.CreateAccount(request)
 		if err != nil {
