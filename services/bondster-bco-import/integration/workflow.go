@@ -130,7 +130,6 @@ func importAccountsFromStatemets(
 		}
 	}
 
-	// INFO CONFIRM statements that we obtained accounts from
 	for _, id := range idsNeedingConfirmation {
 		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
 		if err != nil {
@@ -304,7 +303,7 @@ func yieldUnsynchronizedStatementIds(
 	return chnl
 }
 
-func importStatementsForCurrency(
+func downloadStatementsForCurrency(
 	wg *sync.WaitGroup,
 	mutex *sync.RWMutex,
 	currency string,
@@ -375,13 +374,8 @@ func importStatementsForCurrency(
 
 }
 
-func (workflow Workflow) SynchronizeStatements() {
-
-	// FIXME function start synchronize currencies
-
-	// FIXME check if does not already know both supported currencies
-
-	log.Debug().Msgf("token %s synchronizing statements from Bondster gateway", workflow.Token.ID)
+func (workflow Workflow) SynchronizeCurrencies() {
+	log.Debug().Msgf("token %s synchronizing currencies from Bondster gateway", workflow.Token.ID)
 
 	currencies, err := workflow.BondsterClient.GetCurrencies()
 	if err != nil {
@@ -399,14 +393,15 @@ func (workflow Workflow) SynchronizeStatements() {
 		}
 	}
 
-	// FIXME function end synchronize currencies
+	return
+}
 
-	mutex := sync.RWMutex{}
-
+func (workflow Workflow) SynchronizeStatements() {
 	var wg sync.WaitGroup
 	wg.Add(len(workflow.Token.LastSyncedFrom))
+	mutex := sync.RWMutex{}
 	for currency := range workflow.Token.LastSyncedFrom {
-		go importStatementsForCurrency(
+		go downloadStatementsForCurrency(
 			&wg,
 			&mutex,
 			currency,
