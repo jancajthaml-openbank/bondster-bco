@@ -35,8 +35,8 @@ type BondsterClient struct {
 }
 
 // NewBondsterClient returns new bondster http client
-func NewBondsterClient(gateway string, token model.Token) BondsterClient {
-	return BondsterClient{
+func NewBondsterClient(gateway string, token model.Token) *BondsterClient {
+	return &BondsterClient{
 		gateway:    gateway,
 		underlying: NewHTTPClient(),
 		token:      token,

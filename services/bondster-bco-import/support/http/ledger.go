@@ -27,15 +27,19 @@ type LedgerClient struct {
 }
 
 // NewLedgerClient returns new ledger http client
-func NewLedgerClient(gateway string) LedgerClient {
-	return LedgerClient{
+func NewLedgerClient(gateway string) *LedgerClient {
+	return &LedgerClient{
 		gateway:    gateway,
 		underlying: NewHTTPClient(),
 	}
 }
 
 // CreateTransaction creates transaction in ledger
-func (client LedgerClient) CreateTransaction(transaction model.Transaction) error {
+func (client *LedgerClient) CreateTransaction(transaction model.Transaction) error {
+	if client == nil {
+		return fmt.Errorf("nil deference")
+	}
+
 	request, err := json.Marshal(transaction)
 	if err != nil {
 		return err

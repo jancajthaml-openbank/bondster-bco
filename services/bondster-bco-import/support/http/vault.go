@@ -27,15 +27,18 @@ type VaultClient struct {
 }
 
 // NewVaultClient returns new vault http client
-func NewVaultClient(gateway string) VaultClient {
-	return VaultClient{
+func NewVaultClient(gateway string) *VaultClient {
+	return &VaultClient{
 		gateway:    gateway,
 		underlying: NewHTTPClient(),
 	}
 }
 
 // CreateAccount creates account in vault
-func (client VaultClient) CreateAccount(account model.Account) error {
+func (client *VaultClient) CreateAccount(account model.Account) error {
+	if client == nil {
+		return fmt.Errorf("nil deference")
+	}
 	request, err := json.Marshal(account)
 	if err != nil {
 		return err
