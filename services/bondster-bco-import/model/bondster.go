@@ -17,7 +17,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
+	//"strconv"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
@@ -160,7 +160,6 @@ type bondsterAmount struct {
 	Currency string  `json:"currencyCode"`
 }
 
-
 // GetBondsterTransactions return generator of bondster transactions over given envelope
 func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransaction {
 	chnl := make(chan []bondsterTransaction)
@@ -180,7 +179,8 @@ func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransact
 			set[transfer.IDTransaction] = append(set[transfer.IDTransaction], transfer)
 		}
 
-		for _, transfers := range set {
+		for transaction, transfers := range set {
+			log.Info().Msgf("Yielding %d transfers for %s", len(transfers), transaction)
 			chnl <- transfers
 		}
 
@@ -189,6 +189,7 @@ func (envelope *ImportEnvelope) GroupByTransactionID() <-chan []bondsterTransact
 	return chnl
 }
 
+/*
 // GetTransactions return generator of bondster transactions over given envelope
 func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transaction {
 	chnl := make(chan Transaction)
@@ -314,7 +315,7 @@ func (envelope *ImportEnvelope) GetAccounts(tenant string) <-chan Account {
 	}()
 
 	return chnl
-}
+}*/
 
 // LoginScenario holds code representing how service should log in
 type LoginScenario struct {
