@@ -400,10 +400,10 @@ func importStatementsForCurrency(
 				log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", token.ID, currency, id)
 				continue
 			}
+			log.Debug().Msgf("Writing to path %s", "token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
 			err = plaintextStorage.WriteFileExclusive("token/" + token.ID + "/statements/" + currency + "/" + id + "/data", data)
 			if err != nil {
-				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s", token.ID, currency, id)
-				log.Debug().Msgf("Statements are %+v", statements)
+				log.Warn().Msgf("Unable to persist statement details of %s/%s/%s with %+v", token.ID, currency, id, err)
 				continue
 			}
 			for _, statement := range statements {
