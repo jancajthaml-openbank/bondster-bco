@@ -188,7 +188,7 @@ func importAccountsFromStatemets(
 		wg.Done()
 	}()
 
-	log.Info().Msgf("Token %s creating accounts from statements for currency %s", token.ID, currency)
+	log.Info().Msgf("token %s creating accounts from statements for currency %s", token.ID, currency)
 
 	ids, err := plaintextStorage.ListDirectory("token/"+token.ID+"/statements/"+currency, true)
 	if err != nil {
@@ -267,7 +267,7 @@ func importTransactionsFromStatemets(
 ) {
 	defer wg.Done()
 
-	log.Info().Msgf("Token %s creating transactions from statements for currency %s", token.ID, currency)
+	log.Info().Msgf("token %s creating transactions from statements for currency %s", token.ID, currency)
 
 	ids, err := plaintextStorage.ListDirectory("token/"+token.ID+"/statements/"+currency, true)
 	if err != nil {
@@ -361,7 +361,7 @@ func importStatementsForCurrency(
 	mutex.Unlock()
 
 	if !ok {
-		log.Warn().Msgf("Token %s currency %s unable to obtain last synced time", token.ID, currency)
+		log.Warn().Msgf("token %s currency %s unable to obtain last synced time", token.ID, currency)
 		return
 	}
 
