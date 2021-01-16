@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -96,13 +96,10 @@ func ProcessMessage(s *System) system.ProcessMessage {
 
 func spawnTokenActor(s *System, id string) (*system.Actor, error) {
 	envelope := system.NewActor(id, model.NewToken(id))
-
 	err := s.RegisterActor(envelope, NilToken(s))
 	if err != nil {
 		log.Warn().Msgf("Unable to register %s actor", id)
 		return nil, err
 	}
-
-	log.Debug().Msgf("Actor %s registered", id)
 	return envelope, nil
 }

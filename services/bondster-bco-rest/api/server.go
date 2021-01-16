@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,8 +44,18 @@ type tcpKeepAliveListener struct {
 }
 
 // NewServer returns new secure server instance
-func NewServer(port int, certPath string, keyPath string, rootStorage string, actorSystem *actor.System, systemControl system.Control, diskMonitor system.CapacityCheck, memoryMonitor system.CapacityCheck) *Server {
-	storage, err := localfs.NewPlaintextStorage(rootStorage)
+func NewServer(
+	port int,
+	certPath string,
+	keyPath string,
+	rootStorage string,
+	storageKey []byte,
+	actorSystem *actor.System,
+	systemControl system.Control,
+	diskMonitor system.CapacityCheck,
+	memoryMonitor system.CapacityCheck,
+) *Server {
+	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure storage %+v", err)
 		return nil

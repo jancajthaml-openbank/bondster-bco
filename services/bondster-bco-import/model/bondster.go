@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/jancajthaml-openbank/bondster-bco-import/utils"
@@ -126,13 +125,7 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// ImportEnvelope represents bondster marketplace import statement entity
-type ImportEnvelope struct {
-	Transactions []bondsterTransaction
-	Currency     string
-}
-
-type bondsterTransaction struct {
+type BondsterStatement struct {
 	IDTransaction string                   `json:"idTransaction"`
 	IDTransfer    string                   `json:"idTransfer"`
 	Type          string                   `json:"transactionType"`
@@ -158,148 +151,6 @@ type bondsterOriginator struct {
 type bondsterAmount struct {
 	Value    float64 `json:"amount"`
 	Currency string  `json:"currencyCode"`
-}
-
-// GetTransactions return generator of bondster transactions over given envelope
-func (envelope *ImportEnvelope) GetTransactions(tenant string) <-chan Transaction {
-	chnl := make(chan Transaction)
-	if envelope == nil {
-		close(chnl)
-		return chnl
-	}
-
-	var previousIDTransaction = ""
-	var buffer = make([]Transfer, 0)
-
-	go func() {
-		defer close(chnl)
-
-		for _, transfer := range envelope.Transactions {
-			//if transfer.IsStorno {
-			// FIXME case not handled
-			//}
-
-			valueDate := transfer.ValueDate.Format("2006-01-02T15:04:05Z0700")
-
-			credit := AccountPair{
-				Tenant: tenant,
-			}
-			debit := AccountPair{
-				Tenant: tenant,
-			}
-
-			if transfer.Direction == "CREDIT" {
-				if transfer.Originator != nil {
-					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-					debit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
-				} else {
-					credit.Name = envelope.Currency + "_TYPE_NOSTRO"
-					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-				}
-			} else {
-				if transfer.Originator != nil {
-					credit.Name = envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name
-					debit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-				} else {
-					credit.Name = envelope.Currency + "_TYPE_" + transfer.Type
-					debit.Name = envelope.Currency + "_TYPE_NOSTRO"
-				}
-			}
-
-			idTransaction := transfer.IDTransaction
-
-			if previousIDTransaction == "" {
-				previousIDTransaction = idTransaction
-			} else if previousIDTransaction != idTransaction {
-				transfers := make([]Transfer, len(buffer))
-				copy(transfers, buffer)
-				buffer = make([]Transfer, 0)
-				chnl <- Transaction{
-					Tenant:        tenant,
-					IDTransaction: previousIDTransaction,
-					Transfers:     transfers,
-				}
-				previousIDTransaction = idTransaction
-			}
-
-			buffer = append(buffer, Transfer{
-				IDTransfer:   transfer.IDTransfer,
-				Credit:       credit,
-				Debit:        debit,
-				ValueDate:    valueDate,
-				ValueDateRaw: transfer.ValueDate,
-				Amount:       strconv.FormatFloat(transfer.Amount.Value, 'f', -1, 64),
-				Currency:     transfer.Amount.Currency,
-			})
-		}
-
-		if len(buffer) == 0 {
-			return
-		}
-
-		transfers := make([]Transfer, len(buffer))
-		copy(transfers, buffer)
-		buffer = make([]Transfer, 0)
-		chnl <- Transaction{
-			Tenant:        tenant,
-			IDTransaction: previousIDTransaction,
-			Transfers:     transfers,
-		}
-
-	}()
-
-	return chnl
-}
-
-// GetAccounts return generator of bondster accounts over given envelope
-func (envelope *ImportEnvelope) GetAccounts(tenant string) <-chan Account {
-	chnl := make(chan Account)
-	if envelope == nil {
-		close(chnl)
-		return chnl
-	}
-
-	var visited = make(map[string]interface{})
-
-	go func() {
-		defer close(chnl)
-
-		chnl <- Account{
-			Tenant:         tenant,
-			Name:           envelope.Currency + "_TYPE_NOSTRO",
-			Format:         "BONDSTER_TECHNICAL",
-			Currency:       envelope.Currency,
-			IsBalanceCheck: false,
-		}
-
-		for _, transfer := range envelope.Transactions {
-			if transfer.Originator != nil {
-				if _, ok := visited[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name]; !ok {
-					chnl <- Account{
-						Tenant:         tenant,
-						Name:           envelope.Currency + "_ORIGINATOR_" + transfer.Originator.Name,
-						Format:         "BONDSTER_ORIGINATOR",
-						Currency:       envelope.Currency,
-						IsBalanceCheck: false,
-					}
-					visited[envelope.Currency+"_ORIGINATOR_"+transfer.Originator.Name] = nil
-				}
-			}
-
-			if _, ok := visited[envelope.Currency+"_TYPE_"+transfer.Type]; !ok {
-				chnl <- Account{
-					Tenant:         tenant,
-					Name:           envelope.Currency + "_TYPE_" + transfer.Type,
-					Format:         "BONDSTER_TECHNICAL",
-					Currency:       envelope.Currency,
-					IsBalanceCheck: false,
-				}
-				visited[envelope.Currency+"_TYPE_"+transfer.Type] = nil
-			}
-		}
-	}()
-
-	return chnl
 }
 
 // LoginScenario holds code representing how service should log in

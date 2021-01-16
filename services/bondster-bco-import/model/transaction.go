@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
 
 package model
 
-import "time"
-
 // Transaction entity in ledger-rest format
 type Transaction struct {
 	Tenant        string     `json:"-"`
@@ -25,11 +23,10 @@ type Transaction struct {
 
 // Transfer entity in ledger-rest format
 type Transfer struct {
-	IDTransfer   string      `json:"id"`
-	Credit       AccountPair `json:"credit"`
-	Debit        AccountPair `json:"debit"`
-	ValueDate    string      `json:"valueDate"`
-	ValueDateRaw time.Time   `json:"-"`
-	Amount       string      `json:"amount"`
-	Currency     string      `json:"currency"`
+	IDTransfer string      `json:"id"`
+	Credit     AccountPair `json:"credit"`
+	Debit      AccountPair `json:"debit"`
+	ValueDate  string      `json:"valueDate"`
+	Amount     string      `json:"amount"`
+	Currency   string      `json:"currency"`
 }

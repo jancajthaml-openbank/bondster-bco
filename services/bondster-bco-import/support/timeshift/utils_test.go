@@ -76,4 +76,14 @@ func TestPartitionInterval(t *testing.T) {
 
 		assert.Equal(t, expected, actual)
 	}
+
+	t.Log("same start and end time produces empty slice")
+	{
+		start := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
+		end := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+		timeRanges := PartitionInterval(start, end)
+
+		assert.Empty(t, timeRanges)
+	}
 }

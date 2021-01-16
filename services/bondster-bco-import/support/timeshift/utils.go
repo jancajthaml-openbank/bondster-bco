@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ func SliceByMonths(startDate time.Time, endDate time.Time) []TimeRange {
 // PartitionInterval partitions time range for optimal bondster search
 func PartitionInterval(startDate time.Time, endDate time.Time) []TimeRange {
 	timeline := SliceByMonths(startDate, endDate)
+	if len(timeline) == 0 {
+		return timeline
+	}
 	timeline[len(timeline)-1].EndTime = endDate
 	timeline[0].StartTime = startDate
 	if len(timeline) == 0 && timeline[0].StartTime == timeline[0].EndTime {
