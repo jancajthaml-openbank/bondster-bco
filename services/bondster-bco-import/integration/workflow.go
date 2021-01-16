@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/support/http"
@@ -37,6 +38,7 @@ type Workflow struct {
 	LedgerClient     *http.LedgerClient
 	EncryptedStorage localfs.Storage
 	PlaintextStorage localfs.Storage
+	Metrics          metrics.Metrics
 }
 
 // NewWorkflow returns fascade for integration workflow
@@ -48,6 +50,7 @@ func NewWorkflow(
 	ledgerGateway string,
 	encryptedStorage localfs.Storage,
 	plaintextStorage localfs.Storage,
+	metrics metrics.Metrics,
 ) Workflow {
 	return Workflow{
 		Token:            token,
@@ -57,6 +60,7 @@ func NewWorkflow(
 		LedgerClient:     http.NewLedgerClient(ledgerGateway),
 		EncryptedStorage: encryptedStorage,
 		PlaintextStorage: plaintextStorage,
+		Metrics:          metrics,
 	}
 }
 
@@ -146,6 +150,7 @@ func importTransactionsFromStatemets(
 	token *model.Token,
 	tenant string,
 	ledgerClient *http.LedgerClient,
+	metrics metrics.Metrics,
 ) {
 	defer wg.Done()
 
@@ -217,6 +222,8 @@ func importTransactionsFromStatemets(
 			continue
 		}
 
+		metrics.TransactionImported(1)
+
 		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/transactions")
 		if err != nil {
 			log.Warn().Msgf("Unable to mark transactions discovery for %s/%s/%s", token.ID, currency, id)
@@ -233,6 +240,7 @@ func downloadStatements(
 	plaintextStorage localfs.Storage,
 	tokenID string,
 	bondsterClient *http.BondsterClient,
+	metrics metrics.Metrics,
 ) time.Time {
 	startTime := time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
 	if len(ids) == 0 {
@@ -259,6 +267,7 @@ func downloadStatements(
 			continue
 		}
 	}
+	metrics.StatementsImported(len(statements))
 	return startTime
 }
 
@@ -309,6 +318,7 @@ func downloadStatementsForCurrency(
 	plaintextStorage localfs.Storage,
 	token *model.Token,
 	bondsterClient *http.BondsterClient,
+	metrics metrics.Metrics,
 ) {
 	defer wg.Done()
 
@@ -357,6 +367,7 @@ func downloadStatementsForCurrency(
 			plaintextStorage,
 			token.ID,
 			bondsterClient,
+			metrics,
 		)
 		if newTime.Before(lastTime) {
 			continue
@@ -407,6 +418,7 @@ func (workflow Workflow) SynchronizeStatements() {
 			workflow.PlaintextStorage,
 			workflow.Token,
 			workflow.BondsterClient,
+			workflow.Metrics,
 		)
 	}
 	wg.Wait()
@@ -443,6 +455,7 @@ func (workflow Workflow) CreateTransactions() {
 			workflow.Token,
 			workflow.Tenant,
 			workflow.LedgerClient,
+			workflow.Metrics,
 		)
 	}
 	wg.Wait()
