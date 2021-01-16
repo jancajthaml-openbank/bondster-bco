@@ -119,6 +119,7 @@ func ExistToken(s *System) func(interface{}, system.Context) {
 					s.LedgerGateway,
 					s.EncryptedStorage,
 					s.PlaintextStorage,
+					s.Metrics,
 				)
 
 				workflow.SynchronizeCurrencies()

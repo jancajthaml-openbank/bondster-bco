@@ -24,6 +24,7 @@ type Metrics interface {
 	TokenCreated()
 	TokenDeleted()
 	TransactionImported(transfers int)
+	StatementsImported(statements int)
 }
 
 type metrics struct {
@@ -33,6 +34,7 @@ type metrics struct {
 	deletedTokens        int64
 	importedTransactions int64
 	importedTransfers    int64
+	downloadedStatements int64
 }
 
 // NewMetrics returns blank metrics holder
@@ -49,6 +51,7 @@ func NewMetrics(tenant string, endpoint string) *metrics {
 		deletedTokens:        int64(0),
 		importedTransactions: int64(0),
 		importedTransfers:    int64(0),
+		downloadedStatements: int64(0),
 	}
 }
 
@@ -78,6 +81,14 @@ func (instance *metrics) TransactionImported(transfers int) {
 	atomic.AddInt64(&(instance.importedTransfers), int64(transfers))
 }
 
+// StatementsImported increments statements downloaded by given amount
+func (instance *metrics) StatementsImported(statements int) {
+	if instance == nil {
+		return
+	}
+	atomic.AddInt64(&(instance.downloadedStatements), int64(statements))
+}
+
 // Setup does nothing
 func (_ *metrics) Setup() error {
 	return nil
@@ -104,11 +115,13 @@ func (instance *metrics) Work() {
 	deletedTokens := instance.deletedTokens
 	importedTransactions := instance.importedTransactions
 	importedTransfers := instance.importedTransfers
+	downloadedStatements := instance.downloadedStatements
 
 	atomic.AddInt64(&(instance.createdTokens), -createdTokens)
 	atomic.AddInt64(&(instance.deletedTokens), -deletedTokens)
 	atomic.AddInt64(&(instance.importedTransactions), -importedTransactions)
 	atomic.AddInt64(&(instance.importedTransfers), -importedTransfers)
+	atomic.AddInt64(&(instance.downloadedStatements), -downloadedStatements)
 
 	tags := []string{"tenant:" + instance.tenant}
 
@@ -116,4 +129,5 @@ func (instance *metrics) Work() {
 	instance.client.Count("openbank.bco.bondster.token.deleted", deletedTokens, tags, 1)
 	instance.client.Count("openbank.bco.bondster.transaction.imported", importedTransactions, tags, 1)
 	instance.client.Count("openbank.bco.bondster.transfer.imported", importedTransfers, tags, 1)
+	instance.client.Count("openbank.bco.bondster.statement.downloaded", downloadedStatements, tags, 1)
 }
