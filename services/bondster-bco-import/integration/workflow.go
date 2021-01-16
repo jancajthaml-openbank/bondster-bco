@@ -240,6 +240,7 @@ func downloadStatements(
 	plaintextStorage localfs.Storage,
 	tokenID string,
 	bondsterClient *http.BondsterClient,
+	metrics metrics.Metrics,
 ) time.Time {
 	startTime := time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
 	if len(ids) == 0 {
@@ -266,6 +267,7 @@ func downloadStatements(
 			continue
 		}
 	}
+	metrics.StatementsImported(len(statements))
 	return startTime
 }
 
@@ -316,6 +318,7 @@ func downloadStatementsForCurrency(
 	plaintextStorage localfs.Storage,
 	token *model.Token,
 	bondsterClient *http.BondsterClient,
+	metrics metrics.Metrics,
 ) {
 	defer wg.Done()
 
@@ -364,6 +367,7 @@ func downloadStatementsForCurrency(
 			plaintextStorage,
 			token.ID,
 			bondsterClient,
+			metrics,
 		)
 		if newTime.Before(lastTime) {
 			continue
@@ -414,6 +418,7 @@ func (workflow Workflow) SynchronizeStatements() {
 			workflow.PlaintextStorage,
 			workflow.Token,
 			workflow.BondsterClient,
+			workflow.Metrics,
 		)
 	}
 	wg.Wait()

@@ -9,6 +9,7 @@ Feature: Metrics test
       | openbank.bco.bondster.token.deleted        | count | tenant:M2 |     0 |
       | openbank.bco.bondster.transaction.imported | count | tenant:M2 |       |
       | openbank.bco.bondster.transfer.imported    | count | tenant:M2 |       |
+      | openbank.bco.bondster.statement.downloaded | count | tenant:M2 |       |
 
     When token M2/A is created
 
