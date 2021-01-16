@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 	"github.com/jancajthaml-openbank/bondster-bco-import/support/http"
@@ -37,6 +38,7 @@ type Workflow struct {
 	LedgerClient     *http.LedgerClient
 	EncryptedStorage localfs.Storage
 	PlaintextStorage localfs.Storage
+	Metrics          metrics.Metrics
 }
 
 // NewWorkflow returns fascade for integration workflow
@@ -48,6 +50,7 @@ func NewWorkflow(
 	ledgerGateway string,
 	encryptedStorage localfs.Storage,
 	plaintextStorage localfs.Storage,
+	metrics metrics.Metrics,
 ) Workflow {
 	return Workflow{
 		Token:            token,
@@ -57,6 +60,7 @@ func NewWorkflow(
 		LedgerClient:     http.NewLedgerClient(ledgerGateway),
 		EncryptedStorage: encryptedStorage,
 		PlaintextStorage: plaintextStorage,
+		Metrics:          metrics,
 	}
 }
 
@@ -146,6 +150,7 @@ func importTransactionsFromStatemets(
 	token *model.Token,
 	tenant string,
 	ledgerClient *http.LedgerClient,
+	metrics metrics.Metrics,
 ) {
 	defer wg.Done()
 
@@ -216,6 +221,8 @@ func importTransactionsFromStatemets(
 			log.Warn().Msgf("Unable to create transaction %s/%s with %+v", tenant, statement.IDTransfer, err)
 			continue
 		}
+
+		metrics.TransactionImported(1)
 
 		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/transactions")
 		if err != nil {
@@ -443,6 +450,7 @@ func (workflow Workflow) CreateTransactions() {
 			workflow.Token,
 			workflow.Tenant,
 			workflow.LedgerClient,
+			workflow.Metrics,
 		)
 	}
 	wg.Wait()
