@@ -312,7 +312,6 @@ func yieldUnsynchronizedStatementIds(
 
 func downloadStatementsForCurrency(
 	wg *sync.WaitGroup,
-	mutex *sync.RWMutex,
 	currency string,
 	encryptedStorage localfs.Storage,
 	plaintextStorage localfs.Storage,
@@ -322,15 +321,15 @@ func downloadStatementsForCurrency(
 ) {
 	defer wg.Done()
 
-	mutex.Lock()
-	lastTime, ok := token.LastSyncedFrom[currency]
-	mutex.Unlock()
-	if !ok {
+	lastSyncedTime := token.GetLastSyncedTime(currency)
+
+	if lastSyncedTime == nil {
 		log.Warn().Msgf("token %s currency %s unable to obtain last synced time", token.ID, currency)
 		return
 	}
 
 	// Stage of discovering new transfer ids within given time range
+	lastTime := *lastSyncedTime
 	endTime := time.Now()
 
 	log.Info().Msgf("Token %s discovering new statements for currency %s between %s and %s", token.ID, currency, lastTime.Format("2006-01-02T15:04:05Z0700"), endTime.Format("2006-01-02T15:04:05Z0700"))
@@ -341,7 +340,6 @@ func downloadStatementsForCurrency(
 			log.Warn().Msgf("Unable to obtain transaction ids for token %s currency %s", token.ID, currency)
 			return
 		}
-
 		for _, id := range ids {
 			exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id)
 			if err != nil {
@@ -373,9 +371,7 @@ func downloadStatementsForCurrency(
 			continue
 		}
 		lastTime = newTime
-		mutex.Lock()
-		token.LastSyncedFrom[currency] = lastTime
-		mutex.Unlock()
+		token.SetLastSyncedTime(currency, lastTime)
 		if !persistence.UpdateToken(encryptedStorage, token) {
 			log.Warn().Msgf("unable to update token %s", token.ID)
 		}
@@ -383,8 +379,12 @@ func downloadStatementsForCurrency(
 
 }
 
+// SynchronizeCurrencies discovers all existing currencies for given token if not already known
 func (workflow Workflow) SynchronizeCurrencies() {
-	log.Debug().Msgf("token %s synchronizing currencies from Bondster gateway", workflow.Token.ID)
+	if workflow.Token.GetLastSyncedTime("CZK") != nil && workflow.Token.GetLastSyncedTime("EUR") != nil {
+		return
+	}
+	log.Debug().Msgf("token %s discovering currencies from Bondster gateway", workflow.Token.ID)
 
 	currencies, err := workflow.BondsterClient.GetCurrencies()
 	if err != nil {
@@ -393,12 +393,15 @@ func (workflow Workflow) SynchronizeCurrencies() {
 	}
 
 	for _, currency := range currencies {
-		if _, ok := workflow.Token.LastSyncedFrom[currency]; !ok {
-			workflow.Token.LastSyncedFrom[currency] = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
-			if !persistence.UpdateToken(workflow.EncryptedStorage, workflow.Token) {
-				log.Warn().Msgf("unable to update token %s", workflow.Token.ID)
-				continue
-			}
+		if workflow.Token.GetLastSyncedTime(currency) != nil {
+			continue
+		}
+		if workflow.Token.SetLastSyncedTime(currency, time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)) != nil {
+			continue
+		}
+		if !persistence.UpdateToken(workflow.EncryptedStorage, workflow.Token) {
+			log.Warn().Msgf("unable to update token %s", workflow.Token.ID)
+			continue
 		}
 	}
 
@@ -406,13 +409,14 @@ func (workflow Workflow) SynchronizeCurrencies() {
 }
 
 func (workflow Workflow) SynchronizeStatements() {
+	log.Debug().Msgf("token %s synchronizing statements from bondster gateway", workflow.Token.ID)
+
+	currencies := workflow.Token.GetCurrencies()
 	var wg sync.WaitGroup
-	wg.Add(len(workflow.Token.LastSyncedFrom))
-	mutex := sync.RWMutex{}
-	for currency := range workflow.Token.LastSyncedFrom {
+	wg.Add(len(currencies))
+	for _, currency := range currencies {
 		go downloadStatementsForCurrency(
 			&wg,
-			&mutex,
 			currency,
 			workflow.EncryptedStorage,
 			workflow.PlaintextStorage,
@@ -427,9 +431,10 @@ func (workflow Workflow) SynchronizeStatements() {
 func (workflow Workflow) CreateAccounts() {
 	log.Debug().Msgf("token %s ensuring accounts based on statements", workflow.Token.ID)
 
+	currencies := workflow.Token.GetCurrencies()
 	var wg sync.WaitGroup
-	wg.Add(len(workflow.Token.LastSyncedFrom))
-	for currency := range workflow.Token.LastSyncedFrom {
+	wg.Add(len(currencies))
+	for _, currency := range currencies {
 		go importAccountsFromStatemets(
 			&wg,
 			currency,
@@ -445,9 +450,10 @@ func (workflow Workflow) CreateAccounts() {
 func (workflow Workflow) CreateTransactions() {
 	log.Debug().Msgf("token %s creating transactions based on statements", workflow.Token.ID)
 
+	currencies := workflow.Token.GetCurrencies()
 	var wg sync.WaitGroup
-	wg.Add(len(workflow.Token.LastSyncedFrom))
-	for currency := range workflow.Token.LastSyncedFrom {
+	wg.Add(len(currencies))
+	for _, currency := range currencies {
 		go importTransactionsFromStatemets(
 			&wg,
 			currency,
