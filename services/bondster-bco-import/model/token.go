@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"sync"
 )
 
 // Token represents metadata of token entity
@@ -27,15 +28,56 @@ type Token struct {
 	Username       string
 	Password       string
 	CreatedAt      time.Time
-	LastSyncedFrom map[string]time.Time
+	lastSynced map[string]time.Time
+	mutex sync.RWMutex
 }
 
 // NewToken returns new Token
 func NewToken(id string) Token {
 	return Token{
 		ID:             id,
-		LastSyncedFrom: make(map[string]time.Time),
+		lastSynced: make(map[string]time.Time),
+		mutex: sync.RWMutex{},
 	}
+}
+
+// GetLastSyncedTime returns last synced time for given currency
+func (entity *Token) GetLastSyncedTime(currency string) *time.Time {
+	if entity == nil {
+		return nil
+	}
+	entity.mutex.Lock()
+	lastSyncedTime, ok := entity.lastSynced[currency]
+	entity.mutex.Unlock()
+	if !ok {
+		return nil
+	}
+	return &lastSyncedTime
+}
+
+// SetLastSyncedTime sets last synced time for given currency
+func (entity *Token) SetLastSyncedTime(currency string, lastSyncedTime time.Time) error {
+	if entity == nil {
+		return fmt.Errorf("called Token.SetLastSyncedTime over nil")
+	}
+	entity.mutex.Lock()
+	entity.lastSynced[currency] = lastSyncedTime
+	entity.mutex.Unlock()
+	return nil
+}
+
+// GetCurrencies returns know currencies to token
+func (entity *Token) GetCurrencies() []string {
+	keys := make([]string, 0)
+	if entity == nil {
+		return keys
+	}
+	entity.mutex.Lock()
+	for k := range entity.lastSynced {
+        keys = append(keys, k)
+    }
+    entity.mutex.Unlock()
+	return keys
 }
 
 // Serialize Token entity to persistable data
@@ -49,7 +91,7 @@ func (entity *Token) Serialize() ([]byte, error) {
 	buffer.WriteString(entity.Username)
 	buffer.WriteString("\n")
 	buffer.WriteString(entity.Password)
-	for currency, syncTime := range entity.LastSyncedFrom {
+	for currency, syncTime := range entity.lastSynced {
 		buffer.WriteString("\n")
 		buffer.WriteString(currency)
 		buffer.WriteString(" ")
@@ -63,7 +105,7 @@ func (entity *Token) Deserialize(data []byte) error {
 	if entity == nil {
 		return fmt.Errorf("called Token.Deserialize over nil")
 	}
-	entity.LastSyncedFrom = make(map[string]time.Time)
+	entity.lastSynced = make(map[string]time.Time)
 
 	// FIXME more optimal split
 	lines := strings.Split(string(data), "\n")
@@ -82,9 +124,9 @@ func (entity *Token) Deserialize(data []byte) error {
 			continue
 		}
 		if from, err := time.Parse("02/01/2006", syncTime[4:]); err == nil {
-			entity.LastSyncedFrom[syncTime[:3]] = from
+			entity.lastSynced[syncTime[:3]] = from
 		} else {
-			entity.LastSyncedFrom[syncTime[:3]] = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
+			entity.lastSynced[syncTime[:3]] = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
 		}
 	}
 
