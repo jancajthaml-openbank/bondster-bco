@@ -129,7 +129,7 @@ func importAccountsFromStatemets(
 		}
 		err = vaultClient.CreateAccount(request)
 		if err != nil {
-			log.Warn().Msgf("Unable to create account %s/%s with %+v", tenant, account, err)
+			log.Warn().Err(err).Msgf("Unable to create account %s/%s", tenant, account)
 			return
 		}
 	}
@@ -218,7 +218,7 @@ func importTransactionsFromStatemets(
 
 		err = ledgerClient.CreateTransaction(request)
 		if err != nil {
-			log.Warn().Msgf("Unable to create transaction %s/%s with %+v", tenant, statement.IDTransfer, err)
+			log.Warn().Err(err).Msgf("Unable to create transaction %s/%s", tenant, statement.IDTransfer)
 			continue
 		}
 
@@ -263,7 +263,7 @@ func downloadStatements(
 		}
 		err = plaintextStorage.WriteFileExclusive("token/"+tokenID+"/statements/"+currency+"/"+transaction.IDTransfer+"/data", data)
 		if err != nil {
-			log.Warn().Msgf("Unable to persist statement details of %s/%s/%s with %+v", tokenID, currency, transaction.IDTransfer, err)
+			log.Warn().Err(err).Msgf("Unable to persist statement details of %s/%s/%s", tokenID, currency, transaction.IDTransfer)
 			continue
 		}
 	}
@@ -388,7 +388,7 @@ func (workflow Workflow) SynchronizeCurrencies() {
 
 	currencies, err := workflow.BondsterClient.GetCurrencies()
 	if err != nil {
-		log.Warn().Msgf("token %s Unable to get currencies because %+v", workflow.Token.ID, err)
+		log.Warn().Err(err).Msgf("token %s Unable to get currencies", workflow.Token.ID)
 		return
 	}
 

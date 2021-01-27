@@ -30,7 +30,7 @@ type BondsterImport struct {
 func NewBondsterImport(rootStorage string, storageKey []byte, callback func(token string)) *BondsterImport {
 	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
 	if err != nil {
-		log.Error().Msgf("Failed to ensure storage %+v", err)
+		log.Error().Err(err).Msg("Failed to ensure storage")
 		return nil
 	}
 	return &BondsterImport{
@@ -66,13 +66,13 @@ func (bondster BondsterImport) Work() {
 
 	tokens, err := bondster.getActiveTokens()
 	if err != nil {
-		log.Error().Msgf("unable to get active tokens %+v", err)
+		log.Error().Err(err).Msg("unable to get active tokens")
 		return
 	}
 
-	for _, item := range tokens {
-		log.Debug().Msgf("Request to import token %s", item)
-		bondster.callback(item)
+	for _, token := range tokens {
+		log.Debug().Msgf("Request to import token %s", token)
+		bondster.callback(token)
 	}
 }
 
