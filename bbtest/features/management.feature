@@ -17,12 +17,12 @@ Feature: System control
     And unit "bondster-bco-import@ipsum.service" is running
 
   Scenario: stop
-    When restart unit "bondster-bco.service"
+    When stop unit "bondster-bco.service"
     Then unit "bondster-bco-import@lorem.service" is not running
     And  unit "bondster-bco-import@ipsum.service" is not running
 
   Scenario: start
-    When restart unit "bondster-bco.service"
+    When start unit "bondster-bco.service"
     Then unit "bondster-bco-import@lorem.service" is running
     And  unit "bondster-bco-import@ipsum.service" is running
 
