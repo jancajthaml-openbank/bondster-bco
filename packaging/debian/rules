@@ -10,14 +10,16 @@ SUBSTVARS = -Vshlibs:Depends="libc6"
 	+dh $@ -P debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU} --with=systemd
 
 override_dh_systemd_enable:
-	dh_systemd_enable -pbondster-bco --name=bondster-bco bondster-bco.path
 	dh_systemd_enable -pbondster-bco --name=bondster-bco bondster-bco.service
+	dh_systemd_enable -pbondster-bco --name=bondster-bco-watcher bondster-bco-watcher.path
+	dh_systemd_enable -pbondster-bco --name=bondster-bco-watcher bondster-bco-watcher.service
 	dh_systemd_enable -pbondster-bco --name=bondster-bco-rest bondster-bco-rest.service
 	dh_systemd_enable -pbondster-bco --name=bondster-bco-import@ bondster-bco-import@.service
 
 override_dh_systemd_start:
-	dh_systemd_start -pbondster-bco --name=bondster-bco bondster-bco.path
 	dh_systemd_start -pbondster-bco --name=bondster-bco bondster-bco.service
+	dh_systemd_start -pbondster-bco --name=bondster-bco-watcher bondster-bco-watcher.path
+	dh_systemd_start -pbondster-bco --name=bondster-bco-watcher bondster-bco-watcher.service
 	dh_systemd_start -pbondster-bco --name=bondster-bco-rest bondster-bco-rest.service
 
 override_dh_installinit:

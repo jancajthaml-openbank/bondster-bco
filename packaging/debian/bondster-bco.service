@@ -1,13 +1,15 @@
 [Unit]
-Description=openbank Bondster Marketplace Connection services namespace
+Description=openbank Bondster Marketplace connection control group
 After=inetd.service
 ConditionPathExists=/etc/bondster-bco/conf.d/init.conf
 
 [Service]
 Type=oneshot
-ExecStart=/bin/echo start bondster-bco namespace
+ExecStart=/bin/true
 RemainAfterExit=yes
 KillMode=control-group
+StartLimitBurst=0
+StartLimitInterval=0
 
 [Install]
 WantedBy=multi-user.target

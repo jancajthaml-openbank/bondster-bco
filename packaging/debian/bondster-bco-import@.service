@@ -1,8 +1,8 @@
 [Unit]
-Description=openbank Bondster Marketplace Connection tenant %i
+Description=openbank Bondster Marketplace connection tenant %i
 PartOf=bondster-bco.service
 After=bondster-bco.service
-ConditionPathExists=/etc/bondster-bco/conf.d/init.conf
+Requires=bondster-bco.service
 
 [Service]
 Type=notify
@@ -23,4 +23,4 @@ KillMode=process
 KillSignal=SIGTERM
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=bondster-bco.service

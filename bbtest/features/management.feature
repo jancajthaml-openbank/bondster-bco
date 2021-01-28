@@ -1,27 +1,35 @@
-Feature: Properly behaving units
+Feature: System control
 
+  Scenario: check units presence
+    Then  systemctl contains following active units
+      | name              | type    |
+      | bondster-bco      | service |
+      | bondster-bco-rest | service |
+  
   Scenario: onboard
     Given tenant lorem is onboarded
     And   tenant ipsum is onboarded
     Then  systemctl contains following active units
       | name                      | type    |
-      | bondster-bco              | path    |
-      | bondster-bco              | service |
-      | bondster-bco-rest         | service |
       | bondster-bco-import@lorem | service |
       | bondster-bco-import@ipsum | service |
     And unit "bondster-bco-import@lorem.service" is running
     And unit "bondster-bco-import@ipsum.service" is running
 
-    When stop unit "bondster-bco-import@lorem.service"
+  Scenario: stop
+    When restart unit "bondster-bco.service"
     Then unit "bondster-bco-import@lorem.service" is not running
+    And  unit "bondster-bco-import@ipsum.service" is not running
+
+  Scenario: start
+    When restart unit "bondster-bco.service"
+    Then unit "bondster-bco-import@lorem.service" is running
     And  unit "bondster-bco-import@ipsum.service" is running
 
-    When start unit "bondster-bco-import@lorem.service"
+  Scenario: restart
+    When restart unit "bondster-bco.service"
     Then unit "bondster-bco-import@lorem.service" is running
-
-    When restart unit "bondster-bco-import@lorem.service"
-    Then unit "bondster-bco-import@lorem.service" is running
+    And  unit "bondster-bco-import@ipsum.service" is running
 
   Scenario: offboard
     Given tenant lorem is offboarded
@@ -32,6 +40,5 @@ Feature: Properly behaving units
       | bondster-bco-import@ipsum | service |
     And systemctl contains following active units
       | name                      | type    |
-      | bondster-bco              | path    |
       | bondster-bco              | service |
       | bondster-bco-rest         | service |

@@ -1,8 +1,8 @@
 [Unit]
-Description=openbank Bondster Marketplace Connection REST service
+Description=openbank Bondster Marketplace connection REST service
 PartOf=bondster-bco.service
 After=bondster-bco.service
-ConditionPathExists=/etc/bondster-bco/conf.d/init.conf
+Requires=bondster-bco.service
 
 [Service]
 Type=notify
@@ -22,4 +22,4 @@ KillMode=process
 KillSignal=SIGTERM
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=bondster-bco.service
