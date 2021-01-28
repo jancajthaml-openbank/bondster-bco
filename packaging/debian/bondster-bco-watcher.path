@@ -1,0 +1,9 @@
+[Unit]
+Description=openbank Bondster Marketplace connection configuration watcher
+
+[Path]
+PathChanged=/etc/bondster-bco/conf.d/init.conf
+Unit=bondster-bco-watcher.service
+
+[Install]
+WantedBy=multi-user.target
