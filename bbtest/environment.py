@@ -26,6 +26,10 @@ def after_scenario(context, feature):
   context.unit.collect_logs()
 
 
+def after_feature(context, feature):
+  context.zmq.clear()
+
+
 def before_all(context):
   context.log = logger()
   context.unit = UnitHelper(context)
