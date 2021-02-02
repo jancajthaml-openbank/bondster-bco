@@ -100,6 +100,7 @@ func ExistToken(s *System) func(interface{}, system.Context) {
 
 		case SynchronizeToken:
 			log.Debug().Msgf("token %s (Exist SynchronizeToken)", state.ID)
+			log.Info().Msgf("Synchronizing %s", state.ID)
 			context.Self.Become(t_state, SynchronizingToken(s))
 
 			go func() {

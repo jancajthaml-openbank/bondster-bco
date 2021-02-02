@@ -78,7 +78,7 @@ func importAccountsFromStatemets(
 
 	ids, err := plaintextStorage.ListDirectory("token/"+token.ID+"/statements/"+currency, true)
 	if err != nil {
-		log.Warn().Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
+		log.Warn().Err(err).Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
 		return
 	}
 
@@ -88,7 +88,7 @@ func importAccountsFromStatemets(
 	for _, id := range ids {
 		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
 		if err != nil {
-			log.Warn().Msgf("Unable to check if statement %s/%s/%s accounts exists", token.ID, currency, id)
+			log.Warn().Err(err).Msgf("Unable to check if statement %s/%s/%s accounts exists", token.ID, currency, id)
 			continue
 		}
 		if exists {
@@ -97,7 +97,7 @@ func importAccountsFromStatemets(
 
 		data, err := plaintextStorage.ReadFileFully("token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
 		if err != nil {
-			log.Warn().Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
+			log.Warn().Err(err).Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
 			continue
 		}
 
@@ -137,7 +137,7 @@ func importAccountsFromStatemets(
 	for _, id := range idsNeedingConfirmation {
 		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
 		if err != nil {
-			log.Warn().Msgf("Unable to mark account discovery for %s/%s/%s", token.ID, currency, id)
+			log.Warn().Err(err).Msgf("Unable to mark account discovery for %s/%s/%s", token.ID, currency, id)
 		}
 	}
 
@@ -158,7 +158,7 @@ func importTransactionsFromStatemets(
 
 	ids, err := plaintextStorage.ListDirectory("token/"+token.ID+"/statements/"+currency, true)
 	if err != nil {
-		log.Warn().Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
+		log.Warn().Err(err).Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
 		return
 	}
 
@@ -174,7 +174,7 @@ func importTransactionsFromStatemets(
 
 		data, err := plaintextStorage.ReadFileFully("token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
 		if err != nil {
-			log.Warn().Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
+			log.Warn().Err(err).Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
 			continue
 		}
 
@@ -322,7 +322,6 @@ func downloadStatementsForCurrency(
 	defer wg.Done()
 
 	lastSyncedTime := token.GetLastSyncedTime(currency)
-
 	if lastSyncedTime == nil {
 		log.Warn().Msgf("token %s currency %s unable to obtain last synced time", token.ID, currency)
 		return
@@ -337,13 +336,13 @@ func downloadStatementsForCurrency(
 	for _, interval := range timeshift.PartitionInterval(lastTime, endTime) {
 		ids, err := bondsterClient.GetStatementIdsInInterval(currency, interval)
 		if err != nil {
-			log.Warn().Msgf("Unable to obtain transaction ids for token %s currency %s", token.ID, currency)
+			log.Warn().Err(err).Msgf("Unable to obtain transaction ids for token %s currency %s", token.ID, currency)
 			return
 		}
 		for _, id := range ids {
 			exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id)
 			if err != nil {
-				log.Warn().Msgf("Unable to check if transaction %s exists for token %s currency %s", id, token.ID, currency)
+				log.Warn().Err(err).Msgf("Unable to check if transaction %s exists for token %s currency %s", id, token.ID, currency)
 				return
 			}
 			if exists {
@@ -351,7 +350,7 @@ func downloadStatementsForCurrency(
 			}
 			err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/mark")
 			if err != nil {
-				log.Warn().Msgf("Unable to mark transaction %s as known for token %s currency %s", id, token.ID, currency)
+				log.Warn().Err(err).Msgf("Unable to mark transaction %s as known for token %s currency %s", id, token.ID, currency)
 				return
 			}
 		}
@@ -410,7 +409,6 @@ func (workflow Workflow) SynchronizeCurrencies() {
 
 func (workflow Workflow) SynchronizeStatements() {
 	log.Debug().Msgf("token %s synchronizing statements from bondster gateway", workflow.Token.ID)
-
 	currencies := workflow.Token.GetCurrencies()
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))

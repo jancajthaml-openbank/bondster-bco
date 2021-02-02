@@ -79,7 +79,7 @@ func (prog *Program) Setup() {
 				},
 				system.Coordinates{
 					Region: actorSystem.Name,
-					Name:   "token_import_cron",
+					Name:   "",
 				},
 			)
 		},
