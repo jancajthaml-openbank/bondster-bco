@@ -37,17 +37,15 @@ func NewScheduledDaemon(name string, worker Worker, interval time.Duration) Daem
 	if interval < tickerInterval {
 		tickerInterval = interval
 	}
-	daemon := &ScheduledDaemon{
+	return &ScheduledDaemon{
 		Worker:       worker,
 		name:         name,
 		interval:     interval,
-		ticker:       time.NewTicker(time.Second),
-		nextDeadline: time.Now(),
+		ticker:       time.NewTicker(tickerInterval),
+		nextDeadline: time.Now().Add(interval),
 		cancelOnce:   sync.Once{},
 		done:         make(chan interface{}),
 	}
-	daemon.nextDeadline = time.Now().Add(daemon.interval)
-	return daemon
 }
 
 // Done returns signal when worker has finished work
