@@ -27,6 +27,8 @@ const (
 	ReqDeleteToken = "DT"
 	// RespDeleteToken fio message response code for "Delete Token"
 	RespDeleteToken = "TD"
+	// RespTokenDoesNotExist bondster message response code for "Token does not Exist"
+	RespTokenDoesNotExist = "EM"
 	// FatalError fio message response code for "Error"
 	FatalError = "EE"
 )

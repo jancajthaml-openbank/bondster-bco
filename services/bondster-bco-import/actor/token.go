@@ -53,7 +53,6 @@ func NonExistToken(s *System) func(interface{}, system.Context) {
 
 		case CreateToken:
 			tokenResult := persistence.CreateToken(s.EncryptedStorage, state.ID, msg.Username, msg.Password)
-
 			if tokenResult == nil {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
 				log.Debug().Msgf("token %s (NonExist CreateToken) Error", state.ID)
@@ -66,14 +65,13 @@ func NonExistToken(s *System) func(interface{}, system.Context) {
 			s.Metrics.TokenCreated()
 
 			context.Self.Become(*tokenResult, ExistToken(s))
-			context.Self.Tell(SynchronizeToken{}, context.Receiver, context.Receiver)
 
 		case DeleteToken:
-			s.SendMessage(FatalError, context.Sender, context.Receiver)
+			s.SendMessage(RespTokenDoesNotExist, context.Sender, context.Receiver)
 			log.Debug().Msgf("token %s (NonExist DeleteToken) Error", state.ID)
 
 		case SynchronizeToken:
-			s.SendMessage(FatalError, context.Sender, context.Receiver)
+			s.SendMessage(RespTokenDoesNotExist, context.Sender, context.Receiver)
 			log.Debug().Msgf("token %s (NonExist SynchronizeToken) Error", state.ID)
 
 		default:

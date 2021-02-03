@@ -41,6 +41,9 @@ func parseMessage(msg string) (interface{}, error) {
 	case RespSynchronizeToken:
 		return new(TokenSynchonizeAccepted), nil
 
+	case RespTokenDoesNotExist:
+		return new(TokenMissing), nil
+		
 	default:
 		return nil, fmt.Errorf("unknown message %s", msg)
 	}

@@ -35,6 +35,8 @@ const (
 	ReqSynchronizeToken = "ST"
 	// RespSynchronizeToken bondster message response code for "Synchronize Token"
 	RespSynchronizeToken = "TS"
+	// RespTokenDoesNotExist bondster message response code for "Token does not Exist"
+	RespTokenDoesNotExist = "EM"
 	// FatalError bondster message response code for "Error"
 	FatalError = "EE"
 )
