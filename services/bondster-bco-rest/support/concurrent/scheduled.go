@@ -23,28 +23,22 @@ import (
 // ScheduledDaemon represent work happening repeatedly in given interval
 type ScheduledDaemon struct {
 	Worker
-	name         string
-	interval     time.Duration
-	ticker       *time.Ticker
-	nextDeadline time.Time
-	cancelOnce   sync.Once
-	done         chan interface{}
+	name       string
+	interval   time.Duration
+	ticker     *time.Ticker
+	cancelOnce sync.Once
+	done       chan interface{}
 }
 
 // NewScheduledDaemon returns new daemon with given name for periodic work
 func NewScheduledDaemon(name string, worker Worker, interval time.Duration) Daemon {
-	tickerInterval := time.Second
-	if interval < tickerInterval {
-		tickerInterval = interval
-	}
 	return &ScheduledDaemon{
-		Worker:       worker,
-		name:         name,
-		interval:     interval,
-		ticker:       time.NewTicker(tickerInterval),
-		nextDeadline: time.Now().Add(interval),
-		cancelOnce:   sync.Once{},
-		done:         make(chan interface{}),
+		Worker:     worker,
+		name:       name,
+		interval:   interval,
+		ticker:     time.NewTicker(interval),
+		cancelOnce: sync.Once{},
+		done:       make(chan interface{}),
 	}
 }
 
@@ -100,11 +94,6 @@ func (daemon *ScheduledDaemon) Start(parentContext context.Context, cancelFuncti
 			daemon.Stop()
 			return
 		case <-daemon.ticker.C:
-			now := time.Now()
-			if now.Before(daemon.nextDeadline) {
-				continue
-			}
-			daemon.nextDeadline = now.Add(daemon.interval)
 			daemon.Work()
 		case <-daemon.Done():
 			return
