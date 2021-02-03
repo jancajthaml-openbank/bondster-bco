@@ -51,13 +51,12 @@ func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
-			// FIXME forward into deadletter receiver and finish whatever has started
-			log.Warn().Msgf("Deadletter received [remote %v -> local %v] : %+v", from, to, msg)
+			log.Warn().Err(err).Msgf("Deadletter [remote %v -> local %v] %s", from, to, msg)
 			return
 		}
 		message, err := parseMessage(msg)
 		if err != nil {
-			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
+			log.Warn().Err(err).Msgf("Failed to parse message [remote %v -> local %v]", from, to)
 		}
 		ref.Tell(message, to, from)
 		return

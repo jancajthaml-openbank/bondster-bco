@@ -66,7 +66,7 @@ func NonExistToken(s *System) func(interface{}, system.Context) {
 			s.Metrics.TokenCreated()
 
 			context.Self.Become(*tokenResult, ExistToken(s))
-			context.Self.Tell(SynchronizeToken{}, context.Receiver, context.Sender)
+			context.Self.Tell(SynchronizeToken{}, context.Receiver, context.Receiver)
 
 		case DeleteToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
