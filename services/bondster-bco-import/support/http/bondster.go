@@ -44,8 +44,8 @@ func NewBondsterClient(gateway string, token *model.Token) *BondsterClient {
 	}
 }
 
-// CheckSession ensures authorized session is present for http requests
-func (client *BondsterClient) CheckSession() error {
+// EnsureSession ensures authorized session is present for http requests
+func (client *BondsterClient) EnsureSession() error {
 	if client == nil {
 		return fmt.Errorf("nil deference")
 	}
@@ -127,7 +127,7 @@ func (client *BondsterClient) login() error {
 	client.session.JWT = &(webToken.JWT)
 	client.session.SSID = &(webToken.SSID)
 
-	log.Info().Msgf("logged in with token %s, valid until %s", client.token.ID, webToken.JWT.ExpiresAt.Format(time.RFC3339))
+	log.Debug().Msgf("logged in with token %s, valid until %s", client.token.ID, webToken.JWT.ExpiresAt.Format(time.RFC3339))
 
 	return nil
 }
@@ -147,11 +147,11 @@ func (client *BondsterClient) prolong() error {
 		"referer":           client.gateway + "/cs",
 	}
 
-	if client.session.JWT != nil {
+	if client.session != nil && client.session.JWT != nil {
 		headers["authorization"] = "Bearer " + client.session.JWT.Value
 	}
 
-	if client.session.SSID != nil {
+	if client.session != nil && client.session.SSID != nil {
 		headers["ssid"] = client.session.SSID.Value
 	}
 
@@ -210,11 +210,11 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 		"referer":           client.gateway + "/cs",
 	}
 
-	if client.session.JWT != nil {
+	if client.session != nil && client.session.JWT != nil {
 		headers["authorization"] = "Bearer " + client.session.JWT.Value
 	}
 
-	if client.session.SSID != nil {
+	if client.session != nil && client.session.SSID != nil {
 		headers["ssid"] = client.session.SSID.Value
 	}
 
@@ -263,11 +263,11 @@ func (client *BondsterClient) GetStatementIdsInInterval(currency string, interva
 		"referer":           client.gateway + "/cs/statement",
 	}
 
-	if client.session.JWT != nil {
+	if client.session != nil && client.session.JWT != nil {
 		headers["authorization"] = "Bearer " + client.session.JWT.Value
 	}
 
-	if client.session.SSID != nil {
+	if client.session != nil && client.session.SSID != nil {
 		headers["ssid"] = client.session.SSID.Value
 	}
 
@@ -325,11 +325,11 @@ func (client *BondsterClient) GetStatements(currency string, transferIds []strin
 		"referer":           client.gateway + "/cs/statement",
 	}
 
-	if client.session.JWT != nil {
+	if client.session != nil && client.session.JWT != nil {
 		headers["authorization"] = "Bearer " + client.session.JWT.Value
 	}
 
-	if client.session.SSID != nil {
+	if client.session != nil && client.session.SSID != nil {
 		headers["ssid"] = client.session.SSID.Value
 	}
 

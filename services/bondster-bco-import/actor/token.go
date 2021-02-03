@@ -123,8 +123,7 @@ func ExistToken(s *System) func(interface{}, system.Context) {
 					s.Metrics,
 				)
 
-				workflow.SynchronizeCurrencies()
-				workflow.SynchronizeStatements()
+				workflow.DownloadStatements()
 				workflow.CreateAccounts()
 				workflow.CreateTransactions()
 			}()

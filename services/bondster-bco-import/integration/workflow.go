@@ -156,23 +156,23 @@ func importTransactionsFromStatemets(
 
 	log.Info().Msgf("token %s creating transactions from statements for currency %s", token.ID, currency)
 
-	ids, err := plaintextStorage.ListDirectory("token/"+token.ID+"/statements/"+currency, true)
+	ids, err := plaintextStorage.ListDirectory(persistence.StatementPath(token.ID, currency), true)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
 		return
 	}
 
 	for _, id := range ids {
-		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/transactions")
+		exists, err := plaintextStorage.Exists(persistence.StatementDoneMarkPath(token.ID, currency, id))
 		if err != nil {
-			log.Warn().Msgf("Unable to check if statement %s/%s/%s transactions exists", token.ID, currency, id)
+			log.Warn().Msgf("Unable to check if statement %s/%s/%s done exists", token.ID, currency, id)
 			continue
 		}
 		if exists {
 			continue
 		}
 
-		data, err := plaintextStorage.ReadFileFully("token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
+		data, err := plaintextStorage.ReadFileFully(persistence.StatementDataPath(token.ID, currency, id))
 		if err != nil {
 			log.Warn().Err(err).Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
 			continue
@@ -224,9 +224,9 @@ func importTransactionsFromStatemets(
 
 		metrics.TransactionImported(1)
 
-		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/transactions")
+		err = plaintextStorage.TouchFile(persistence.StatementDoneMarkPath(token.ID, currency, id))
 		if err != nil {
-			log.Warn().Msgf("Unable to mark transactions discovery for %s/%s/%s", token.ID, currency, id)
+			log.Warn().Msgf("Unable to mark statement done for %s/%s/%s", token.ID, currency, id)
 			continue
 		}
 
@@ -261,7 +261,7 @@ func downloadStatements(
 			log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", tokenID, currency, transaction.IDTransfer)
 			continue
 		}
-		err = plaintextStorage.WriteFileExclusive("token/"+tokenID+"/statements/"+currency+"/"+transaction.IDTransfer+"/data", data)
+		err = plaintextStorage.WriteFileExclusive(persistence.StatementDataPath(tokenID, currency, transaction.IDTransfer), data)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Unable to persist statement details of %s/%s/%s", tokenID, currency, transaction.IDTransfer)
 			continue
@@ -282,13 +282,13 @@ func yieldUnsynchronizedStatementIds(
 	go func() {
 		defer close(chnl)
 		buffer := make([]string, 0)
-		ids, err := plaintextStorage.ListDirectory("token/"+tokenID+"/statements/"+currency, true)
+		ids, err := plaintextStorage.ListDirectory(persistence.StatementPath(tokenID, currency), true)
 		if err != nil {
 			log.Warn().Msgf("Unable to obtain transaction ids from storage for token %s currency %s", tokenID, currency)
 			return
 		}
 		for _, id := range ids {
-			exists, err := plaintextStorage.Exists("token/" + tokenID + "/statements/" + currency + "/" + id + "/data")
+			exists, err := plaintextStorage.Exists(persistence.StatementDataPath(tokenID, currency, id))
 			if err != nil {
 				log.Warn().Msgf("Unable to check if statement %s/%s/%s data exists", tokenID, currency, id)
 				continue
@@ -378,11 +378,11 @@ func downloadStatementsForCurrency(
 
 }
 
-// SynchronizeCurrencies discovers all existing currencies for given token if not already known
-func (workflow Workflow) SynchronizeCurrencies() {
+// DownloadStatements download new statements from bonster gateway
+func (workflow Workflow) DownloadStatements() {
+	log.Debug().Msgf("token %s synchronizing statements from bondster gateway", workflow.Token.ID)
 
-	// FIXME elsewhere
-	err := workflow.BondsterClient.CheckSession()
+	err := workflow.BondsterClient.EnsureSession()
 	if err != nil {
 		log.Warn().Err(err).Msgf("Unable to ensure session")
 		return
@@ -391,11 +391,11 @@ func (workflow Workflow) SynchronizeCurrencies() {
 	if workflow.Token.GetLastSyncedTime("CZK") != nil && workflow.Token.GetLastSyncedTime("EUR") != nil {
 		return
 	}
-	log.Debug().Msgf("token %s discovering currencies from Bondster gateway", workflow.Token.ID)
+	log.Debug().Msgf("token %s discovering currencies", workflow.Token.ID)
 
 	currencies, err := workflow.BondsterClient.GetCurrencies()
 	if err != nil {
-		log.Warn().Err(err).Msgf("token %s Unable to get currencies", workflow.Token.ID)
+		log.Warn().Err(err).Msgf("token %s unable to get currencies", workflow.Token.ID)
 		return
 	}
 
@@ -407,18 +407,14 @@ func (workflow Workflow) SynchronizeCurrencies() {
 			continue
 		}
 		if !persistence.UpdateToken(workflow.EncryptedStorage, workflow.Token) {
-			log.Warn().Msgf("unable to update token %s", workflow.Token.ID)
+			log.Warn().Msgf("token %s unable to update", workflow.Token.ID)
 			continue
 		}
 	}
 
-	return
-}
+	currencies = workflow.Token.GetCurrencies()
 
-func (workflow Workflow) SynchronizeStatements() {
-	log.Debug().Msgf("token %s synchronizing statements from bondster gateway", workflow.Token.ID)
-
-	currencies := workflow.Token.GetCurrencies()
+	// FIXME better with daemon support and cancelation
 
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
