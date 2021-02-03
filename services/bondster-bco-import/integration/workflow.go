@@ -74,7 +74,7 @@ func importAccountsFromStatemets(
 ) {
 	defer wg.Done()
 
-	log.Info().Msgf("token %s creating accounts from statements for currency %s", token.ID, currency)
+	log.Debug().Msgf("token %s creating accounts from statements for currency %s", token.ID, currency)
 
 	ids, err := plaintextStorage.ListDirectory("token/"+token.ID+"/statements/"+currency, true)
 	if err != nil {
@@ -118,7 +118,7 @@ func importAccountsFromStatemets(
 	accounts[currency+"_TYPE_NOSTRO"] = true
 
 	for account := range accounts {
-		log.Debug().Msgf("Creating account %s", account)
+		log.Info().Msgf("Creating account %s", account)
 
 		request := model.Account{
 			Tenant:         tenant,
@@ -214,7 +214,7 @@ func importTransactionsFromStatemets(
 			},
 		}
 
-		log.Debug().Msgf("Creating transaction %s", statement.IDTransfer)
+		log.Info().Msgf("Creating transaction %s", statement.IDTransfer)
 
 		err = ledgerClient.CreateTransaction(request)
 		if err != nil {
@@ -380,8 +380,6 @@ func downloadStatementsForCurrency(
 
 // DownloadStatements download new statements from bonster gateway
 func (workflow Workflow) DownloadStatements() {
-	log.Debug().Msgf("token %s synchronizing statements from bondster gateway", workflow.Token.ID)
-
 	err := workflow.BondsterClient.EnsureSession()
 	if err != nil {
 		log.Warn().Err(err).Msgf("Unable to ensure session")
@@ -433,8 +431,6 @@ func (workflow Workflow) DownloadStatements() {
 }
 
 func (workflow Workflow) CreateAccounts() {
-	log.Debug().Msgf("token %s ensuring accounts based on statements", workflow.Token.ID)
-
 	currencies := workflow.Token.GetCurrencies()
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
@@ -452,8 +448,6 @@ func (workflow Workflow) CreateAccounts() {
 }
 
 func (workflow Workflow) CreateTransactions() {
-	log.Debug().Msgf("token %s creating transactions based on statements", workflow.Token.ID)
-
 	currencies := workflow.Token.GetCurrencies()
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))

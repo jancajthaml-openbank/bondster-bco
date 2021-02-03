@@ -77,8 +77,8 @@ func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
 		message, err := parseMessage(msg, to)
 		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to parse message [remote %v -> local %v]", from, to)
 			if from != to && to.Name != "" {
+				log.Warn().Err(err).Msgf("Failed to parse message [remote %v -> local %v]", from, to)
 				s.SendMessage(FatalError, from, to)
 			}
 			return
