@@ -15,8 +15,10 @@
 package actor
 
 const (
-	// SynchronizeTokens fio message request code for "Synchronize Tokens Now"
-	SynchronizeTokens = "ST"
+	// ReqSynchronizeToken bondster message request code for "Synchronize Token"
+	ReqSynchronizeToken = "ST"
+	// RespSynchronizeToken bondster message response code for "Synchronize Token"
+	RespSynchronizeToken = "TS"
 	// ReqCreateToken fio message request code for "New Token"
 	ReqCreateToken = "NT"
 	// RespCreateToken fio message response code for "New Token"

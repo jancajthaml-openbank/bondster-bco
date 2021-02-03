@@ -104,6 +104,40 @@ func CreateToken(system *actor.System) func(c echo.Context) error {
 	}
 }
 
+// SynchronizeToken orders token to synchronize now
+func SynchronizeToken(system *actor.System) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
+		tenant := c.Param("tenant")
+		if tenant == "" {
+			return fmt.Errorf("missing tenant")
+		}
+
+		token := c.Param("token")
+		if tenant == "" {
+			return fmt.Errorf("missing token")
+		}
+
+		switch actor.SynchronizeToken(system, tenant, token).(type) {
+
+		case *actor.TokenSynchonizeAccepted:
+			log.Debug().Msgf("Token %s Synchonizing", token)
+			c.Response().WriteHeader(http.StatusOK)
+			return nil
+
+		case *actor.ReplyTimeout:
+			log.Debug().Msgf("Token %s Creation Timeout", token)
+			c.Response().WriteHeader(http.StatusGatewayTimeout)
+			return nil
+
+		default:
+			return fmt.Errorf("interval server error")
+
+		}
+	}
+}
+
 // GetTokens return existing tokens of given tenant
 func GetTokens(storage localfs.Storage) func(c echo.Context) error {
 	return func(c echo.Context) error {

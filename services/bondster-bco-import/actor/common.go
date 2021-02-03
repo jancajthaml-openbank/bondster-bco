@@ -49,7 +49,7 @@ func parseMessage(msg string, to system.Coordinates) (interface{}, error) {
 
 	switch parts[0] {
 
-	case SynchronizeTokens:
+	case RespSynchronizeToken:
 		return SynchronizeToken{}, nil
 
 	case ReqCreateToken:

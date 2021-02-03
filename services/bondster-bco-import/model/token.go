@@ -18,26 +18,26 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-	"time"
 	"sync"
+	"time"
 )
 
 // Token represents metadata of token entity
 type Token struct {
-	ID             string
-	Username       string
-	Password       string
-	CreatedAt      time.Time
+	ID         string
+	Username   string
+	Password   string
+	CreatedAt  time.Time
 	lastSynced map[string]time.Time
-	mutex sync.RWMutex
+	mutex      sync.RWMutex
 }
 
 // NewToken returns new Token
 func NewToken(id string) Token {
 	return Token{
-		ID:             id,
+		ID:         id,
 		lastSynced: make(map[string]time.Time),
-		mutex: sync.RWMutex{},
+		mutex:      sync.RWMutex{},
 	}
 }
 
@@ -74,9 +74,9 @@ func (entity *Token) GetCurrencies() []string {
 	}
 	entity.mutex.Lock()
 	for k := range entity.lastSynced {
-        keys = append(keys, k)
-    }
-    entity.mutex.Unlock()
+		keys = append(keys, k)
+	}
+	entity.mutex.Unlock()
 	return keys
 }
 

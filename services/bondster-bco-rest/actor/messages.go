@@ -19,19 +19,23 @@ import (
 )
 
 const (
-	// ReqTokens fio message request code for "Get Tokens"
+	// ReqTokens bondster message request code for "Get Tokens"
 	ReqTokens = "GT"
-	// RespTokens fio message response code for "Get Tokens"
+	// RespTokens bondster message response code for "Get Tokens"
 	RespTokens = "TG"
-	// ReqCreateToken fio message request code for "New Token"
+	// ReqCreateToken bondster message request code for "New Token"
 	ReqCreateToken = "NT"
-	// RespCreateToken fio message response code for "New Token"
+	// RespCreateToken bondster message response code for "New Token"
 	RespCreateToken = "TN"
-	// ReqDeleteToken fio message request code for "Delete Token"
+	// ReqDeleteToken bondster message request code for "Delete Token"
 	ReqDeleteToken = "DT"
-	// RespDeleteToken fio message response code for "Delete Token"
+	// RespDeleteToken bondster message response code for "Delete Token"
 	RespDeleteToken = "TD"
-	// FatalError fio message response code for "Error"
+	// ReqSynchronizeToken bondster message request code for "Synchronize Token"
+	ReqSynchronizeToken = "ST"
+	// RespSynchronizeToken bondster message response code for "Synchronize Token"
+	RespSynchronizeToken = "TS"
+	// FatalError bondster message response code for "Error"
 	FatalError = "EE"
 )
 
@@ -40,7 +44,12 @@ func CreateTokenMessage(token model.Token) string {
 	return ReqCreateToken + " " + token.Username + " " + token.Password
 }
 
-// DeleteTokenMessage is message for deletion of new token
+// SynchronizeTokenMessage is message for immediate synchronization of existing token
+func SynchronizeTokenMessage() string {
+	return ReqSynchronizeToken
+}
+
+// DeleteTokenMessage is message for deletion of existing token
 func DeleteTokenMessage() string {
 	return ReqDeleteToken
 }

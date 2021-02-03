@@ -23,7 +23,7 @@ import (
 // ScheduledDaemon represent work happening repeatedly in given interval
 type ScheduledDaemon struct {
 	Worker
-	name       string
+	name         string
 	interval     time.Duration
 	ticker       *time.Ticker
 	nextDeadline time.Time
