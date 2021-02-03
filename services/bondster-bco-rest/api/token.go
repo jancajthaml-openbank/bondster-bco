@@ -130,7 +130,7 @@ func SynchronizeToken(system *actor.System) func(c echo.Context) error {
 			log.Debug().Msgf("Token %s Synchonizing", id)
 			c.Response().WriteHeader(http.StatusOK)
 			return nil
-	
+
 		case *actor.TokenMissing:
 			log.Debug().Msgf("Token %s Synchonizing does not exist", id)
 			c.Response().WriteHeader(http.StatusNotFound)
@@ -141,7 +141,6 @@ func SynchronizeToken(system *actor.System) func(c echo.Context) error {
 			c.Response().WriteHeader(http.StatusGatewayTimeout)
 			return nil
 
-		
 		default:
 			return fmt.Errorf("interval server error")
 

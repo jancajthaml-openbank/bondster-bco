@@ -30,12 +30,12 @@ var whitespaceRegex = regexp.MustCompile(`\s`)
 type BondsterClient struct {
 	underlying Client
 	gateway    string
-	token      model.Token
+	token      *model.Token
 	session    *model.Session
 }
 
 // NewBondsterClient returns new bondster http client
-func NewBondsterClient(gateway string, token model.Token) *BondsterClient {
+func NewBondsterClient(gateway string, token *model.Token) *BondsterClient {
 	return &BondsterClient{
 		gateway:    gateway,
 		underlying: NewHTTPClient(),
@@ -44,8 +44,8 @@ func NewBondsterClient(gateway string, token model.Token) *BondsterClient {
 	}
 }
 
-// FIXME tied to session
-func (client *BondsterClient) checkSession() error {
+// CheckSession ensures authorized session is present for http requests
+func (client *BondsterClient) CheckSession() error {
 	if client == nil {
 		return fmt.Errorf("nil deference")
 	}
@@ -201,11 +201,6 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 		return nil, fmt.Errorf("nil deference")
 	}
 
-	err := client.checkSession()
-	if err != nil {
-		return nil, err
-	}
-
 	headers := map[string]string{
 		"device":            client.session.Device,
 		"channeluuid":       client.session.Channel,
@@ -256,10 +251,6 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 func (client *BondsterClient) GetStatementIdsInInterval(currency string, interval timeshift.TimeRange) ([]string, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
-	}
-	err := client.checkSession()
-	if err != nil {
-		return nil, err
 	}
 
 	headers := map[string]string{
@@ -318,10 +309,7 @@ func (client *BondsterClient) GetStatements(currency string, transferIds []strin
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}
-	err := client.checkSession()
-	if err != nil {
-		return nil, err
-	}
+
 	ids := ""
 	for _, id := range transferIds {
 		ids += "\"" + id + "\","

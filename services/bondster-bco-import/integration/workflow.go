@@ -55,7 +55,7 @@ func NewWorkflow(
 	return Workflow{
 		Token:            token,
 		Tenant:           tenant,
-		BondsterClient:   http.NewBondsterClient(bondsterGateway, *token),
+		BondsterClient:   http.NewBondsterClient(bondsterGateway, token),
 		VaultClient:      http.NewVaultClient(vaultGateway),
 		LedgerClient:     http.NewLedgerClient(ledgerGateway),
 		EncryptedStorage: encryptedStorage,
@@ -380,6 +380,14 @@ func downloadStatementsForCurrency(
 
 // SynchronizeCurrencies discovers all existing currencies for given token if not already known
 func (workflow Workflow) SynchronizeCurrencies() {
+
+	// FIXME elsewhere
+	err := workflow.BondsterClient.CheckSession()
+	if err != nil {
+		log.Warn().Err(err).Msgf("Unable to ensure session")
+		return
+	}
+
 	if workflow.Token.GetLastSyncedTime("CZK") != nil && workflow.Token.GetLastSyncedTime("EUR") != nil {
 		return
 	}
@@ -409,7 +417,9 @@ func (workflow Workflow) SynchronizeCurrencies() {
 
 func (workflow Workflow) SynchronizeStatements() {
 	log.Debug().Msgf("token %s synchronizing statements from bondster gateway", workflow.Token.ID)
+
 	currencies := workflow.Token.GetCurrencies()
+
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
 	for _, currency := range currencies {
