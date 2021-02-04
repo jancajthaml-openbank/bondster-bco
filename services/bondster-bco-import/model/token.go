@@ -37,6 +37,7 @@ func NewToken(id string) Token {
 	return Token{
 		ID:         id,
 		lastSynced: make(map[string]time.Time),
+		CreatedAt:  time.Now().UTC(),
 		mutex:      sync.RWMutex{},
 	}
 }
