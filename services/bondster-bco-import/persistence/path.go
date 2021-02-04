@@ -1,3 +1,4 @@
+
 // Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,19 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package actor
+package persistence
 
-// ReplyTimeout message
-type ReplyTimeout struct{}
 
-// TokenCreated message
-type TokenCreated struct{}
+func StatementPath(token string, currency string) string {
+	return "token/"+token+"/statements/"+currency
+}
 
-// TokenDeleted message
-type TokenDeleted struct{}
+func StatementDataPath(token string, currency string, transfer string) string {
+	return "token/"+token+"/statements/"+currency+"/" + transfer + "/data"
+}
 
-// TokenSynchonizeAccepted message
-type TokenSynchonizeAccepted struct{}
-
-// TokenMissing message
-type TokenMissing struct{}
+func StatementDoneMarkPath(token string, currency string, transfer string) string {
+	return "token/"+token+"/statements/"+currency+"/" + transfer + "/done"
+}

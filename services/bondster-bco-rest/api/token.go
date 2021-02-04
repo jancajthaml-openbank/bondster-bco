@@ -47,6 +47,11 @@ func DeleteToken(system *actor.System) func(c echo.Context) error {
 			c.Response().WriteHeader(http.StatusOK)
 			return nil
 
+		case *actor.TokenMissing:
+			log.Debug().Msgf("Token %s Deletion does not exist", id)
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+
 		case *actor.ReplyTimeout:
 			log.Debug().Msgf("Token %s Deletion Timeout", id)
 			c.Response().WriteHeader(http.StatusGatewayTimeout)
@@ -94,6 +99,45 @@ func CreateToken(system *actor.System) func(c echo.Context) error {
 
 		case *actor.ReplyTimeout:
 			log.Debug().Msgf("Token %s Creation Timeout", req.ID)
+			c.Response().WriteHeader(http.StatusGatewayTimeout)
+			return nil
+
+		default:
+			return fmt.Errorf("interval server error")
+
+		}
+	}
+}
+
+// SynchronizeToken orders token to synchronize now
+func SynchronizeToken(system *actor.System) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
+		tenant := c.Param("tenant")
+		if tenant == "" {
+			return fmt.Errorf("missing tenant")
+		}
+
+		id := c.Param("id")
+		if id == "" {
+			return fmt.Errorf("missing id")
+		}
+
+		switch actor.SynchronizeToken(system, tenant, id).(type) {
+
+		case *actor.TokenSynchonizeAccepted:
+			log.Debug().Msgf("Token %s Synchonizing", id)
+			c.Response().WriteHeader(http.StatusOK)
+			return nil
+
+		case *actor.TokenMissing:
+			log.Debug().Msgf("Token %s Synchonizing does not exist", id)
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+
+		case *actor.ReplyTimeout:
+			log.Debug().Msgf("Token %s Synchonizing Timeout", id)
 			c.Response().WriteHeader(http.StatusGatewayTimeout)
 			return nil
 

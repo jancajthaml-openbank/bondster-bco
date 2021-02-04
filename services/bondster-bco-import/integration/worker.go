@@ -62,7 +62,7 @@ func (bondster BondsterImport) Setup() error {
 
 // Work performs import roundtrip
 func (bondster BondsterImport) Work() {
-	log.Debug().Msg("Importing from Bondster Marketplace")
+	log.Info().Msg("Import statements from Bondster Marketplace")
 
 	tokens, err := bondster.getActiveTokens()
 	if err != nil {

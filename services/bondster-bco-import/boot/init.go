@@ -72,14 +72,14 @@ func (prog *Program) Setup() {
 		prog.cfg.RootStorage,
 		prog.cfg.EncryptionKey,
 		func(token string) {
-			actorSystem.SendMessage(actor.SynchronizeTokens,
+			actorSystem.SendMessage(actor.ReqSynchronizeToken,
 				system.Coordinates{
 					Region: actorSystem.Name,
 					Name:   token,
 				},
 				system.Coordinates{
 					Region: actorSystem.Name,
-					Name:   "token_import_cron",
+					Name:   "",
 				},
 			)
 		},

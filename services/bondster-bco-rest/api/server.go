@@ -57,7 +57,7 @@ func NewServer(
 ) *Server {
 	storage, err := localfs.NewEncryptedStorage(rootStorage, storageKey)
 	if err != nil {
-		log.Error().Msgf("Failed to ensure storage %+v", err)
+		log.Error().Err(err).Msg("Failed to ensure storage")
 		return nil
 	}
 
@@ -65,7 +65,7 @@ func NewServer(
 
 	certificate, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
-		log.Error().Msg("Invalid cert and key")
+		log.Error().Err(err).Msg("Invalid cert and key")
 		return nil
 	}
 
@@ -76,6 +76,7 @@ func NewServer(
 	router.POST("/tenant/:tenant", CreateTenant(systemControl))
 	router.DELETE("/tenant/:tenant", DeleteTenant(systemControl))
 
+	router.GET("/token/:tenant/:id/sync", SynchronizeToken(actorSystem))
 	router.DELETE("/token/:tenant/:id", DeleteToken(actorSystem))
 	router.POST("/token/:tenant", CreateToken(actorSystem))
 	router.GET("/token/:tenant", GetTokens(storage))
@@ -142,7 +143,7 @@ func (server *Server) Work() {
 	if server == nil {
 		return
 	}
-	log.Info().Msgf("Server listening on %s", server.underlying.Addr)
+	log.Info().Str("listen", server.underlying.Addr).Msg("Server")
 	tlsListener := tls.NewListener(tcpKeepAliveListener{server.listener}, server.underlying.TLSConfig)
 	err := server.underlying.Serve(tlsListener)
 	if err != nil && err != http.ErrServerClosed {
