@@ -107,7 +107,7 @@ func importAccountsFromStatemets(
 			continue
 		}
 
-		accounts[currency+"_TYPE_"+statement.Type] = true
+		accounts["BONDSTER_"+currency+"_TYPE_"+statement.Type] = true
 		idsNeedingConfirmation = append(idsNeedingConfirmation, id)
 	}
 
@@ -115,7 +115,7 @@ func importAccountsFromStatemets(
 		return
 	}
 
-	accounts[currency+"_TYPE_NOSTRO"] = true
+	accounts["BONDSTER_"+currency+"_TYPE_NOSTRO"] = true
 
 	for account := range accounts {
 		log.Info().Msgf("Creating account %s", account)
@@ -192,11 +192,11 @@ func importTransactionsFromStatemets(
 		}
 
 		if statement.Direction == "CREDIT" {
-			credit.Name = statement.Amount.Currency + "_TYPE_NOSTRO"
-			debit.Name = statement.Amount.Currency + "_TYPE_" + statement.Type
+			credit.Name = "BONDSTER_"+statement.Amount.Currency + "_TYPE_NOSTRO"
+			debit.Name = "BONDSTER_"+statement.Amount.Currency + "_TYPE_" + statement.Type
 		} else {
-			credit.Name = statement.Amount.Currency + "_TYPE_" + statement.Type
-			debit.Name = statement.Amount.Currency + "_TYPE_NOSTRO"
+			credit.Name = "BONDSTER_"+statement.Amount.Currency + "_TYPE_" + statement.Type
+			debit.Name = "BONDSTER_"+statement.Amount.Currency + "_TYPE_NOSTRO"
 		}
 
 		request := model.Transaction{
@@ -311,7 +311,6 @@ func yieldUnsynchronizedStatementIds(
 }
 
 func downloadStatementsForCurrency(
-	wg *sync.WaitGroup,
 	currency string,
 	encryptedStorage localfs.Storage,
 	plaintextStorage localfs.Storage,
@@ -319,8 +318,6 @@ func downloadStatementsForCurrency(
 	bondsterClient *http.BondsterClient,
 	metrics metrics.Metrics,
 ) {
-	defer wg.Done()
-
 	lastSyncedTime := token.GetLastSyncedTime(currency)
 	if lastSyncedTime == nil {
 		log.Warn().Msgf("token %s currency %s unable to obtain last synced time", token.ID, currency)
@@ -370,7 +367,7 @@ func downloadStatementsForCurrency(
 			continue
 		}
 		lastTime = newTime
-		token.SetLastSyncedTime(currency, lastTime)
+		token.SetLastSyncedTime(currency, newTime)
 		if !persistence.UpdateToken(encryptedStorage, token) {
 			log.Warn().Msgf("unable to update token %s", token.ID)
 		}
@@ -414,11 +411,8 @@ func (workflow Workflow) DownloadStatements() {
 
 	// FIXME better with daemon support and cancelation
 
-	var wg sync.WaitGroup
-	wg.Add(len(currencies))
 	for _, currency := range currencies {
-		go downloadStatementsForCurrency(
-			&wg,
+		downloadStatementsForCurrency(
 			currency,
 			workflow.EncryptedStorage,
 			workflow.PlaintextStorage,
@@ -427,11 +421,13 @@ func (workflow Workflow) DownloadStatements() {
 			workflow.Metrics,
 		)
 	}
-	wg.Wait()
 }
 
 func (workflow Workflow) CreateAccounts() {
 	currencies := workflow.Token.GetCurrencies()
+
+	// FIXME better with daemon support and cancelation
+
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
 	for _, currency := range currencies {
@@ -449,6 +445,9 @@ func (workflow Workflow) CreateAccounts() {
 
 func (workflow Workflow) CreateTransactions() {
 	currencies := workflow.Token.GetCurrencies()
+
+	// FIXME better with daemon support and cancelation
+
 	var wg sync.WaitGroup
 	wg.Add(len(currencies))
 	for _, currency := range currencies {
