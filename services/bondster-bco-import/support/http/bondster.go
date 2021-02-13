@@ -78,7 +78,7 @@ func (client *BondsterClient) login() error {
 
 	response, err := client.underlying.Post(client.gateway+"/proxy/router/api/public/authentication/getLoginScenario", nil, headers)
 	if err != nil {
-		return fmt.Errorf("bondster get login scenario Error %+v", err)
+		return fmt.Errorf("bondster get login scenario Error %w", err)
 	}
 	if response.Status != 200 {
 		return fmt.Errorf("bondster get login scenario error %s", response.String())
@@ -121,7 +121,7 @@ func (client *BondsterClient) login() error {
 	var webToken = new(model.WebToken)
 	err = json.Unmarshal(response.Data, webToken)
 	if err != nil {
-		return fmt.Errorf("bondster validate login step invalid response %s with error %+v", response.String(), err)
+		return fmt.Errorf("bondster validate login step invalid response %s with error %w", response.String(), err)
 	}
 
 	client.session.JWT = &(webToken.JWT)
@@ -157,7 +157,7 @@ func (client *BondsterClient) prolong() error {
 
 	response, err := client.underlying.Post(client.gateway+"/proxy/router/api/private/token/prolong", nil, headers)
 	if err != nil {
-		return fmt.Errorf("bondster get prolong token Error %+v", err)
+		return fmt.Errorf("bondster get prolong token Error %w", err)
 	}
 	if response.Status == 401 {
 		return client.login()
@@ -220,7 +220,7 @@ func (client *BondsterClient) GetCurrencies() ([]string, error) {
 
 	response, err := client.underlying.Post(client.gateway+"/proxy/clientusersetting/api/private/market/getContactInformation", nil, headers)
 	if err != nil {
-		return nil, fmt.Errorf("bondster get contact information error %+v", err)
+		return nil, fmt.Errorf("bondster get contact information error %w", err)
 	}
 	if response.Status != 200 {
 		return nil, fmt.Errorf("bondster get contact information error %s", response.String())
@@ -286,7 +286,7 @@ func (client *BondsterClient) GetStatementIdsInInterval(currency string, interva
 
 	response, err := client.underlying.Post(client.gateway+"/proxy/mktinvestor/api/private/transaction/search", []byte(request), headers)
 	if err != nil {
-		return nil, fmt.Errorf("bondster get contact information error %+v", err)
+		return nil, fmt.Errorf("bondster get contact information error %w", err)
 	}
 	if response.Status != 200 {
 		return nil, fmt.Errorf("bondster get contact information error %s", response.String())
@@ -343,7 +343,7 @@ func (client *BondsterClient) GetStatements(currency string, transferIds []strin
 
 	response, err := client.underlying.Post(client.gateway+"/proxy/mktinvestor/api/private/transaction/list", []byte(request), headers)
 	if err != nil {
-		return nil, fmt.Errorf("bondster get contact information error %+v", err)
+		return nil, fmt.Errorf("bondster get contact information error %w", err)
 	}
 	if response.Status != 200 {
 		return nil, fmt.Errorf("bondster get contact information error %s", response.String())
