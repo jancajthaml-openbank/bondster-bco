@@ -15,9 +15,9 @@
 package config
 
 import (
+	"github.com/jancajthaml-openbank/bondster-bco-import/support/env"
 	"strings"
 	"time"
-	"github.com/jancajthaml-openbank/bondster-bco-import/support/env"
 )
 
 // Configuration of application
@@ -54,7 +54,7 @@ func LoadConfig() Configuration {
 		LedgerGateway:         env.String("BONDSTER_BCO_LEDGER_GATEWAY", "https://127.0.0.1:4401"),
 		VaultGateway:          env.String("BONDSTER_BCO_VAULT_GATEWAY", "https://127.0.0.1:4400"),
 		LakeHostname:          env.String("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
-		SyncRate:              env.Duration("BONDSTER_BCO_SYNC_RATE", 22 * time.Second),
+		SyncRate:              env.Duration("BONDSTER_BCO_SYNC_RATE", 22*time.Second),
 		LogLevel:              strings.ToUpper(env.String("BONDSTER_BCO_LOG_LEVEL", "INFO")),
 		MetricsStastdEndpoint: env.String("FIO_BCO_STATSD_ENDPOINT", "127.0.0.1:8125"),
 	}
