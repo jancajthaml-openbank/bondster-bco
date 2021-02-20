@@ -14,7 +14,10 @@
 
 package config
 
-import "strings"
+import (
+	"strings"
+	"github.com/jancajthaml-openbank/bondster-bco-rest/support/env"
+)
 
 // Configuration of application
 type Configuration struct {
@@ -43,14 +46,14 @@ type Configuration struct {
 // LoadConfig loads application configuration
 func LoadConfig() Configuration {
 	return Configuration{
-		RootStorage:      envString("BONDSTER_BCO_STORAGE", "/data"),
-		EncryptionKey:    envSecret("BONDSTER_BCO_ENCRYPTION_KEY", nil),
-		ServerPort:       envInteger("BONDSTER_BCO_HTTP_PORT", 4001),
-		ServerKey:        envString("BONDSTER_BCO_SERVER_KEY", ""),
-		ServerCert:       envString("BONDSTER_BCO_SERVER_CERT", ""),
-		LakeHostname:     envString("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
-		LogLevel:         strings.ToUpper(envString("BONDSTER_BCO_LOG_LEVEL", "INFO")),
-		MinFreeDiskSpace: uint64(envInteger("BONDSTER_BCO_STORAGE_THRESHOLD", 0)),
-		MinFreeMemory:    uint64(envInteger("BONDSTER_BCO_MEMORY_THRESHOLD", 0)),
+		RootStorage:      env.String("BONDSTER_BCO_STORAGE", "/data"),
+		EncryptionKey:    env.HexFile("BONDSTER_BCO_ENCRYPTION_KEY", nil),
+		ServerPort:       env.Int("BONDSTER_BCO_HTTP_PORT", 4001),
+		ServerKey:        env.String("BONDSTER_BCO_SERVER_KEY", ""),
+		ServerCert:       env.String("BONDSTER_BCO_SERVER_CERT", ""),
+		LakeHostname:     env.String("BONDSTER_BCO_LAKE_HOSTNAME", "127.0.0.1"),
+		LogLevel:         strings.ToUpper(env.String("BONDSTER_BCO_LOG_LEVEL", "INFO")),
+		MinFreeDiskSpace: env.Uint64("BONDSTER_BCO_STORAGE_THRESHOLD", 0),
+		MinFreeMemory:    env.Uint64("BONDSTER_BCO_MEMORY_THRESHOLD", 0),
 	}
 }
