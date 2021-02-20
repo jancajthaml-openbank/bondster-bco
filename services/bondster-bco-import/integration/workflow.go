@@ -192,11 +192,11 @@ func importTransactionsFromStatemets(
 		}
 
 		if statement.Direction == "CREDIT" {
-			credit.Name = "BONDSTER_"+statement.Amount.Currency + "_TYPE_NOSTRO"
-			debit.Name = "BONDSTER_"+statement.Amount.Currency + "_TYPE_" + statement.Type
+			credit.Name = "BONDSTER_" + statement.Amount.Currency + "_TYPE_NOSTRO"
+			debit.Name = "BONDSTER_" + statement.Amount.Currency + "_TYPE_" + statement.Type
 		} else {
-			credit.Name = "BONDSTER_"+statement.Amount.Currency + "_TYPE_" + statement.Type
-			debit.Name = "BONDSTER_"+statement.Amount.Currency + "_TYPE_NOSTRO"
+			credit.Name = "BONDSTER_" + statement.Amount.Currency + "_TYPE_" + statement.Type
+			debit.Name = "BONDSTER_" + statement.Amount.Currency + "_TYPE_NOSTRO"
 		}
 
 		request := model.Transaction{

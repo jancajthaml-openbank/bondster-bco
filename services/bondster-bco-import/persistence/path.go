@@ -1,4 +1,3 @@
-
 // Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +14,14 @@
 
 package persistence
 
-
 func StatementPath(token string, currency string) string {
-	return "token/"+token+"/statements/"+currency
+	return "token/" + token + "/statements/" + currency
 }
 
 func StatementDataPath(token string, currency string, transfer string) string {
-	return "token/"+token+"/statements/"+currency+"/" + transfer + "/data"
+	return "token/" + token + "/statements/" + currency + "/" + transfer + "/data"
 }
 
 func StatementDoneMarkPath(token string, currency string, transfer string) string {
-	return "token/"+token+"/statements/"+currency+"/" + transfer + "/done"
+	return "token/" + token + "/statements/" + currency + "/" + transfer + "/done"
 }
