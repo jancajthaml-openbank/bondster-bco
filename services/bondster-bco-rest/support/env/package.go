@@ -16,4 +16,4 @@ package env
 
 import "github.com/jancajthaml-openbank/bondster-bco-rest/support/logging"
 
-var log = logging.New("env")
+var log = logging.New("support/env")

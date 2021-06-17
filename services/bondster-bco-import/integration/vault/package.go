@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package concurrent
+package vault
 
-import "github.com/jancajthaml-openbank/bondster-bco-rest/support/logging"
+import "github.com/jancajthaml-openbank/bondster-bco-import/support/logging"
 
-var log = logging.New("support/concurrent")
+var log = logging.New("integration/vault")

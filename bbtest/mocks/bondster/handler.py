@@ -47,6 +47,7 @@ class RequestHandler(BaseHTTPRequestHandler):
       return self.__respond(500)
 
     req_data = self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8')
+
     request = json.loads(req_data)
 
     response = self.server.logic.validate_login_step(request)

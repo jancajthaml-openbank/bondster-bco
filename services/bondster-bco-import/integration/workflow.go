@@ -23,7 +23,9 @@ import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/metrics"
 	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
-	"github.com/jancajthaml-openbank/bondster-bco-import/support/http"
+	"github.com/jancajthaml-openbank/bondster-bco-import/integration/vault"
+	"github.com/jancajthaml-openbank/bondster-bco-import/integration/ledger"
+	"github.com/jancajthaml-openbank/bondster-bco-import/integration/bondster"
 	"github.com/jancajthaml-openbank/bondster-bco-import/support/timeshift"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -33,9 +35,9 @@ import (
 type Workflow struct {
 	Token            *model.Token
 	Tenant           string
-	BondsterClient   *http.BondsterClient
-	VaultClient      *http.VaultClient
-	LedgerClient     *http.LedgerClient
+	BondsterClient   *bondster.Client
+	VaultClient      *vault.Client
+	LedgerClient     *ledger.Client
 	EncryptedStorage localfs.Storage
 	PlaintextStorage localfs.Storage
 	Metrics          metrics.Metrics
@@ -55,9 +57,9 @@ func NewWorkflow(
 	return Workflow{
 		Token:            token,
 		Tenant:           tenant,
-		BondsterClient:   http.NewBondsterClient(bondsterGateway, token),
-		VaultClient:      http.NewVaultClient(vaultGateway),
-		LedgerClient:     http.NewLedgerClient(ledgerGateway),
+		BondsterClient:   bondster.NewClient(bondsterGateway, token),
+		VaultClient:      vault.NewClient(vaultGateway),
+		LedgerClient:     ledger.NewClient(ledgerGateway),
 		EncryptedStorage: encryptedStorage,
 		PlaintextStorage: plaintextStorage,
 		Metrics:          metrics,
@@ -70,7 +72,7 @@ func importAccountsFromStatemets(
 	plaintextStorage localfs.Storage,
 	token *model.Token,
 	tenant string,
-	vaultClient *http.VaultClient,
+	vaultClient *vault.Client,
 ) {
 	defer wg.Done()
 
@@ -101,7 +103,7 @@ func importAccountsFromStatemets(
 			continue
 		}
 
-		statement := new(model.BondsterStatement)
+		statement := new(bondster.BondsterStatement)
 		if json.Unmarshal(data, statement) != nil {
 			log.Warn().Msgf("Unable to unmarshal statement %s/%s/%s", token.ID, currency, id)
 			continue
@@ -149,7 +151,7 @@ func importTransactionsFromStatemets(
 	plaintextStorage localfs.Storage,
 	token *model.Token,
 	tenant string,
-	ledgerClient *http.LedgerClient,
+	ledgerClient *ledger.Client,
 	metrics metrics.Metrics,
 ) {
 	defer wg.Done()
@@ -178,7 +180,7 @@ func importTransactionsFromStatemets(
 			continue
 		}
 
-		statement := new(model.BondsterStatement)
+		statement := new(bondster.BondsterStatement)
 		if json.Unmarshal(data, statement) != nil {
 			log.Warn().Msgf("Unable to unmarshal statement %s/%s/%s", token.ID, currency, id)
 			continue
@@ -239,7 +241,7 @@ func downloadStatements(
 	currency string,
 	plaintextStorage localfs.Storage,
 	tokenID string,
-	bondsterClient *http.BondsterClient,
+	bondsterClient *bondster.Client,
 	metrics metrics.Metrics,
 ) time.Time {
 	startTime := time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -315,7 +317,7 @@ func downloadStatementsForCurrency(
 	encryptedStorage localfs.Storage,
 	plaintextStorage localfs.Storage,
 	token *model.Token,
-	bondsterClient *http.BondsterClient,
+	bondsterClient *bondster.Client,
 	metrics metrics.Metrics,
 ) {
 	lastSyncedTime := token.GetLastSyncedTime(currency)
@@ -377,12 +379,6 @@ func downloadStatementsForCurrency(
 
 // DownloadStatements download new statements from bonster gateway
 func (workflow Workflow) DownloadStatements() {
-	err := workflow.BondsterClient.EnsureSession()
-	if err != nil {
-		log.Warn().Err(err).Msgf("Unable to ensure session")
-		return
-	}
-
 	if workflow.Token.GetLastSyncedTime("CZK") != nil && workflow.Token.GetLastSyncedTime("EUR") != nil {
 		return
 	}
