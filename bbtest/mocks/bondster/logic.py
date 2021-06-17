@@ -42,8 +42,6 @@ class BussinessLogic(object):
     }
 
   def validate_login_step(self, data):
-    print('validate_login_step {}'.format(data))
-
     code = data['scenarioCode']
 
     if code != 'USR_PWD':
