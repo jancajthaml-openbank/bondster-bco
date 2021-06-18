@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+package bondster
 
 import (
 	"encoding/json"
@@ -62,10 +62,19 @@ func (session Session) IsSSIDExpired() bool {
 	return false
 }
 
+// Clear empties the session
+func (session *Session) Clear() {
+	if session == nil {
+		return
+	}
+	session.JWT = nil
+	session.SSID = nil
+}
+
 // IsJWTExpired tells whenever JsonWebToken is expired
 func (session Session) IsJWTExpired() bool {
 	if session.JWT == nil {
-		return true
+		return false
 	}
 	if time.Now().After(session.JWT.ExpiresAt.Add(time.Second * time.Duration(-10))) {
 		return true
@@ -125,8 +134,8 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// BondsterStatement repsenents result of /proxy/mktinvestor/api/private/transaction/list
-type BondsterStatement struct {
+// Statement repsenents entry of /proxy/mktinvestor/api/private/transaction/list
+type Statement struct {
 	IDTransaction string                   `json:"idTransaction"`
 	IDTransfer    string                   `json:"idTransfer"`
 	Type          string                   `json:"transactionType"`
@@ -154,13 +163,12 @@ type bondsterAmount struct {
 	Currency string  `json:"currencyCode"`
 }
 
-// LoginScenario holds code representing how service should log in
-type LoginScenario struct {
-	Value string
+type loginScenario struct {
+	value string
 }
 
-// UnmarshalJSON is json LoginScenario unmarhalling companion
-func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
+// UnmarshalJSON is json loginScenario unmarhalling companion
+func (entity *loginScenario) UnmarshalJSON(data []byte) error {
 	if entity == nil {
 		return fmt.Errorf("cannot unmarshal to nil pointer")
 	}
@@ -179,6 +187,42 @@ func (entity *LoginScenario) UnmarshalJSON(data []byte) error {
 	if all.Scenarios[0].Code == "" {
 		return fmt.Errorf("missing \"code\" value field")
 	}
-	entity.Value = all.Scenarios[0].Code
+	entity.value = all.Scenarios[0].Code
 	return nil
+}
+
+type profileDetail struct {
+	MarketAccounts accountDetail `json:"marketVerifiedExternalAccount"`
+}
+
+type accountDetail struct {
+	AccountsMap map[string]interface{} `json:"currencyToAccountMap"`
+}
+
+type loginScenarioAnswer struct {
+	ScenarioCode string `json:"scenarioCode"`
+	AuthProcessStepValues []loginScenarioStep `json:"authProcessStepValues"`
+}
+
+type loginScenarioStep struct {
+	AuthDetailType string `json:"authDetailType"`
+	Value string `json:"value"`
+}
+
+type searchFilter struct {
+	ValueDateFrom filterDate `json:"valueDateFrom"`
+	ValueDateTo filterDate `json:"valueDateTo"`	
+}
+
+type filterDate struct {
+	Month time.Month `json:"month"`
+	Year int `json:"year"`	
+}
+
+type transactionFilter struct {
+	TransactionIds []string `json:"transactionIds"`	
+}
+
+type transactionsIds struct {
+	IDs []string `json:"transferIdList"`	
 }
