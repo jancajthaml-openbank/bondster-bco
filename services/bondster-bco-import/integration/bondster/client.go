@@ -107,7 +107,7 @@ func (client *Client) GetStatementIdsInInterval(currency string, interval timesh
 }
 
 // GetStatements returns statements for given currency and transaction ids
-func (client *Client) GetStatements(currency string, transferIds []string) ([]BondsterStatement, error) {
+func (client *Client) GetStatements(currency string, transferIds []string) ([]Statement, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}
@@ -130,7 +130,7 @@ func (client *Client) GetStatements(currency string, transferIds []string) ([]Bo
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("download statements error %s", resp.Status)
 	}
-	all := make([]BondsterStatement, 0)
+	all := make([]Statement, 0)
 	err = json.NewDecoder(resp.Body).Decode(&all)
 	if err != nil {
 		return nil, err

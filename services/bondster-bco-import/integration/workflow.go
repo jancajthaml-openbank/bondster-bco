@@ -103,7 +103,7 @@ func importAccountsFromStatemets(
 			continue
 		}
 
-		statement := new(bondster.BondsterStatement)
+		statement := new(bondster.Statement)
 		if json.Unmarshal(data, statement) != nil {
 			log.Warn().Msgf("Unable to unmarshal statement %s/%s/%s", token.ID, currency, id)
 			continue
@@ -180,7 +180,7 @@ func importTransactionsFromStatemets(
 			continue
 		}
 
-		statement := new(bondster.BondsterStatement)
+		statement := new(bondster.Statement)
 		if json.Unmarshal(data, statement) != nil {
 			log.Warn().Msgf("Unable to unmarshal statement %s/%s/%s", token.ID, currency, id)
 			continue

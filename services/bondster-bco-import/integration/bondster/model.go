@@ -134,8 +134,8 @@ func (entity *WebToken) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// BondsterStatement repsenents result of /proxy/mktinvestor/api/private/transaction/list
-type BondsterStatement struct {
+// Statement repsenents entry of /proxy/mktinvestor/api/private/transaction/list
+type Statement struct {
 	IDTransaction string                   `json:"idTransaction"`
 	IDTransfer    string                   `json:"idTransfer"`
 	Type          string                   `json:"transactionType"`
