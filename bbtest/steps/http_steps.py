@@ -99,7 +99,7 @@ def create_token(context, tenant, token):
 
   try:
     response = urllib.request.urlopen(request, timeout=10, context=ctx)
-    assert response.status == 200, str(response.status)
+    assert response.status == 200
     key = '{}/{}'.format(tenant, token)
     context.tokens[key] = response.read().decode('utf-8')
   except (http.client.RemoteDisconnected, socket.timeout):
