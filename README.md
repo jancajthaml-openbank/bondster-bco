@@ -5,7 +5,8 @@ Bondster Marketplace Bank Connector
 ![Health Check](https://github.com/jancajthaml-openbank/bondster-bco/workflows/Health%20Check/badge.svg)
 [![CircleCI](https://circleci.com/gh/jancajthaml-openbank/bondster-bco/tree/main.svg?style=shield)](https://circleci.com/gh/jancajthaml-openbank/bondster-bco/tree/main)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/jancajthaml-openbank/bondster-bco)](https://goreportcard.com/report/github.com/jancajthaml-openbank/bondster-bco) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c3185b6c5940475c8773c98d754bd17c)](https://www.codacy.com/app/jancajthaml-openbank/bondster-bco?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jancajthaml-openbank/bondster-bco&amp;utm_campaign=Badge_Grade) [![codebeat badge](https://codebeat.co/badges/2baf283e-9f92-4e61-af1c-d8d37a688b87)](https://codebeat.co/projects/github-com-jancajthaml-openbank-bondster-bco-main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jancajthaml-openbank/bondster-bco)](https://goreportcard.com/report/github.com/jancajthaml-openbank/bondster-bco) [![codebeat badge](https://codebeat.co/badges/bf3c1365-aee0-4f75-be51-4c7d4aed7375)](https://codebeat.co/projects/github-com-jancajthaml-openbank-bondster-bco-main)
+
 
 ## License
 
