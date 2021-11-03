@@ -94,7 +94,7 @@ func CreateToken(system *actor.System) func(c echo.Context) error {
 		defer c.Request().Body.Close()
 		if err != nil {
 			c.Response().WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 
 		var req = new(model.Token)
