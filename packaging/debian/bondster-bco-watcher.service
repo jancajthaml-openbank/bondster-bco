@@ -3,10 +3,9 @@ Description=openbank Bondster Marketplace connection configuration watcher
 StartLimitBurst=5
 
 [Service]
-Type=oneshot
-ExecStart=/bin/sh -c 'echo reloading bondster-bco.service'
+Type=simple
+ExecStartPre=echo 'restarting bondster-bco (configuration has changed)'
 ExecStart=/bin/sh -c 'systemctl restart bondster-bco.service'
-ExecStart=/bin/sh -c 'echo reloaded bondster-bco.service'
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=bondster-bco.service
