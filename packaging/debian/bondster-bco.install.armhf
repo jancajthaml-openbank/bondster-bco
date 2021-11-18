@@ -1,3 +1,0 @@
-bin/bondster-bco-rest-linux-armhf usr/bin
-bin/bondster-bco-import-linux-armhf usr/bin
-init.conf etc/bondster-bco/conf.d
