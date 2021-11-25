@@ -17,7 +17,6 @@ package bondster
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"time"
 	_http "net/http"
 	"sync"
@@ -68,8 +67,7 @@ func (client *AuthorizedClient) login() error {
 	}
 
 	if resp.StatusCode != 200 {
-		data, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("get login scenario status error %s ... %s", resp.Status, string(data))
+		return fmt.Errorf("get login scenario status error %s", resp.Status)
 	}
 
 	scenario := new(loginScenario)
