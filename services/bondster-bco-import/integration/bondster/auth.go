@@ -58,7 +58,8 @@ func (client *AuthorizedClient) login() error {
 	req.SetHeader("device", client.session.Device)
 	req.SetHeader("channeluuid", client.session.Channel)
 	req.SetHeader("x-active-language", "cs")
-	req.SetHeader("authority", client.gateway)
+	req.SetHeader("referer", client.gateway + "/cs")
+	req.SetHeader("origin", client.gateway)
 
 	resp, err := client.httpClient.Do(req)
 	if err != nil {
@@ -106,7 +107,8 @@ func (client *AuthorizedClient) login() error {
 	req.SetHeader("device", client.session.Device)
 	req.SetHeader("channeluuid", client.session.Channel)
 	req.SetHeader("x-active-language", "cs")
-	req.SetHeader("authority", client.gateway)
+	req.SetHeader("referer", client.gateway + "/cs")
+	req.SetHeader("origin", client.gateway)
 
 	resp, err = client.httpClient.Do(req)
 	if err != nil {
@@ -144,7 +146,8 @@ func (client *AuthorizedClient) prolong() error {
 	req.SetHeader("device", client.session.Device)
 	req.SetHeader("channeluuid", client.session.Channel)
 	req.SetHeader("x-active-language", "cs")
-	req.SetHeader("authority", client.gateway)
+	req.SetHeader("referer", client.gateway + "/cs")
+	req.SetHeader("origin", client.gateway)
 
 	if client.session.JWT != nil {
 		// FIXME possible nil

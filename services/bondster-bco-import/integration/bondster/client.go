@@ -90,7 +90,9 @@ func (client *Client) GetStatementIdsInInterval(currency string, interval timesh
 	if err != nil {
 		return nil, fmt.Errorf("get statements ids error %w", err)
 	}
-	req.SetHeader("Content-Type", "application/json")
+	//req.SetHeader("device", "https://ib.bondster.com/cs/statement")
+	req.SetHeader("x-account-context", currency)
+	req.SetHeader("content-type", "application/json")
 	resp, err := client.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("get statements ids error %w", err)
@@ -122,7 +124,8 @@ func (client *Client) GetStatements(currency string, transferIds []string) ([]St
 	if err != nil {
 		return nil, fmt.Errorf("get statements error %w", err)
 	}
-	req.SetHeader("Content-Type", "application/json")
+	req.SetHeader("x-account-context", currency)
+	req.SetHeader("content-type", "application/json")
 	resp, err := client.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("download statements error %w", err)
