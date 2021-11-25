@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 	_http "net/http"
 	"time"
 )
@@ -74,7 +75,7 @@ func (client *Client) Do(req *Request) (*_http.Response, error) {
 	if client == nil {
 		return nil, fmt.Errorf("nil deference")
 	}
-	log.Debug().Str("url", req.URL.String()).Str("method", req.Method).Msg("performing request")
+	log.Debug().Str("url", req.URL.String()).Str("method", req.Method).Msgf("performing request")
 	var resp *_http.Response
 	var attempt int
 	var shouldRetry bool
