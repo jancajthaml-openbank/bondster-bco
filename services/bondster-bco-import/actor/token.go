@@ -65,7 +65,6 @@ func NonExistToken(s *System, state model.Token) system.ReceiverFunction {
 			log.Debug().Msgf("token %s (NonExist CreateToken) OK", state.ID)
 			s.Metrics.TokenCreated()
 
-			//context.Self.Become(*tokenResult, ExistToken(s))
 			return ExistToken(s, *tokenResult)
 
 		case DeleteToken:
@@ -106,14 +105,12 @@ func ExistToken(s *System, state model.Token) system.ReceiverFunction {
 			log.Info().Msgf("Synchronizing %s", state.ID)
 			
 			s.SendMessage(RespSynchronizeToken, context.Sender, context.Receiver)
-			//context.Self.Become(t_state, SynchronizingToken(s))
 
 			go func() {
 				log.Debug().Msgf("token %s Importing statements Start", state.ID)
 
 				defer func() {
 					log.Debug().Msgf("token %s Importing statements End", state.ID)
-					//context.Self.Become(t_state, NilToken(s))
 					context.Self.Tell(ProbeMessage{}, context.Receiver, context.Receiver)
 				}()
 
@@ -147,8 +144,7 @@ func ExistToken(s *System, state model.Token) system.ReceiverFunction {
 			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
 			s.Metrics.TokenDeleted()
 
-			//context.Self.Become(state, NonExistToken(s))
-			return NonExistToken(s, state) // FIXME
+			return NonExistToken(s, model.NewToken(state.ID))
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
@@ -191,7 +187,7 @@ func SynchronizingToken(s *System, state model.Token) system.ReceiverFunction {
 			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
 			s.Metrics.TokenDeleted()
 			
-			return NonExistToken(s, state)	// FIXME
+			return NonExistToken(s, model.NewToken(state.ID))
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
