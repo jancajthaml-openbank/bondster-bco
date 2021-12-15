@@ -16,104 +16,103 @@ package actor
 
 import (
 	"github.com/jancajthaml-openbank/bondster-bco-import/integration"
-	"github.com/jancajthaml-openbank/bondster-bco-import/model"
 	"github.com/jancajthaml-openbank/bondster-bco-import/persistence"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
 // NilToken represents token that is neither existing neither non existing
-func NilToken(s *System) func(interface{}, system.Context) {
-	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.Token)
-
-		tokenHydration := persistence.LoadToken(s.EncryptedStorage, state.ID)
-
-		if tokenHydration == nil {
-			context.Self.Become(state, NonExistToken(s))
-			log.Debug().Msgf("token %s Nil -> NonExist", state.ID)
+func NilToken(s *System, id string) system.ReceiverFunction {
+	return func(context system.Context) system.ReceiverFunction {
+		context.Self.Tell(context.Data, context.Receiver, context.Sender)
+		if persistence.LoadToken(s.EncryptedStorage, id) == nil {
+			log.Debug().Msgf("token %s Nil -> NonExist", id)
+			return NonExistToken(s, id)
 		} else {
-			context.Self.Become(*tokenHydration, ExistToken(s))
-			log.Debug().Msgf("token %s Nil -> Exist", state.ID)
+			log.Debug().Msgf("token %s Nil -> Exist", id)
+			return ExistToken(s, id)
 		}
-
-		context.Self.Receive(context)
 	}
 }
 
 // NonExistToken represents token that does not exist
-func NonExistToken(s *System) func(interface{}, system.Context) {
-	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.Token)
+func NonExistToken(s *System, id string) system.ReceiverFunction {
+	return func(context system.Context) system.ReceiverFunction {
 
 		switch msg := context.Data.(type) {
 
-		case ProbeMessage:
-			break
+		case SynchornizationDone:
+			log.Debug().Msgf("token %s (NonExist SynchornizationDone)", id)
+			return NonExistToken(s, id)
 
 		case CreateToken:
-			tokenResult := persistence.CreateToken(s.EncryptedStorage, state.ID, msg.Username, msg.Password)
-			if tokenResult == nil {
+			if persistence.CreateToken(s.EncryptedStorage, id, msg.Username, msg.Password) == nil {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.Debug().Msgf("token %s (NonExist CreateToken) Error", state.ID)
-				return
+				log.Debug().Msgf("token %s (NonExist CreateToken) Error", id)
+				return NonExistToken(s, id)
 			}
 
 			s.SendMessage(RespCreateToken, context.Sender, context.Receiver)
-			log.Info().Msgf("New Token %s Created", state.ID)
-			log.Debug().Msgf("token %s (NonExist CreateToken) OK", state.ID)
+			log.Info().Msgf("New Token %s Created", id)
+			log.Debug().Msgf("token %s (NonExist CreateToken) OK", id)
 			s.Metrics.TokenCreated()
 
-			context.Self.Become(*tokenResult, ExistToken(s))
+			return ExistToken(s, id)
 
 		case DeleteToken:
 			s.SendMessage(RespTokenDoesNotExist, context.Sender, context.Receiver)
-			log.Debug().Msgf("token %s (NonExist DeleteToken) Error", state.ID)
+			log.Debug().Msgf("token %s (NonExist DeleteToken) Error", id)
+			return NonExistToken(s, id)
 
 		case SynchronizeToken:
 			s.SendMessage(RespTokenDoesNotExist, context.Sender, context.Receiver)
-			log.Debug().Msgf("token %s (NonExist SynchronizeToken) Error", state.ID)
+			log.Debug().Msgf("token %s (NonExist SynchronizeToken) Error", id)
+			return NonExistToken(s, id)
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debug().Msgf("token %s (NonExist Unknown Message) Error", state.ID)
+			log.Debug().Msgf("token %s (NonExist Unknown Message) Error", id)
+			return NonExistToken(s, id)
 		}
 
-		return
 	}
 }
 
 // ExistToken represents account that does exist
-func ExistToken(s *System) func(interface{}, system.Context) {
-	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.Token)
+func ExistToken(s *System, id string) system.ReceiverFunction {
+	return func(context system.Context) system.ReceiverFunction {
 
 		switch context.Data.(type) {
 
-		case ProbeMessage:
-			break
+		case SynchornizationDone:
+			log.Debug().Msgf("token %s (Exist SynchornizationDone)", id)
+			return ExistToken(s, id)
 
 		case CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debug().Msgf("token %s (Exist CreateToken) Error", state.ID)
+			log.Debug().Msgf("token %s (Exist CreateToken) Error", id)
+			return ExistToken(s, id)
 
 		case SynchronizeToken:
-			log.Debug().Msgf("token %s (Exist SynchronizeToken)", state.ID)
-			log.Info().Msgf("Synchronizing %s", state.ID)
+			log.Debug().Msgf("token %s (Exist SynchronizeToken)", id)
+			log.Info().Msgf("Synchronizing %s", id)
+			
 			s.SendMessage(RespSynchronizeToken, context.Sender, context.Receiver)
-			context.Self.Become(t_state, SynchronizingToken(s))
 
 			go func() {
-				log.Debug().Msgf("token %s Importing statements Start", state.ID)
+				log.Debug().Msgf("token %s Importing statements Start", id)
 
 				defer func() {
-					log.Debug().Msgf("token %s Importing statements End", state.ID)
-					context.Self.Become(t_state, NilToken(s))
-					context.Self.Tell(ProbeMessage{}, context.Receiver, context.Receiver)
+					log.Debug().Msgf("token %s Importing statements End", id)
+					context.Self.Tell(SynchornizationDone{}, context.Receiver, context.Receiver)
 				}()
 
+				token := persistence.LoadToken(s.EncryptedStorage, id)
+				if token == nil {
+					return
+				}
 				workflow := integration.NewWorkflow(
-					&state,
+					token,
 					s.Tenant,
 					s.BondsterGateway,
 					s.VaultGateway,
@@ -128,63 +127,71 @@ func ExistToken(s *System) func(interface{}, system.Context) {
 				workflow.CreateTransactions()
 			}()
 
+			return SynchronizingToken(s, id)
+
 		case DeleteToken:
-			if !persistence.DeleteToken(s.EncryptedStorage, state.ID) {
+			if !persistence.DeleteToken(s.EncryptedStorage, id) {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.Debug().Msgf("token %s (Exist DeleteToken) Error", state.ID)
-				return
+				log.Debug().Msgf("token %s (Exist DeleteToken) Error", id)
+				return ExistToken(s, id)
 			}
-			log.Info().Msgf("Token %s Deleted", state.ID)
-			log.Debug().Msgf("token %s (Exist DeleteToken) OK", state.ID)
-			s.Metrics.TokenDeleted()
+			log.Info().Msgf("Token %s Deleted", id)
+			log.Debug().Msgf("token %s (Exist DeleteToken) OK", id)
+			
 			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
-			context.Self.Become(state, NonExistToken(s))
+			s.Metrics.TokenDeleted()
+
+			return NonExistToken(s, id)
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debug().Msgf("token %s (Exist Unknown Message) Error", state.ID)
+			log.Debug().Msgf("token %s (Exist Unknown Message) Error", id)
+			return ExistToken(s, id)
 
 		}
 
-		return
 	}
 }
 
 // SynchronizingToken represents account that is currently synchronizing
-func SynchronizingToken(s *System) func(interface{}, system.Context) {
-	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.Token)
+func SynchronizingToken(s *System, id string) system.ReceiverFunction {
+	return func(context system.Context) system.ReceiverFunction {
 
 		switch context.Data.(type) {
 
-		case ProbeMessage:
-			break
+		case SynchornizationDone:
+			log.Debug().Msgf("token %s (Synchronizing SynchornizationDone)", id)
+			return ExistToken(s, id)
 
 		case CreateToken:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debug().Msgf("token %s (Synchronizing CreateToken) Error", state.ID)
+			log.Debug().Msgf("token %s (Synchronizing CreateToken) Error", id)
+			return SynchronizingToken(s, id)
 
 		case SynchronizeToken:
 			s.SendMessage(RespSynchronizeToken, context.Sender, context.Receiver)
-			log.Debug().Msgf("token %s (Synchronizing SynchronizeToken)", state.ID)
+			log.Debug().Msgf("token %s (Synchronizing SynchronizeToken)", id)
+			return SynchronizingToken(s, id)
 
 		case DeleteToken:
-			if !persistence.DeleteToken(s.EncryptedStorage, state.ID) {
+			if !persistence.DeleteToken(s.EncryptedStorage, id) {
 				s.SendMessage(FatalError, context.Sender, context.Receiver)
-				log.Debug().Msgf("token %s (Synchronizing DeleteToken) Error", state.ID)
-				return
+				log.Debug().Msgf("token %s (Synchronizing DeleteToken) Error", id)
+				return SynchronizingToken(s, id)
 			}
-			log.Info().Msgf("Token %s Deleted", state.ID)
-			log.Debug().Msgf("token %s (Synchronizing DeleteToken) OK", state.ID)
-			s.Metrics.TokenDeleted()
+			log.Info().Msgf("Token %s Deleted", id)
+			log.Debug().Msgf("token %s (Synchronizing DeleteToken) OK", id)
+			
 			s.SendMessage(RespDeleteToken, context.Sender, context.Receiver)
-			context.Self.Become(state, NonExistToken(s))
+			s.Metrics.TokenDeleted()
+			
+			return NonExistToken(s, id)
 
 		default:
 			s.SendMessage(FatalError, context.Sender, context.Receiver)
-			log.Debug().Msgf("token %s (Synchronizing Unknown Message) Error", state.ID)
+			log.Debug().Msgf("token %s (Synchronizing Unknown Message) Error", id)
+			return SynchronizingToken(s, id)
 		}
 
-		return
 	}
 }
