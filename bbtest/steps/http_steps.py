@@ -22,11 +22,13 @@ def token_exists(context, tenant, token):
 
   uri = "https://127.0.0.1/token/{}".format(tenant)
 
-
   request = Request(method='GET', url=uri)
   request.add_header('Accept', 'application/json')
 
   response = request.do()
+  if response.status == 504:
+    response = request.do()
+
   assert response.status == 200, str(response.status)
   
   actual = list()
@@ -49,6 +51,8 @@ def token_not_exists(context, tenant, token):
   request.add_header('Accept', 'application/json')
 
   response = request.do()
+  if response.status == 504:
+    response = request.do()
 
   assert response.status == 200, str(response.status)
       
@@ -76,6 +80,8 @@ def create_token(context, tenant, token):
   request.data = json.dumps(payload)
 
   response = request.do()
+  if response.status == 504:
+    response = request.do()
 
   assert response.status == 200, str(response.status)
   key = '{}/{}'.format(tenant, token)
@@ -91,7 +97,11 @@ def create_token(context, tenant, token):
   uri = "https://127.0.0.1/token/{}/{}".format(tenant, context.tokens[key])
   
   request = Request(method='DELETE', url=uri)
+
   response = request.do()
+  if response.status == 504:
+    response = request.do()
+
   assert response.status == 200, str(response.status)
 
 
@@ -104,7 +114,10 @@ def create_token(context, tenant, token):
   uri = "https://127.0.0.1/token/{}/{}/sync".format(tenant, context.tokens[key])
 
   request = Request(method='GET', url=uri)
+  
   response = request.do()
+  if response.status == 504:
+    response = request.do()
 
   assert response.status == 200, str(response.status)
 
