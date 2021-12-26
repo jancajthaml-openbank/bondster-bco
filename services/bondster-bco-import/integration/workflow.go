@@ -88,7 +88,7 @@ func importAccountsFromStatemets(
 	idsNeedingConfirmation := make([]string, 0)
 
 	for _, id := range ids {
-		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
+		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/ack_account")
 		if err != nil {
 			log.Warn().Err(err).Msgf("Unable to check if statement %s/%s/%s accounts exists", token.ID, currency, id)
 			continue
@@ -137,7 +137,7 @@ func importAccountsFromStatemets(
 	}
 
 	for _, id := range idsNeedingConfirmation {
-		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/accounts")
+		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/ack_account")
 		if err != nil {
 			log.Warn().Err(err).Msgf("Unable to mark account discovery for %s/%s/%s", token.ID, currency, id)
 		}
@@ -165,7 +165,7 @@ func importTransactionsFromStatemets(
 	}
 
 	for _, id := range ids {
-		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/done")
+		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/ack_transfer")
 		if err != nil {
 			log.Warn().Msgf("Unable to check if statement %s/%s/%s done exists", token.ID, currency, id)
 			continue
@@ -226,7 +226,7 @@ func importTransactionsFromStatemets(
 
 		metrics.TransactionImported(1)
 
-		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/done")
+		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/ack_transfer")
 		if err != nil {
 			log.Warn().Msgf("Unable to mark statement done for %s/%s/%s", token.ID, currency, id)
 			continue
@@ -248,7 +248,7 @@ func downloadStatements(
 	if len(ids) == 0 {
 		return startTime
 	}
-	log.Debug().Msgf("Will synchronize %d statements in %s currency", len(ids), currency)
+	log.Debug().Msgf("Will download %d statements in %s currency", len(ids), currency)
 	statements, err := bondsterClient.GetStatements(currency, ids)
 	if err != nil {
 		log.Warn().Msgf("Unable to download statements details for currency %s", currency)
@@ -330,9 +330,13 @@ func downloadStatementsForCurrency(
 	lastTime := *lastSyncedTime
 	endTime := time.Now()
 
-	log.Info().Msgf("Token %s discovering new statements for currency %s between %s and %s", token.ID, currency, lastTime.Format("2006-01-02T15:04:05Z0700"), endTime.Format("2006-01-02T15:04:05Z0700"))
+	
 
 	for _, interval := range timeshift.PartitionInterval(lastTime, endTime) {
+
+		//log.Debug().Msgf("token %s downloading new statements", workflow.Token.ID)
+		log.Debug().Msgf("Token %s discovering new statements for currency %s between %s and %s", token.ID, currency, interval.StartTime.Format("2006-01-02T15:04:05Z0700"), interval.EndTime.Format("2006-01-02T15:04:05Z0700"))
+
 		ids, err := bondsterClient.GetStatementIdsInInterval(currency, interval)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Unable to obtain transaction ids for token %s currency %s", token.ID, currency)
@@ -374,7 +378,6 @@ func downloadStatementsForCurrency(
 			log.Warn().Msgf("unable to update token %s", token.ID)
 		}
 	}
-
 }
 
 // DownloadStatements download new statements from bonster gateway
@@ -420,6 +423,8 @@ func (workflow Workflow) DownloadStatements() {
 }
 
 func (workflow Workflow) CreateAccounts() {
+	log.Debug().Msgf("token %s creating accounts from statements", workflow.Token.ID)
+
 	currencies := workflow.Token.GetCurrencies()
 
 	// FIXME better with daemon support and cancelation
@@ -440,6 +445,8 @@ func (workflow Workflow) CreateAccounts() {
 }
 
 func (workflow Workflow) CreateTransactions() {
+	log.Debug().Msgf("token %s creating transactions from statements", workflow.Token.ID)
+
 	currencies := workflow.Token.GetCurrencies()
 
 	// FIXME better with daemon support and cancelation

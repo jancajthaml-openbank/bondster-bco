@@ -62,8 +62,6 @@ func (bondster BondsterImport) Setup() error {
 
 // Work performs import roundtrip
 func (bondster BondsterImport) Work() {
-	log.Info().Msg("Import statements from Bondster Marketplace")
-
 	tokens, err := bondster.getActiveTokens()
 	if err != nil {
 		log.Error().Err(err).Msg("unable to get active tokens")
