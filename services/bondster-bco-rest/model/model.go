@@ -26,10 +26,10 @@ import (
 
 // Token represents metadata of token entity
 type Token struct {
-	ID        string    `json:"-"`
-	CreatedAt time.Time `json:"-"`
-	Username  string    `json:"username"`
-	Password  string    `json:"password"`
+	ID        string
+	CreatedAt time.Time
+	Username  string
+	Password  string
 }
 
 // MarshalJSON serializes Token as json
