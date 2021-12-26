@@ -158,14 +158,14 @@ func importTransactionsFromStatemets(
 
 	log.Info().Msgf("token %s creating transactions from statements for currency %s", token.ID, currency)
 
-	ids, err := plaintextStorage.ListDirectory(persistence.StatementPath(token.ID, currency), true)
+	ids, err := plaintextStorage.ListDirectory("token/" + token.ID + "/statements/" + currency, true)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Unable to obtain transaction ids from storage for token %s currency %s", token.ID, currency)
 		return
 	}
 
 	for _, id := range ids {
-		exists, err := plaintextStorage.Exists(persistence.StatementDoneMarkPath(token.ID, currency, id))
+		exists, err := plaintextStorage.Exists("token/" + token.ID + "/statements/" + currency + "/" + id + "/done")
 		if err != nil {
 			log.Warn().Msgf("Unable to check if statement %s/%s/%s done exists", token.ID, currency, id)
 			continue
@@ -174,7 +174,7 @@ func importTransactionsFromStatemets(
 			continue
 		}
 
-		data, err := plaintextStorage.ReadFileFully(persistence.StatementDataPath(token.ID, currency, id))
+		data, err := plaintextStorage.ReadFileFully("token/" + token.ID + "/statements/" + currency + "/" + id + "/data")
 		if err != nil {
 			log.Warn().Err(err).Msgf("Unable to load statement %s/%s/%s", token.ID, currency, id)
 			continue
@@ -226,7 +226,7 @@ func importTransactionsFromStatemets(
 
 		metrics.TransactionImported(1)
 
-		err = plaintextStorage.TouchFile(persistence.StatementDoneMarkPath(token.ID, currency, id))
+		err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/done")
 		if err != nil {
 			log.Warn().Msgf("Unable to mark statement done for %s/%s/%s", token.ID, currency, id)
 			continue
@@ -263,7 +263,7 @@ func downloadStatements(
 			log.Warn().Msgf("Unable to marshal statement details of %s/%s/%s", tokenID, currency, transaction.IDTransfer)
 			continue
 		}
-		err = plaintextStorage.WriteFileExclusive(persistence.StatementDataPath(tokenID, currency, transaction.IDTransfer), data)
+		err = plaintextStorage.WriteFileExclusive("token/" + tokenID + "/statements/" + currency + "/" + transaction.IDTransfer + "/data", data)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Unable to persist statement details of %s/%s/%s", tokenID, currency, transaction.IDTransfer)
 			continue
@@ -284,13 +284,13 @@ func yieldUnsynchronizedStatementIds(
 	go func() {
 		defer close(chnl)
 		buffer := make([]string, 0)
-		ids, err := plaintextStorage.ListDirectory(persistence.StatementPath(tokenID, currency), true)
+		ids, err := plaintextStorage.ListDirectory("token/" + tokenID + "/statements/" + currency, true)
 		if err != nil {
 			log.Warn().Msgf("Unable to obtain transaction ids from storage for token %s currency %s", tokenID, currency)
 			return
 		}
 		for _, id := range ids {
-			exists, err := plaintextStorage.Exists(persistence.StatementDataPath(tokenID, currency, id))
+			exists, err := plaintextStorage.Exists("token/" + tokenID + "/statements/" + currency + "/" + id + "/data")
 			if err != nil {
 				log.Warn().Msgf("Unable to check if statement %s/%s/%s data exists", tokenID, currency, id)
 				continue

@@ -14,14 +14,6 @@
 
 package persistence
 
-func StatementPath(token string, currency string) string {
-	return "token/" + token + "/statements/" + currency
-}
+import "github.com/jancajthaml-openbank/bondster-bco-import/support/logging"
 
-func StatementDataPath(token string, currency string, transfer string) string {
-	return "token/" + token + "/statements/" + currency + "/" + transfer + "/data"
-}
-
-func StatementDoneMarkPath(token string, currency string, transfer string) string {
-	return "token/" + token + "/statements/" + currency + "/" + transfer + "/done"
-}
+var log = logging.New("persistence")
