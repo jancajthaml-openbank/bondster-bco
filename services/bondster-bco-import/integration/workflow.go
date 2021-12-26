@@ -330,11 +330,8 @@ func downloadStatementsForCurrency(
 	lastTime := *lastSyncedTime
 	endTime := time.Now()
 
-	
-
 	for _, interval := range timeshift.PartitionInterval(lastTime, endTime) {
 
-		//log.Debug().Msgf("token %s downloading new statements", workflow.Token.ID)
 		log.Debug().Msgf("Token %s discovering new statements for currency %s between %s and %s", token.ID, currency, interval.StartTime.Format("2006-01-02T15:04:05Z0700"), interval.EndTime.Format("2006-01-02T15:04:05Z0700"))
 
 		ids, err := bondsterClient.GetStatementIdsInInterval(currency, interval)
