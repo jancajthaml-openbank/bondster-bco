@@ -348,9 +348,9 @@ func downloadStatementsForCurrency(
 			if exists {
 				continue
 			}
-			err = plaintextStorage.TouchFile("token/" + token.ID + "/statements/" + currency + "/" + id + "/mark")
+			err = plaintextStorage.Mkdir("token/" + token.ID + "/statements/" + currency + "/" + id)
 			if err != nil {
-				log.Warn().Err(err).Msgf("Unable to mark transaction %s as known for token %s currency %s", id, token.ID, currency)
+				log.Warn().Err(err).Msgf("Unable to ensure statement partition %s as known for token %s currency %s", id, token.ID, currency)
 				return
 			}
 		}
