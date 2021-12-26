@@ -126,7 +126,7 @@ func importAccountsFromStatemets(
 			Tenant:         tenant,
 			Name:           account,
 			Currency:       currency,
-			Format:         "BONDSTER_TECHNICAL",
+			Format:         "BONDSTER_VIRTUAL",
 			IsBalanceCheck: false,
 		}
 		err = vaultClient.CreateAccount(request)
